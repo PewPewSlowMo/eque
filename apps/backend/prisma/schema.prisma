@@ -1,0 +1,260 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  ADMIN
+  REGISTRAR
+  CALL_CENTER
+  DOCTOR
+  DEPARTMENT_HEAD
+  DIRECTOR
+}
+
+enum PatientCategory {
+  PAID_ONCE
+  PAID_CONTRACT
+  OSMS
+  CONTINGENT
+  EMPLOYEE
+}
+
+enum QueuePriority {
+  EMERGENCY
+  INPATIENT
+  SCHEDULED
+  WALK_IN
+}
+
+enum QueueEntryStatus {
+  WAITING_ARRIVAL
+  ARRIVED
+  CALLED
+  IN_PROGRESS
+  COMPLETED
+  NO_SHOW
+  CANCELLED
+}
+
+enum QueueSource {
+  REGISTRAR
+  CALL_CENTER
+}
+
+// ============================================================================
+// USERS
+// ============================================================================
+
+model User {
+  id         String   @id @default(cuid())
+  username   String   @unique
+  password   String
+  firstName  String
+  lastName   String
+  middleName String?
+  role       UserRole @default(REGISTRAR)
+  isActive   Boolean  @default(true)
+  specialty  String?
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  // Категории, доступные регистратору / колл-центру для постановки в очередь
+  allowedCategories PatientCategory[]
+
+  createdQueueEntries QueueEntry[]       @relation("CreatedBy")
+  doctorQueueEntries  QueueEntry[]       @relation("DoctorQueue")
+  assignments         DoctorAssignment[] @relation("AssignedDoctor")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ============================================================================
+// DEPARTMENTS & CABINETS
+// ============================================================================
+
+model Department {
+  id       String  @id @default(cuid())
+  name     String
+  isActive Boolean @default(true)
+
+  users    User[]
+  cabinets Cabinet[]
+  patients Patient[]  @relation("EmployeeDepartment")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("departments")
+}
+
+model Cabinet {
+  id           String  @id @default(cuid())
+  number       String  @unique
+  name         String?
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  isActive     Boolean @default(true)
+
+  assignments DoctorAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cabinets")
+}
+
+// ============================================================================
+// DOCTOR ↔ CABINET ASSIGNMENTS
+// ============================================================================
+
+model DoctorAssignment {
+  id        String   @id @default(cuid())
+  doctorId  String
+  doctor    User     @relation("AssignedDoctor", fields: [doctorId], references: [id])
+  cabinetId String
+  cabinet   Cabinet  @relation(fields: [cabinetId], references: [id])
+
+  startTime DateTime
+  endTime   DateTime?
+  isActive  Boolean  @default(true)
+
+  shiftTemplateId String?
+  shiftTemplate   ShiftTemplate? @relation(fields: [shiftTemplateId], references: [id])
+
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([doctorId, isActive])
+  @@index([cabinetId, isActive])
+  @@map("doctor_assignments")
+}
+
+model ShiftTemplate {
+  id        String @id @default(cuid())
+  name      String
+  startTime String // "08:00"
+  endTime   String // "14:00"
+
+  assignments DoctorAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("shift_templates")
+}
+
+// ============================================================================
+// PATIENTS
+// ============================================================================
+
+model Patient {
+  id          String  @id @default(cuid())
+  firstName   String
+  lastName    String
+  middleName  String?
+  dateOfBirth DateTime?
+  phone       String?
+  iin         String?  @unique
+
+  categories       PatientCategory[]
+  contractNumber   String?
+
+  employeeDepartmentId String?
+  employeeDepartment   Department? @relation("EmployeeDepartment", fields: [employeeDepartmentId], references: [id])
+
+  queueEntries QueueEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([lastName, firstName])
+  @@map("patients")
+}
+
+// ============================================================================
+// QUEUE
+// ============================================================================
+
+model QueueEntry {
+  id          String           @id @default(cuid())
+  queueNumber Int
+
+  // Очередь привязана к врачу, НЕ к кабинету
+  doctorId  String
+  doctor    User    @relation("DoctorQueue", fields: [doctorId], references: [id])
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  priority QueuePriority
+  category PatientCategory
+
+  scheduledAt DateTime? // для SCHEDULED: плановое время
+
+  requiresArrivalConfirmation Boolean @default(true)
+
+  status    QueueEntryStatus @default(WAITING_ARRIVAL)
+  source    QueueSource
+  createdById String
+  createdBy   User    @relation("CreatedBy", fields: [createdById], references: [id])
+
+  paymentConfirmed Boolean @default(false)
+  notes            String?
+  cancelReason     String?
+
+  arrivedAt   DateTime?
+  calledAt    DateTime?
+  completedAt DateTime?
+
+  history QueueHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([doctorId, createdAt, queueNumber])
+  @@index([doctorId, status])
+  @@map("queue_entries")
+}
+
+model QueueHistory {
+  id           String           @id @default(cuid())
+  queueEntryId String
+  queueEntry   QueueEntry       @relation(fields: [queueEntryId], references: [id])
+  action       String
+  oldStatus    QueueEntryStatus?
+  newStatus    QueueEntryStatus?
+  userId       String?
+  notes        String?
+  createdAt    DateTime         @default(now())
+
+  @@index([queueEntryId])
+  @@map("queue_history")
+}
+
+// ============================================================================
+// SYSTEM SETTINGS
+// ============================================================================
+
+model CategorySettings {
+  id                          String          @id @default(cuid())
+  category                    PatientCategory @unique
+  requiresArrivalConfirmation Boolean         @default(true)
+  requiresPaymentConfirmation Boolean         @default(false)
+
+  updatedAt DateTime @updatedAt
+
+  @@map("category_settings")
+}
