@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { TrpcService } from '../../trpc/trpc.service';
 import { PrismaService } from '../../database/prisma.service';
 import * as bcrypt from 'bcrypt';
@@ -21,11 +22,11 @@ export const createAuthRouter = (trpc: TrpcService, prisma: PrismaService) => {
         });
 
         if (!user || !user.isActive) {
-          throw new Error('Неверный логин или пароль');
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Неверный логин или пароль' });
         }
 
         const valid = await bcrypt.compare(input.password, user.password);
-        if (!valid) throw new Error('Неверный логин или пароль');
+        if (!valid) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Неверный логин или пароль' });
 
         const token = jwt.sign(
           { userId: user.id, username: user.username, role: user.role, departmentId: user.departmentId },
@@ -54,7 +55,7 @@ export const createAuthRouter = (trpc: TrpcService, prisma: PrismaService) => {
         where: { id: ctx.user.id },
         include: { department: { select: { id: true, name: true } } },
       });
-      if (!user) throw new Error('Пользователь не найден');
+      if (!user) throw new TRPCError({ code: 'NOT_FOUND', message: 'Пользователь не найден' });
       return {
         id: user.id,
         username: user.username,

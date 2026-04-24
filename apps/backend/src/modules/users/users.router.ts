@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { TrpcService } from '../../trpc/trpc.service';
 import { PrismaService } from '../../database/prisma.service';
 import { UserRole, PatientCategory } from '@prisma/client';
@@ -7,8 +8,9 @@ import * as bcrypt from 'bcrypt';
 export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
   return trpc.router({
     getAll: trpc.protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== 'ADMIN') throw new Error('Нет доступа');
+      if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
       return prisma.user.findMany({
+        omit: { password: true },
         include: { department: { select: { id: true, name: true } } },
         orderBy: [{ role: 'asc' }, { lastName: 'asc' }],
       });
@@ -27,10 +29,11 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
         allowedCategories: z.array(z.nativeEnum(PatientCategory)).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== 'ADMIN') throw new Error('Нет доступа');
+        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         const hashed = await bcrypt.hash(input.password, 10);
         return prisma.user.create({
           data: { ...input, password: hashed, allowedCategories: input.allowedCategories ?? [] },
+          omit: { password: true },
           include: { department: { select: { id: true, name: true } } },
         });
       }),
@@ -48,13 +51,14 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
         password: z.string().min(6).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== 'ADMIN') throw new Error('Нет доступа');
+        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         const { id, password, ...rest } = input;
         const data: any = { ...rest };
         if (password) data.password = await bcrypt.hash(password, 10);
         return prisma.user.update({
           where: { id },
           data,
+          omit: { password: true },
           include: { department: { select: { id: true, name: true } } },
         });
       }),
@@ -68,6 +72,7 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
             isActive: true,
             ...(input?.departmentId ? { departmentId: input.departmentId } : {}),
           },
+          omit: { password: true },
           include: { department: { select: { id: true, name: true } } },
           orderBy: { lastName: 'asc' },
         });

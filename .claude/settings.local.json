@@ -13,7 +13,32 @@
       "Bash(git push *)",
       "Bash(git -C /home/administrator/projects_danik log --oneline -3)",
       "Bash(git -C /home/administrator/projects_danik remote -v)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(pnpm install *)",
+      "Bash(npm install *)",
+      "Bash(npx pnpm *)",
+      "Read(//home/administrator/.local/bin/**)",
+      "Read(//usr/local/bin/**)",
+      "Read(//home/administrator/.npm/**)",
+      "Read(//home/administrator/**)",
+      "Bash(corepack enable *)",
+      "Bash(corepack prepare *)",
+      "Bash(node *)",
+      "Bash(/home/administrator/.local/bin/pnpm --version)",
+      "Bash(/home/administrator/.local/bin/pnpm install *)",
+      "Bash(/home/administrator/.local/bin/pnpm *)",
+      "Bash(/home/administrator/projects_danik/node_modules/.bin/prisma validate *)",
+      "Bash(/home/administrator/projects_danik/apps/backend/node_modules/.bin/prisma validate *)",
+      "Bash(DATABASE_URL=\"postgresql://user:pass@localhost:5432/eque\" /home/administrator/projects_danik/apps/backend/node_modules/.bin/prisma validate *)",
+      "Bash(docker compose up *)",
+      "Bash(docker compose *)",
+      "Bash(DATABASE_URL=\"postgresql://eque_admin:eque_dev_password@localhost:5433/eque?schema=public\" pnpm *)",
+      "Bash(DATABASE_URL=\"postgresql://eque_admin:eque_dev_password@localhost:5433/eque?schema=public\" npx prisma migrate dev --name init)",
+      "Bash(DATABASE_URL=\"postgresql://eque_admin:eque_dev_password@localhost:5433/eque?schema=public\" PORT=3002 JWT_SECRET=\"change-me-in-production-32-chars-min\" pnpm --filter backend dev)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s http://localhost:3002/trpc/health)",
+      "Bash(kill 696190)",
+      "Bash(pkill -f \"nest start\")"
     ]
   }
 }

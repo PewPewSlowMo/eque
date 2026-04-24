@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { TrpcService } from '../../trpc/trpc.service';
 import { PrismaService } from '../../database/prisma.service';
 
@@ -19,7 +20,7 @@ export const createCabinetsRouter = (trpc: TrpcService, prisma: PrismaService) =
         departmentId: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== 'ADMIN') throw new Error('Нет доступа');
+        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         return prisma.cabinet.create({ data: input });
       }),
 
@@ -31,7 +32,7 @@ export const createCabinetsRouter = (trpc: TrpcService, prisma: PrismaService) =
         departmentId: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== 'ADMIN') throw new Error('Нет доступа');
+        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         const { id, ...data } = input;
         return prisma.cabinet.update({ where: { id }, data });
       }),
@@ -39,7 +40,7 @@ export const createCabinetsRouter = (trpc: TrpcService, prisma: PrismaService) =
     deactivate: trpc.protectedProcedure
       .input(z.object({ id: z.string() }))
       .mutation(async ({ input, ctx }) => {
-        if (ctx.user.role !== 'ADMIN') throw new Error('Нет доступа');
+        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         return prisma.cabinet.update({ where: { id: input.id }, data: { isActive: false } });
       }),
   });
