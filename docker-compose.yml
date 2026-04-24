@@ -1,0 +1,111 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: eque-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: eque_admin
+      POSTGRES_PASSWORD: eque_dev_password
+      POSTGRES_DB: eque
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=ru_RU.UTF-8 --lc-ctype=ru_RU.UTF-8"
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eque_admin -d eque"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eque-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: eque-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eque-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./apps/backend/Dockerfile
+      target: development
+    container_name: eque-backend
+    restart: unless-stopped
+    ports:
+      - "3002:3001"
+    environment:
+      DATABASE_URL: "postgresql://eque_admin:eque_dev_password@postgres:5432/eque?schema=public"
+      REDIS_URL: "redis://redis:6379"
+      PORT: "3001"
+      HOST: "0.0.0.0"
+      NODE_ENV: "development"
+      JWT_SECRET: "change-me-in-production-32-chars-min"
+      CORS_ORIGIN: "http://localhost:3000,http://localhost:5173"
+    volumes:
+      - ./apps/backend:/app/apps/backend
+      - /app/node_modules
+      - /app/apps/backend/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - eque-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./apps/frontend/Dockerfile
+      target: development
+    container_name: eque-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:5173"
+    environment:
+      VITE_TRPC_URL: "http://backend:3001/trpc"
+      VITE_WS_URL: "http://backend:3001"
+      NODE_ENV: "development"
+    volumes:
+      - ./apps/frontend:/app/apps/frontend
+      - /app/node_modules
+      - /app/apps/frontend/node_modules
+    depends_on:
+      - backend
+    networks:
+      - eque-network
+
+  adminer:
+    image: adminer:latest
+    container_name: eque-adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    networks:
+      - eque-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  eque-network:
+    driver: bridge
