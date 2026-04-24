@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash scripts/start-server.sh --project-dir /home/administrator/projects_danik --host 0.0.0.0 --url-host localhost)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d.get\\(k\\) for k in ['scripts','dependencies','devDependencies']}, indent=2, ensure_ascii=False\\)\\)\")",
+      "Bash(python3 *)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git add *)"
+    ]
+  }
+}

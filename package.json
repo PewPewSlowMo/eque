@@ -1,0 +1,26 @@
+{
+  "name": "eque",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:backend": "pnpm --filter backend dev",
+    "build": "turbo run build",
+    "db:migrate": "pnpm --filter backend prisma migrate dev",
+    "db:migrate:prod": "pnpm --filter backend prisma migrate deploy",
+    "db:seed": "pnpm --filter backend prisma db seed",
+    "db:studio": "pnpm --filter backend prisma studio",
+    "db:reset": "pnpm --filter backend prisma migrate reset",
+    "generate": "pnpm --filter backend prisma generate"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "turbo": "^2.3.0"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
