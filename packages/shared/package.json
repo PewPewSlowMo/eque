@@ -1,0 +1,9 @@
+{
+  "name": "@eque/shared",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "echo 'shared has no build step'"
+  }
+}
