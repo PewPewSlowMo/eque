@@ -14,7 +14,10 @@
       "Bash(curl -s -X POST http://localhost:3002/trpc/auth.login -H 'Content-Type: application/json' -d '{\"json\":{\"username\":\"admin\",\"password\":\"admin123\"}}')",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); r=d.get\\('result',{}\\).get\\('data',{}\\); print\\('role:', r.get\\('user',{}\\).get\\('role'\\)\\); print\\('token:', r.get\\('token',''\\)[:30]+'...' if r.get\\('token'\\) else 'NO TOKEN'\\)\")",
       "Bash(curl -s -X POST http://localhost:3002/trpc/auth.login -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"admin123\"}')",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(git push *)",
+      "Bash(pnpm install *)",
+      "Bash(npx vite *)"
     ]
   }
 }
