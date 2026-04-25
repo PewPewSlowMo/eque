@@ -62,21 +62,29 @@ export const createAssignmentsRouter = (
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет прав на назначение врача' });
         }
 
-        // Close previous active assignment if any
-        await prisma.doctorAssignment.updateMany({
-          where: { doctorId: input.doctorId, isActive: true },
-          data: { isActive: false, endTime: new Date() },
+        // Atomic: close old + create new
+        const now = new Date();
+        let newId: string;
+        await prisma.$transaction(async (tx) => {
+          await tx.doctorAssignment.updateMany({
+            where: { doctorId: input.doctorId, isActive: true },
+            data: { isActive: false, endTime: now },
+          });
+          const created = await tx.doctorAssignment.create({
+            data: {
+              doctorId: input.doctorId,
+              cabinetId: input.cabinetId,
+              shiftTemplateId: input.shiftTemplateId ?? null,
+              startTime: input.startTime ? new Date(input.startTime) : now,
+              isActive: true,
+              createdById: ctx.user!.id,
+            } as any,
+          });
+          newId = created.id;
         });
 
-        const assignment = await prisma.doctorAssignment.create({
-          data: {
-            doctorId: input.doctorId,
-            cabinetId: input.cabinetId,
-            shiftTemplateId: input.shiftTemplateId ?? null,
-            startTime: input.startTime ? new Date(input.startTime) : new Date(),
-            isActive: true,
-            createdById: ctx.user!.id,
-          } as any,
+        const assignment = await prisma.doctorAssignment.findUniqueOrThrow({
+          where: { id: newId! },
           include: {
             doctor: {
               select: {
@@ -85,6 +93,7 @@ export const createAssignmentsRouter = (
                 lastName: true,
                 middleName: true,
                 specialty: true,
+                departmentId: true,
               },
             },
             cabinet: { select: { id: true, number: true, name: true } },
@@ -109,6 +118,11 @@ export const createAssignmentsRouter = (
         });
         if (!existing || !existing.isActive) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Активное назначение не найдено' });
+        }
+
+        // DOCTOR can only unassign their own assignment
+        if (ctx.user!.role === 'DOCTOR' && existing.doctorId !== ctx.user!.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Врач может снять только своё назначение' });
         }
 
         const assignment = await prisma.doctorAssignment.update({
