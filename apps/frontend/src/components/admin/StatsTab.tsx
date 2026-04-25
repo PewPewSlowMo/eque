@@ -63,8 +63,8 @@ export function StatsTab() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {(rows as any[]).map((row: any, i: number) => (
-                <tr key={i} className="hover:bg-muted/50">
+              {(rows as any[]).map((row: any) => (
+                <tr key={`${row.status}-${row.priority}`} className="hover:bg-muted/50">
                   <td className="px-4 py-2">{STATUS_LABEL[row.status] ?? row.status}</td>
                   <td className="px-4 py-2">{PRIORITY_LABEL[row.priority] ?? row.priority}</td>
                   <td className="px-4 py-2 text-right font-medium">{row._count._all}</td>
