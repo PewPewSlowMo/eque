@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { TrpcService } from '../../trpc/trpc.service';
 import { PrismaService } from '../../database/prisma.service';
 
@@ -27,17 +28,34 @@ export const createShiftsRouter = (trpc: TrpcService, prisma: PrismaService) => 
           name: z.string().min(1).optional(),
           startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
           endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
-        }),
+        }).refine(
+          ({ id: _id, ...rest }) => Object.values(rest).some((v) => v !== undefined),
+          { message: 'Необходимо передать хотя бы одно поле для обновления' },
+        ),
       )
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        return prisma.shiftTemplate.update({ where: { id }, data });
+        try {
+          return await prisma.shiftTemplate.update({ where: { id }, data });
+        } catch (e: any) {
+          if (e?.code === 'P2025') {
+            throw new TRPCError({ code: 'NOT_FOUND', message: 'Шаблон смены не найден' });
+          }
+          throw e;
+        }
       }),
 
     delete: trpc.protectedProcedure
       .input(z.object({ id: z.string() }))
       .mutation(async ({ input }) => {
-        return prisma.shiftTemplate.delete({ where: { id: input.id } });
+        try {
+          return await prisma.shiftTemplate.delete({ where: { id: input.id } });
+        } catch (e: any) {
+          if (e?.code === 'P2025') {
+            throw new TRPCError({ code: 'NOT_FOUND', message: 'Шаблон смены не найден' });
+          }
+          throw e;
+        }
       }),
   });
 };
