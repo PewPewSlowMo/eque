@@ -20,7 +20,17 @@
       "Bash(npx vite *)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\); print\\('devDeps:', list\\(d.get\\('devDependencies',{}\\).keys\\(\\)\\)\\)\")",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(pnpm --filter backend build)",
+      "Bash(curl -s -X POST http://localhost:3002/trpc/auth.login -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"Admin123!\"}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('count:', len\\(d['result']['data']\\)\\)\")",
+      "Bash(curl -sv -X POST http://localhost:3002/trpc/auth.login -H 'Content-Type: application/json' -d '{\"json\":{\"username\":\"admin\",\"password\":\"Admin123!\"}}')",
+      "Bash(curl *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, ensure_ascii=False, indent=2\\)[:500]\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(x['category'], x['requiresArrivalConfirmation']\\) for x in d['result']['data']]\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('active assignments:', len\\(d['result']['data']\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; print\\(json.dumps\\(json.load\\(sys.stdin\\), indent=2\\)\\)\")"
     ]
   }
 }
