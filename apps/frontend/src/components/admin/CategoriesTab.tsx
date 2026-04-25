@@ -16,7 +16,7 @@ export function CategoriesTab() {
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
 
-  const { data: settings = [] } = trpc.settings.getCategorySettings.useQuery();
+  const { data: settings = [], isLoading } = trpc.settings.getCategorySettings.useQuery();
   const utils = trpc.useUtils();
 
   const updateSetting = trpc.settings.updateCategorySettings.useMutation({
@@ -42,6 +42,8 @@ export function CategoriesTab() {
       requiresPaymentConfirmation: field === 'requiresPaymentConfirmation' ? !current : s.requiresPaymentConfirmation,
     });
   };
+
+  if (isLoading) return <p className="text-sm text-muted-foreground">Загрузка...</p>;
 
   return (
     <div className="border rounded-lg overflow-hidden">
