@@ -12,20 +12,7 @@ const PRIORITY_ORDER: Record<string, number> = {
   WALK_IN: 4,
 };
 
-// Next sequential queue number for a doctor today
-async function getNextQueueNumber(prisma: PrismaService, doctorId: string): Promise<number> {
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date(todayStart);
-  todayEnd.setDate(todayEnd.getDate() + 1);
-
-  const last = await prisma.queueEntry.findFirst({
-    where: { doctorId, createdAt: { gte: todayStart, lt: todayEnd } },
-    orderBy: { queueNumber: 'desc' },
-    select: { queueNumber: true },
-  });
-  return (last?.queueNumber ?? 0) + 1;
-}
+const TERMINAL_STATUSES = ['COMPLETED', 'CANCELLED', 'NO_SHOW'];
 
 const QueuePriorityEnum = z.enum(['EMERGENCY', 'INPATIENT', 'SCHEDULED', 'WALK_IN']);
 const PatientCategoryEnum = z.enum([
@@ -104,25 +91,38 @@ export const createQueueRouter = (
         const requiresPayment = catSettings?.requiresPaymentConfirmation ?? false;
         const paymentConfirmed = !requiresPayment;
 
-        const queueNumber = await getNextQueueNumber(prisma, input.doctorId);
+        // Atomic: compute queue number and create entry in one transaction to avoid race conditions
+        const entry = await prisma.$transaction(async (tx) => {
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const todayEnd = new Date(todayStart);
+          todayEnd.setDate(todayEnd.getDate() + 1);
 
-        const entry = await prisma.queueEntry.create({
-          data: {
-            doctorId: input.doctorId,
-            patientId: input.patientId,
-            priority: input.priority,
-            category: input.category,
-            queueNumber,
-            status: initialStatus,
-            source: input.source,
-            createdById: ctx.user!.id,
-            requiresArrivalConfirmation: requiresArrival,
-            paymentConfirmed,
-            scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : undefined,
-            arrivedAt,
-            notes: input.notes,
-          } as any,
-          include: { patient: { select: PATIENT_SELECT } },
+          const last = await tx.queueEntry.findFirst({
+            where: { doctorId: input.doctorId, createdAt: { gte: todayStart, lt: todayEnd } },
+            orderBy: { queueNumber: 'desc' },
+            select: { queueNumber: true },
+          });
+          const queueNumber = (last?.queueNumber ?? 0) + 1;
+
+          return tx.queueEntry.create({
+            data: {
+              doctorId: input.doctorId,
+              patientId: input.patientId,
+              priority: input.priority,
+              category: input.category,
+              queueNumber,
+              status: initialStatus,
+              source: input.source,
+              createdById: ctx.user!.id,
+              requiresArrivalConfirmation: requiresArrival,
+              paymentConfirmed,
+              scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : undefined,
+              arrivedAt,
+              notes: input.notes,
+            } as any,
+            include: { patient: { select: PATIENT_SELECT } },
+          });
         });
 
         await prisma.queueHistory.create({
@@ -180,6 +180,12 @@ export const createQueueRouter = (
         const entry = await prisma.queueEntry.findUnique({ where: { id: input.entryId } });
         if (!entry) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Запись очереди не найдена' });
+        }
+        if (TERMINAL_STATUSES.includes(entry.status)) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Нельзя подтвердить оплату: статус ${entry.status}`,
+          });
         }
 
         const updated = await prisma.queueEntry.update({
@@ -245,7 +251,7 @@ export const createQueueRouter = (
           const pa = PRIORITY_ORDER[a.priority] ?? 99;
           const pb = PRIORITY_ORDER[b.priority] ?? 99;
           if (pa !== pb) return pa - pb;
-          return (a.arrivedAt?.getTime() ?? 0) - (b.arrivedAt?.getTime() ?? 0);
+          return (a.arrivedAt?.getTime() ?? a.createdAt.getTime()) - (b.arrivedAt?.getTime() ?? b.createdAt.getTime());
         });
 
         const next = candidates[0];
