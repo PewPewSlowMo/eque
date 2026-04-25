@@ -47,7 +47,7 @@ export const createPatientsRouter = (trpc: TrpcService, prisma: PrismaService) =
           data: {
             ...rest,
             dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-          },
+          } as any,
         });
       }),
 

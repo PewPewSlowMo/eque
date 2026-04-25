@@ -21,7 +21,7 @@ export const createCabinetsRouter = (trpc: TrpcService, prisma: PrismaService) =
       }))
       .mutation(async ({ input, ctx }) => {
         if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
-        return prisma.cabinet.create({ data: input });
+        return prisma.cabinet.create({ data: input as any });
       }),
 
     update: trpc.protectedProcedure

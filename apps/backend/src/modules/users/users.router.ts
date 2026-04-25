@@ -32,7 +32,7 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
         if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         const hashed = await bcrypt.hash(input.password, 10);
         return prisma.user.create({
-          data: { ...input, password: hashed, allowedCategories: input.allowedCategories ?? [] },
+          data: { ...input, password: hashed, allowedCategories: input.allowedCategories ?? [] } as any,
           omit: { password: true },
           include: { department: { select: { id: true, name: true } } },
         });
