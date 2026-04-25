@@ -20,6 +20,8 @@ const ROLES = [
   { value: 'DEPARTMENT_HEAD', label: 'Завотделением' },
 ];
 
+const NONE_DEPT = '__none__';
+
 const CATEGORY_OPTIONS = [
   { value: 'PAID_ONCE', label: 'Платный (разовый)' },
   { value: 'PAID_CONTRACT', label: 'Платный (контракт)' },
@@ -54,7 +56,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
   const [middleName, setMiddleName] = useState('');
   const [role, setRole] = useState('REGISTRAR');
   const [specialty, setSpecialty] = useState('');
-  const [departmentId, setDepartmentId] = useState('');
+  const [departmentId, setDepartmentId] = useState(NONE_DEPT);
   const [allowedCategories, setAllowedCategories] = useState<string[]>([]);
 
   useEffect(() => {
@@ -66,7 +68,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
       setMiddleName(editUser?.middleName ?? '');
       setRole(editUser?.role ?? 'REGISTRAR');
       setSpecialty(editUser?.specialty ?? '');
-      setDepartmentId(editUser?.departmentId ?? '');
+      setDepartmentId(editUser?.departmentId ?? NONE_DEPT);
       setAllowedCategories(editUser?.allowedCategories ?? []);
     }
   }, [open, editUser]);
@@ -104,7 +106,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
         lastName: lastName.trim(),
         middleName: middleName.trim() || undefined,
         specialty: specialty.trim() || undefined,
-        departmentId: departmentId || undefined,
+        departmentId: (departmentId && departmentId !== NONE_DEPT) ? departmentId : undefined,
         allowedCategories: allowedCategories as any,
         ...(password.trim() ? { password: password.trim() } : {}),
       });
@@ -117,7 +119,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
         middleName: middleName.trim() || undefined,
         role: role as any,
         specialty: specialty.trim() || undefined,
-        departmentId: departmentId || undefined,
+        departmentId: (departmentId && departmentId !== NONE_DEPT) ? departmentId : undefined,
         allowedCategories: allowedCategories as any,
       });
     }
@@ -192,7 +194,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
                 <SelectValue placeholder="Без отделения" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Без отделения</SelectItem>
+                <SelectItem value={NONE_DEPT}>Без отделения</SelectItem>
                 {(departments as any[]).map((d: any) => (
                   <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                 ))}
