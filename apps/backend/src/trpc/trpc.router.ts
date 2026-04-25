@@ -9,6 +9,7 @@ import { createDepartmentsRouter } from '../modules/departments/departments.rout
 import { createCabinetsRouter } from '../modules/cabinets/cabinets.router';
 import { createPatientsRouter } from '../modules/patients/patients.router';
 import { createShiftsRouter } from '../modules/shifts/shifts.router';
+import { createSettingsRouter } from '../modules/settings/settings.router';
 
 @Injectable()
 export class TrpcRouter {
@@ -29,6 +30,7 @@ export class TrpcRouter {
     cabinets: createCabinetsRouter(this.trpc, this.prisma),
     patients: createPatientsRouter(this.trpc, this.prisma),
     shifts: createShiftsRouter(this.trpc, this.prisma),
+    settings: createSettingsRouter(this.trpc, this.prisma),
   });
 
   async applyMiddleware(app: INestApplication) {
