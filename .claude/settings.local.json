@@ -17,7 +17,10 @@
       "Bash(python3 -c ' *)",
       "Bash(git push *)",
       "Bash(pnpm install *)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\); print\\('devDeps:', list\\(d.get\\('devDependencies',{}\\).keys\\(\\)\\)\\)\")",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }
