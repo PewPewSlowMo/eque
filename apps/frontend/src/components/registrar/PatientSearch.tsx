@@ -17,7 +17,7 @@ interface Patient {
 }
 
 interface PatientSearchProps {
-  onSelect: (patient: Patient) => void;
+  onSelect: (patient: Patient | null) => void;
   selected: Patient | null;
 }
 
@@ -60,7 +60,7 @@ export function PatientSearch({ onSelect, selected }: PatientSearchProps) {
           </p>
           {selected.phone && <p className="text-xs text-muted-foreground">{selected.phone}</p>}
         </div>
-        <Button variant="ghost" size="sm" onClick={() => onSelect(null as any)}>
+        <Button variant="ghost" size="sm" onClick={() => onSelect(null)}>
           Изменить
         </Button>
       </div>
