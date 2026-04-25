@@ -17,18 +17,20 @@ interface Props {
   cabinet?: { id: string; number: string; name?: string | null; department?: { id: string } | null };
 }
 
+const NONE_DEPT = '__none__';
+
 export function CabinetDialog({ open, onClose, cabinet }: Props) {
   const isEdit = !!cabinet;
 
   const [number, setNumber] = useState('');
   const [name, setName] = useState('');
-  const [departmentId, setDepartmentId] = useState('');
+  const [departmentId, setDepartmentId] = useState(NONE_DEPT);
 
   useEffect(() => {
     if (open) {
       setNumber(cabinet?.number ?? '');
       setName(cabinet?.name ?? '');
-      setDepartmentId(cabinet?.department?.id ?? '');
+      setDepartmentId(cabinet?.department?.id ?? NONE_DEPT);
     }
   }, [open, cabinet]);
 
@@ -52,7 +54,7 @@ export function CabinetDialog({ open, onClose, cabinet }: Props) {
     const payload = {
       number: number.trim(),
       name: name.trim() || undefined,
-      departmentId: departmentId || undefined,
+      departmentId: (departmentId && departmentId !== NONE_DEPT) ? departmentId : undefined,
     };
     if (isEdit) {
       update.mutate({ id: cabinet!.id, ...payload });
@@ -86,7 +88,7 @@ export function CabinetDialog({ open, onClose, cabinet }: Props) {
                 <SelectValue placeholder="Без отделения" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Без отделения</SelectItem>
+                <SelectItem value={NONE_DEPT}>Без отделения</SelectItem>
                 {(departments as any[]).map((d: any) => (
                   <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                 ))}
