@@ -1,15 +1,11 @@
 import { trpc } from '@/lib/trpc';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { CheckCircle2 } from 'lucide-react';
 
-const PRIORITY_BADGE: Record<string, { label: string; variant: 'destructive' | 'default' | 'secondary' | 'outline' }> = {
-  EMERGENCY: { label: 'Экстренный', variant: 'destructive' },
-  INPATIENT:  { label: 'Стационарный', variant: 'default' },
-  SCHEDULED:  { label: 'Плановый', variant: 'secondary' },
-  WALK_IN:    { label: 'Обращение', variant: 'outline' },
+const PRIORITY_LABEL: Record<string, string> = {
+  EMERGENCY: 'Экстренный',
+  INPATIENT: 'Стационарный',
+  SCHEDULED: 'Плановый',
+  WALK_IN:   'Обращение',
 };
 
 interface QueueEntry {
@@ -19,12 +15,7 @@ interface QueueEntry {
   patient: { firstName: string; lastName: string; middleName?: string | null };
 }
 
-interface CurrentPatientCardProps {
-  entry: QueueEntry;
-  doctorId: string;
-}
-
-export function CurrentPatientCard({ entry, doctorId }: CurrentPatientCardProps) {
+export function CurrentPatientCard({ entry, doctorId }: { entry: QueueEntry; doctorId: string }) {
   const utils = trpc.useUtils();
 
   const complete = trpc.queue.complete.useMutation({
@@ -35,33 +26,54 @@ export function CurrentPatientCard({ entry, doctorId }: CurrentPatientCardProps)
     onError: (e: any) => toast.error(e.message),
   });
 
-  const prio = PRIORITY_BADGE[entry.priority] ?? { label: entry.priority, variant: 'outline' as const };
+  const fullName = [entry.patient.lastName, entry.patient.firstName, entry.patient.middleName]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <Card className="border-2 border-primary/30 bg-primary/5">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          На приёме
-          <Badge variant={prio.variant}>{prio.label}</Badge>
-          <span className="ml-auto text-muted-foreground font-normal text-sm">
-            №{entry.queueNumber}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex items-center justify-between">
-        <p className="text-xl font-bold">
-          {entry.patient.lastName} {entry.patient.firstName}{' '}
-          {entry.patient.middleName ?? ''}
-        </p>
-        <Button
+    <div
+      className="mx-3 my-2.5 p-3"
+      style={{ background: '#00685B', borderRadius: '8px 40px 40px 8px' }}
+    >
+      <div className="text-[8px] font-bold text-white/50 tracking-wide mb-1">ИДЁТ ПРИЁМ</div>
+      <div className="text-[15px] font-bold text-white mb-0.5 leading-tight">{fullName}</div>
+      <div className="text-[9px] text-white/55 mb-2.5">{PRIORITY_LABEL[entry.priority] ?? entry.priority}</div>
+      <div className="flex gap-1.5 flex-wrap">
+        <button
           onClick={() => complete.mutate({ entryId: entry.id })}
           disabled={complete.isPending}
-          className="gap-2"
+          className="text-[9px] font-bold text-white/85 px-2.5 py-1 disabled:opacity-50"
+          style={{
+            background: 'rgba(255,255,255,.14)',
+            border: '1px solid rgba(255,255,255,.28)',
+            borderRadius: '4px 16px 16px 4px',
+          }}
         >
-          <CheckCircle2 className="h-4 w-4" />
           {complete.isPending ? 'Завершение...' : 'Завершить приём'}
-        </Button>
-      </CardContent>
-    </Card>
+        </button>
+        <button
+          className="text-[9px] font-bold px-2.5 py-1"
+          style={{
+            background: 'rgba(179,145,104,.14)',
+            border: '1px solid rgba(179,145,104,.4)',
+            color: '#B39168',
+            borderRadius: '4px 16px 16px 4px',
+          }}
+        >
+          Направление
+        </button>
+        <button
+          className="text-[9px] font-bold px-2.5 py-1"
+          style={{
+            background: 'rgba(179,145,104,.14)',
+            border: '1px solid rgba(179,145,104,.4)',
+            color: '#B39168',
+            borderRadius: '4px 16px 16px 4px',
+          }}
+        >
+          Повторный
+        </button>
+      </div>
+    </div>
   );
 }

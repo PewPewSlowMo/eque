@@ -3,27 +3,25 @@ import { useQueryClient } from '@tanstack/react-query';
 import { trpc } from '@/lib/trpc';
 import { getSocket } from '@/lib/socket';
 
-const PRIORITY_COLOR: Record<string, string> = {
-  EMERGENCY: 'text-red-400',
-  INPATIENT:  'text-orange-400',
-  SCHEDULED:  'text-yellow-400',
-  WALK_IN:    'text-green-400',
-};
-
 function Clock() {
   const [time, setTime] = useState(() => new Date());
-
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
-
   return (
-    <span className="text-2xl font-mono text-gray-300">
+    <span className="font-bold tabular-nums" style={{ fontSize: '22px', color: '#B39168', fontFamily: 'Montserrat, sans-serif' }}>
       {time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
     </span>
   );
 }
+
+const PRIORITY_COLOR: Record<string, string> = {
+  EMERGENCY: '#ef4444',
+  INPATIENT: '#f97316',
+  SCHEDULED: '#eab308',
+  WALK_IN:   '#22c55e',
+};
 
 export function DisplayBoard() {
   const queryClient = useQueryClient();
@@ -46,75 +44,94 @@ export function DisplayBoard() {
     };
   }, [queryClient]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <p className="text-gray-400 text-xl">Загрузка...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold tracking-wide">Электронная очередь</h1>
+    <div className="min-h-screen flex flex-col" style={{ background: '#0d1117', fontFamily: 'Montserrat, sans-serif' }}>
+      {/* header */}
+      <div className="flex items-center justify-between px-6 py-3 shrink-0"
+        style={{ background: '#00685B' }}>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-bold tracking-wide px-2 py-1 rounded-sm"
+            style={{ border: '1px solid rgba(179,145,104,.4)', color: '#B39168' }}>
+            УЛТ. ГОСПИТАЛЬ
+          </span>
+          <span className="text-white text-[13px] font-semibold">Электронная очередь</span>
+        </div>
         <Clock />
       </div>
 
-      {(board as any[]).length === 0 ? (
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500 text-xl">Нет активных врачей</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {(board as any[]).map((item: any) => (
-            <div
-              key={item.assignmentId}
-              className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden"
-            >
-              <div className="bg-blue-700 px-4 py-3 flex items-center justify-between">
-                <span className="text-2xl font-bold">Каб. {item.cabinet.number}</span>
-                {item.waitingCount > 0 && (
-                  <span className="text-sm bg-blue-900 rounded-full px-2 py-0.5">
-                    {item.waitingCount} ожид.
+      {/* board */}
+      <div className="flex-1 p-5">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-48">
+            <p style={{ color: '#64748b', fontSize: '16px' }}>Загрузка...</p>
+          </div>
+        ) : (board as any[]).length === 0 ? (
+          <div className="flex items-center justify-center h-48">
+            <p style={{ color: '#374151', fontSize: '18px' }}>Нет активных врачей</p>
+          </div>
+        ) : (
+          <div className="grid gap-4" style={{
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          }}>
+            {(board as any[]).map((item: any) => (
+              <div key={item.assignmentId} className="overflow-hidden"
+                style={{ background: '#161b22', border: '1px solid #1e2530', borderRadius: '6px' }}>
+
+                {/* cabinet header */}
+                <div className="px-4 py-2.5 flex items-center justify-between"
+                  style={{ background: '#00685B' }}>
+                  <span className="text-white font-bold" style={{ fontSize: '18px' }}>
+                    Каб. {item.cabinet.number}
                   </span>
-                )}
-              </div>
-
-              <div className="px-4 pt-3 pb-2 border-b border-gray-800">
-                <p className="font-semibold text-sm text-gray-200">
-                  {item.doctor.lastName} {item.doctor.firstName}
-                </p>
-                {item.doctor.specialty && (
-                  <p className="text-xs text-gray-500">{item.doctor.specialty}</p>
-                )}
-              </div>
-
-              <div className="px-4 py-4 min-h-[88px] flex items-center">
-                {item.current ? (
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={`text-5xl font-black leading-none ${PRIORITY_COLOR[item.current.priority] ?? 'text-white'}`}
-                    >
-                      {item.current.queueNumber}
+                  {item.waitingCount > 0 && (
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: 'rgba(255,255,255,.15)', color: '#fff' }}>
+                      {item.waitingCount} ожид.
                     </span>
-                    <div>
-                      <p className="text-lg font-bold leading-tight">
-                        {item.current.patientLastName}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {item.current.status === 'CALLED' ? 'Вызван' : 'На приёме'}
-                      </p>
-                    </div>
+                  )}
+                </div>
+
+                {/* doctor */}
+                <div className="px-4 py-2.5" style={{ borderBottom: '1px solid #1e2530' }}>
+                  <div className="font-semibold" style={{ fontSize: '12px', color: '#e2e8f0' }}>
+                    {item.doctor.lastName} {item.doctor.firstName}
                   </div>
-                ) : (
-                  <p className="text-gray-600 text-sm">Нет вызова</p>
-                )}
+                  {item.doctor.specialty && (
+                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: '1px' }}>
+                      {item.doctor.specialty}
+                    </div>
+                  )}
+                </div>
+
+                {/* current patient — NAME not ticket number */}
+                <div className="px-4 py-4 min-h-[72px] flex items-center">
+                  {item.current ? (
+                    <div>
+                      <div style={{
+                        width: '6px', height: '6px', borderRadius: '50%', marginBottom: '6px',
+                        background: PRIORITY_COLOR[item.current.priority] ?? '#22c55e',
+                      }} />
+                      <div className="font-bold leading-tight" style={{ fontSize: '16px', color: '#f1f5f9' }}>
+                        {item.current.patientLastName}
+                      </div>
+                      {item.current.patientFirstName && (
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                          {item.current.patientFirstName}
+                        </div>
+                      )}
+                      <div style={{ fontSize: '10px', color: '#B39168', marginTop: '3px' }}>
+                        {item.current.status === 'CALLED' ? 'Вызван' : 'На приёме'}
+                      </div>
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: '12px', color: '#374151' }}>Нет вызова</p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

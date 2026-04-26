@@ -1,15 +1,14 @@
 import { ReactNode } from 'react';
 import { useUser } from '@/contexts/UserContext';
-import { Button } from '@/components/ui/button';
-import { LogOut, User } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 const ROLE_LABELS: Record<string, string> = {
-  ADMIN: 'Администратор',
-  REGISTRAR: 'Регистратор',
-  CALL_CENTER: 'Колл-центр',
-  DOCTOR: 'Врач',
+  ADMIN:           'Администратор',
+  REGISTRAR:       'Регистратор',
+  CALL_CENTER:     'Колл-центр',
+  DOCTOR:          'Врач',
   DEPARTMENT_HEAD: 'Заведующий',
-  DIRECTOR: 'Руководитель',
+  DIRECTOR:        'Руководитель',
 };
 
 interface LayoutProps {
@@ -21,30 +20,58 @@ export function Layout({ children, title }: LayoutProps) {
   const { user, logout } = useUser();
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="font-semibold text-primary">СЭО</span>
-            {title && <span className="text-muted-foreground text-sm">/ {title}</span>}
-          </div>
-          {user && (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <User className="h-4 w-4" />
-                <span>{user.lastName} {user.firstName}</span>
-                <span className="text-xs bg-secondary px-2 py-0.5 rounded-full">
-                  {ROLE_LABELS[user.role] ?? user.role}
-                </span>
-              </div>
-              <Button variant="ghost" size="sm" onClick={logout}>
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
+    <div className="min-h-screen bg-slate-100 flex flex-col">
+      <header
+        className="flex items-center justify-between px-4 shrink-0"
+        style={{ background: '#00685B', height: 'var(--header-h, 44px)' }}
+      >
+        <div className="flex items-center gap-3">
+          <span
+            className="text-[11px] font-bold tracking-wide px-2 py-1 rounded-sm"
+            style={{ color: '#B39168', border: '1px solid rgba(179,145,104,.4)' }}
+          >
+            УЛТ. ГОСПИТАЛЬ
+          </span>
+          {title && (
+            <>
+              <span className="w-px h-4" style={{ background: 'rgba(255,255,255,.18)' }} />
+              <span className="text-[11px] text-white/75 font-medium">{title}</span>
+            </>
           )}
         </div>
+
+        {user && (
+          <div className="flex items-center gap-2">
+            <div
+              className="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
+              style={{
+                background: 'rgba(179,145,104,.22)',
+                border: '1.5px solid rgba(179,145,104,.5)',
+                color: '#B39168',
+              }}
+            >
+              {user.lastName?.[0]}{user.firstName?.[0]}
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold text-white leading-tight">
+                {user.lastName} {user.firstName}
+              </div>
+              <div className="text-[8px] text-white/45 leading-tight">
+                {ROLE_LABELS[user.role] ?? user.role}
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              className="ml-1 text-white/50 hover:text-white/80 transition-colors"
+              aria-label="Выйти"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
+        )}
       </header>
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+
+      <main className="flex-1 overflow-hidden">
         {children}
       </main>
     </div>

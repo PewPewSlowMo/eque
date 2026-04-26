@@ -387,6 +387,73 @@ export const createQueueRouter = (
         return updated;
       }),
 
+    // Scheduled slot counts per doctor per date (for registrar calendar grid)
+    getScheduledSlots: trpc.protectedProcedure
+      .input(
+        z.object({
+          startDate: z.string(), // ISO date "2026-04-25"
+          endDate: z.string(),   // ISO date "2026-05-01"
+        }),
+      )
+      .query(async ({ input }) => {
+        const start = new Date(input.startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(input.endDate);
+        end.setHours(23, 59, 59, 999);
+
+        const entries = await prisma.queueEntry.findMany({
+          where: {
+            scheduledAt: { gte: start, lte: end },
+            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+          },
+          select: { doctorId: true, scheduledAt: true },
+        });
+
+        // { [doctorId]: { [dateISO]: count } }
+        const result: Record<string, Record<string, number>> = {};
+        for (const e of entries) {
+          if (!e.scheduledAt) continue;
+          const date = e.scheduledAt.toISOString().slice(0, 10);
+          if (!result[e.doctorId]) result[e.doctorId] = {};
+          result[e.doctorId][date] = (result[e.doctorId][date] ?? 0) + 1;
+        }
+        return result;
+      }),
+
+    // Booked times for a doctor on a specific date (for time slot picker)
+    getScheduledTimes: trpc.protectedProcedure
+      .input(
+        z.object({
+          doctorId: z.string(),
+          date: z.string(), // ISO date "2026-04-25"
+        }),
+      )
+      .query(async ({ input }) => {
+        const date = new Date(input.date);
+        date.setHours(0, 0, 0, 0);
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        const entries = await prisma.queueEntry.findMany({
+          where: {
+            doctorId: input.doctorId,
+            scheduledAt: { gte: date, lt: nextDay },
+            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+          },
+          select: { scheduledAt: true },
+        });
+
+        // Return list of "HH:MM" strings that are already booked
+        return entries
+          .filter((e) => e.scheduledAt)
+          .map((e) => {
+            const d = e.scheduledAt!;
+            const h = String(d.getHours()).padStart(2, '0');
+            const m = String(d.getMinutes()).padStart(2, '0');
+            return `${h}:${m}`;
+          });
+      }),
+
     // Daily stats (for department head / director)
     dailyStats: trpc.protectedProcedure
       .input(

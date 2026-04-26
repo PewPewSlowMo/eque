@@ -4,7 +4,14 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Montserrat', 'Open Sans', 'system-ui', 'sans-serif'],
+      },
       colors: {
+        brand: {
+          green: '#00685B',
+          gold:  '#B39168',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

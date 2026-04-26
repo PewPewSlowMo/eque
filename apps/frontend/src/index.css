@@ -4,28 +4,58 @@
 
 @layer base {
   :root {
+    /* Brand: Emerald #00685B ≈ HSL(173 100% 20%) */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 215 20% 15%;
+
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --card-foreground: 215 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 20% 15%;
+
+    --primary: 173 100% 20%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 173 20% 94%;
+    --secondary-foreground: 173 50% 22%;
+
+    --muted: 210 15% 95%;
+    --muted-foreground: 215 12% 48%;
+
+    --accent: 173 20% 94%;
+    --accent-foreground: 173 50% 22%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 173 18% 88%;
+    --input: 173 18% 88%;
+    --ring: 173 100% 20%;
+
     --radius: 0.5rem;
   }
 }
 
 @layer base {
   * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Montserrat', 'Open Sans', system-ui, sans-serif;
+  }
+}
+
+/* Split-block brand shape */
+@layer utilities {
+  .split-block     { border-radius: 8px 40px 40px 8px; }
+  .split-block-sm  { border-radius: 4px 20px 20px 4px; }
+}
+
+/* Tune these to resize panels without touching components */
+:root {
+  --q-panel-width: 240px;
+  --header-h: 44px;
+  --cal-col-w: 68px;
+  --cal-doc-w: 152px;
 }
