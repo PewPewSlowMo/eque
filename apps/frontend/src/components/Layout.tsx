@@ -14,18 +14,20 @@ const ROLE_LABELS: Record<string, string> = {
 interface LayoutProps {
   children: ReactNode;
   title?: string;
+  adminSwitcher?: ReactNode;
 }
 
-export function Layout({ children, title }: LayoutProps) {
+export function Layout({ children, title, adminSwitcher }: LayoutProps) {
   const { user, logout } = useUser();
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col">
       <header
-        className="flex items-center justify-between px-4 shrink-0"
+        className="flex items-center justify-between px-4 shrink-0 gap-3"
         style={{ background: '#00685B', height: 'var(--header-h, 44px)' }}
       >
-        <div className="flex items-center gap-3">
+        {/* Left: logo + title */}
+        <div className="flex items-center gap-3 shrink-0">
           <span
             className="text-[11px] font-bold tracking-wide px-2 py-1 rounded-sm"
             style={{ color: '#B39168', border: '1px solid rgba(179,145,104,.4)' }}
@@ -40,8 +42,16 @@ export function Layout({ children, title }: LayoutProps) {
           )}
         </div>
 
+        {/* Center: admin view switcher */}
+        {adminSwitcher && (
+          <div className="flex-1 flex justify-center">
+            {adminSwitcher}
+          </div>
+        )}
+
+        {/* Right: user info + logout */}
         {user && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <div
               className="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
               style={{

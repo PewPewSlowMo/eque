@@ -15,11 +15,45 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
 
-// Публичный маршрут — табло без авторизации
 const PUBLIC_ROUTES = ['/board'];
+
+type AdminViewKey = 'admin' | 'registrar' | 'doctor' | 'head' | 'board';
+
+const ADMIN_VIEWS: { key: AdminViewKey; label: string }[] = [
+  { key: 'admin',     label: 'Администрирование' },
+  { key: 'registrar', label: 'Регистратура' },
+  { key: 'doctor',    label: 'Врач' },
+  { key: 'head',      label: 'Заведующий' },
+  { key: 'board',     label: 'Табло' },
+];
+
+function AdminViewSwitcher({ active, onChange }: {
+  active: AdminViewKey;
+  onChange: (v: AdminViewKey) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      {ADMIN_VIEWS.map(v => (
+        <button
+          key={v.key}
+          onClick={() => onChange(v.key)}
+          className="text-[9px] font-semibold px-2.5 py-1 transition-colors"
+          style={
+            active === v.key
+              ? { background: 'rgba(179,145,104,.25)', color: '#B39168', borderRadius: '3px 12px 12px 3px' }
+              : { color: 'rgba(255,255,255,.55)', background: 'transparent' }
+          }
+        >
+          {v.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function AppContent() {
   const [path, setPath] = useState(() => window.location.pathname);
+  const [adminView, setAdminView] = useState<AdminViewKey>('admin');
   const { user, isLoading } = useUser();
 
   useEffect(() => {
@@ -34,9 +68,7 @@ function AppContent() {
     }
   }, [path]);
 
-  if (PUBLIC_ROUTES.includes(path)) {
-    return <DisplayBoard />;
-  }
+  if (PUBLIC_ROUTES.includes(path)) return <DisplayBoard />;
 
   if (isLoading) {
     return (
@@ -48,34 +80,43 @@ function AppContent() {
 
   if (!user) return <Login />;
 
+  const isAdmin = user.role === 'ADMIN';
+
   const renderView = () => {
+    if (isAdmin) {
+      switch (adminView) {
+        case 'registrar': return <RegistrarView />;
+        case 'doctor':    return <DoctorView />;
+        case 'head':      return <DepartmentHeadView />;
+        case 'board':     return <DisplayBoard />;
+        default:          return <AdminPanel />;
+      }
+    }
     switch (user.role) {
       case 'REGISTRAR':
-      case 'CALL_CENTER':
-        return <RegistrarView />;
-      case 'DOCTOR':
-        return <DoctorView />;
-      case 'DEPARTMENT_HEAD':
-        return <DepartmentHeadView />;
-      case 'ADMIN':
-      case 'DIRECTOR':
-        return <AdminPanel />;
-      default:
-        return <div className="text-muted-foreground p-8">Роль не настроена</div>;
+      case 'CALL_CENTER':   return <RegistrarView />;
+      case 'DOCTOR':        return <DoctorView />;
+      case 'DEPARTMENT_HEAD': return <DepartmentHeadView />;
+      case 'DIRECTOR':      return <AdminPanel />;
+      default:              return <div className="text-muted-foreground p-8">Роль не настроена</div>;
     }
   };
 
   const TITLE_MAP: Record<string, string> = {
-    REGISTRAR: 'Регистратура',
-    CALL_CENTER: 'Колл-центр',
-    DOCTOR: 'Рабочее место врача',
+    REGISTRAR:       'Регистратура',
+    CALL_CENTER:     'Колл-центр',
+    DOCTOR:          'Рабочее место врача',
     DEPARTMENT_HEAD: 'Управление отделением',
-    ADMIN: 'Администрирование',
-    DIRECTOR: 'Панель руководителя',
+    ADMIN:           'Администратор',
+    DIRECTOR:        'Панель руководителя',
   };
 
+  const switcher = isAdmin
+    ? <AdminViewSwitcher active={adminView} onChange={setAdminView} />
+    : undefined;
+
   return (
-    <Layout title={TITLE_MAP[user.role]}>
+    <Layout title={TITLE_MAP[user.role]} adminSwitcher={switcher}>
       {renderView()}
     </Layout>
   );
