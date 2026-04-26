@@ -7,10 +7,9 @@ RUN npm install -g pnpm@9.15.0
 COPY package.json pnpm-workspace.yaml ./
 COPY apps/frontend/package.json ./apps/frontend/
 COPY packages/ ./packages/
+COPY apps/frontend ./apps/frontend
 
 RUN pnpm install
-
-COPY apps/frontend ./apps/frontend
 
 WORKDIR /app/apps/frontend
 
