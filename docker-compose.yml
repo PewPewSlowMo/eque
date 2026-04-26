@@ -56,6 +56,7 @@ services:
       NODE_ENV: "development"
       JWT_SECRET: "change-me-in-production-32-chars-min"
       CORS_ORIGIN: "http://localhost:3003,http://localhost:5173"
+    command: sh -c "npx prisma migrate deploy && pnpm dev"
     volumes:
       - ./apps/backend:/app/apps/backend
       - /app/node_modules
@@ -78,8 +79,8 @@ services:
     ports:
       - "3003:5173"
     environment:
-      VITE_TRPC_URL: "http://backend:3001/trpc"
-      VITE_WS_URL: "http://backend:3001"
+      VITE_TRPC_URL: "http://localhost:3002/trpc"
+      VITE_WS_URL: "http://localhost:3002"
       NODE_ENV: "development"
     volumes:
       - ./apps/frontend:/app/apps/frontend
