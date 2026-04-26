@@ -68,13 +68,15 @@ model User {
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
 
-  // Категории, доступные регистратору / колл-центру для постановки в очередь
-  allowedCategories PatientCategory[]
+  // For REGISTRAR / CALL_CENTER: which categories they can add to queue
+  allowedCategories  PatientCategory[]
+  // For DOCTOR: which patient categories this doctor accepts (empty = all)
+  acceptedCategories PatientCategory[]
 
-  createdQueueEntries QueueEntry[]       @relation("CreatedBy")
-  doctorQueueEntries  QueueEntry[]       @relation("DoctorQueue")
-  assignments         DoctorAssignment[] @relation("AssignedDoctor")
-  doctorSchedules     DoctorSchedule[]
+  createdQueueEntries QueueEntry[]          @relation("CreatedBy")
+  doctorQueueEntries  QueueEntry[]          @relation("DoctorQueue")
+  assignments         DoctorAssignment[]    @relation("AssignedDoctor")
+  doctorDaySchedules  DoctorDaySchedule[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -83,36 +85,35 @@ model User {
 }
 
 // ============================================================================
-// DOCTOR SCHEDULES
+// DOCTOR DAY SCHEDULES
 // ============================================================================
 
-model DoctorSchedule {
-  id        String          @id @default(cuid())
+model DoctorDaySchedule {
+  id        String             @id @default(cuid())
   doctorId  String
-  doctor    User            @relation(fields: [doctorId], references: [id])
-  dayOfWeek Int             // 1=Пн … 7=Вс (ISO weekday)
-  startTime String          // "08:00"
-  endTime   String          // "14:00"
-  isActive  Boolean         @default(true)
-  breaks    ScheduleBreak[]
+  doctor    User               @relation(fields: [doctorId], references: [id])
+  date      DateTime           @db.Date  // конкретная дата, без времени
+  startTime String             // "08:00"
+  endTime   String             // "14:00"
+  breaks    DayScheduleBreak[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([doctorId, dayOfWeek])
-  @@index([doctorId])
-  @@map("doctor_schedules")
+  @@unique([doctorId, date])
+  @@index([date])
+  @@map("doctor_day_schedules")
 }
 
-model ScheduleBreak {
-  id         String         @id @default(cuid())
+model DayScheduleBreak {
+  id         String            @id @default(cuid())
   scheduleId String
-  schedule   DoctorSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  startTime  String         // "12:00"
-  endTime    String         // "13:00"
+  schedule   DoctorDaySchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  startTime  String            // "12:00"
+  endTime    String            // "13:00"
   label      String?
 
-  @@map("schedule_breaks")
+  @@map("day_schedule_breaks")
 }
 
 // ============================================================================
@@ -227,7 +228,6 @@ model QueueEntry {
   id          String           @id @default(cuid())
   queueNumber Int
 
-  // Очередь привязана к врачу, НЕ к кабинету
   doctorId  String
   doctor    User    @relation("DoctorQueue", fields: [doctorId], references: [id])
   patientId String
@@ -236,7 +236,7 @@ model QueueEntry {
   priority QueuePriority
   category PatientCategory
 
-  scheduledAt DateTime? // для SCHEDULED: плановое время
+  scheduledAt DateTime?
 
   requiresArrivalConfirmation Boolean @default(true)
 

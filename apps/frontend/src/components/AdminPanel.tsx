@@ -4,7 +4,8 @@ import { UsersTab } from './admin/UsersTab';
 import { CabinetsTab } from './admin/CabinetsTab';
 import { CategoriesTab } from './admin/CategoriesTab';
 import { StatsTab } from './admin/StatsTab';
-import { SchedulesTab } from './admin/SchedulesTab';
+import { ScheduleTab } from './admin/ScheduleTab';
+import { DepartmentsTab } from './admin/DepartmentsTab';
 
 export function AdminPanel() {
   const { user } = useUser();
@@ -15,6 +16,7 @@ export function AdminPanel() {
       <Tabs defaultValue={isAdmin ? 'users' : 'schedules'}>
         <TabsList>
           {isAdmin && <TabsTrigger value="users">Пользователи</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="departments">Отделения</TabsTrigger>}
           <TabsTrigger value="schedules">Графики</TabsTrigger>
           <TabsTrigger value="cabinets">Кабинеты</TabsTrigger>
           <TabsTrigger value="categories">Категории</TabsTrigger>
@@ -27,8 +29,14 @@ export function AdminPanel() {
           </TabsContent>
         )}
 
+        {isAdmin && (
+          <TabsContent value="departments" className="pt-4">
+            <DepartmentsTab />
+          </TabsContent>
+        )}
+
         <TabsContent value="schedules" className="pt-4">
-          <SchedulesTab />
+          <ScheduleTab />
         </TabsContent>
 
         <TabsContent value="cabinets" className="pt-4">

@@ -25,12 +25,6 @@ function slotsFromSchedule(sched: { startTime: string; endTime: string; breaks: 
   return slots;
 }
 
-/* ISO weekday: 1=Mon … 7=Sun */
-function isoWeekday(d: Date): number {
-  const js = d.getDay(); // 0=Sun
-  return js === 0 ? 7 : js;
-}
-
 const CATEGORY_OPTS = [
   { value: 'OSMS',          label: 'ОСМС' },
   { value: 'PAID_ONCE',     label: 'Платный' },
@@ -382,7 +376,9 @@ function CalendarTab() {
   const today     = isoDate(new Date());
 
   const { data: allDoctors = [] } = trpc.users.getDoctors.useQuery({ departmentId: '' });
-  const { data: allSchedules = [] } = trpc.schedules.getAll.useQuery(undefined, { staleTime: 60_000 });
+  const { data: allSchedules = [] } = trpc.schedules.getForDateRange.useQuery(
+    { startDate, endDate }, { staleTime: 60_000 },
+  );
 
   const { data: slotMap = {} } = trpc.queue.getScheduledSlots.useQuery(
     { startDate, endDate }, { staleTime: 30_000 },
@@ -552,8 +548,8 @@ function CalendarTab() {
                     const dstr  = isoDate(d);
                     const isPast = dstr < today;
                     const booked = (slotMap as any)[doc.id]?.[dstr] ?? 0;
-                    const slots  = (allSchedules as any[]).find(
-                      s => s.doctorId === doc.id && s.dayOfWeek === isoWeekday(d)
+                    const slots = (allSchedules as any[]).find(
+                      s => s.doctorId === doc.id && isoDate(new Date(s.date)) === dstr
                     );
                     const daySlots = slots ? slotsFromSchedule(slots) : null;
                     return (

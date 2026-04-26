@@ -26,13 +26,14 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
         role: z.nativeEnum(UserRole),
         specialty: z.string().optional(),
         departmentId: z.string().optional(),
-        allowedCategories: z.array(z.nativeEnum(PatientCategory)).optional(),
+        allowedCategories:  z.array(z.nativeEnum(PatientCategory)).optional(),
+        acceptedCategories: z.array(z.nativeEnum(PatientCategory)).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         const hashed = await bcrypt.hash(input.password, 10);
         return prisma.user.create({
-          data: { ...input, password: hashed, allowedCategories: input.allowedCategories ?? [] } as any,
+          data: { ...input, password: hashed, allowedCategories: input.allowedCategories ?? [], acceptedCategories: input.acceptedCategories ?? [] } as any,
           omit: { password: true },
           include: { department: { select: { id: true, name: true } } },
         });
@@ -46,7 +47,8 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
         middleName: z.string().optional(),
         specialty: z.string().optional(),
         departmentId: z.string().optional(),
-        allowedCategories: z.array(z.nativeEnum(PatientCategory)).optional(),
+        allowedCategories:  z.array(z.nativeEnum(PatientCategory)).optional(),
+        acceptedCategories: z.array(z.nativeEnum(PatientCategory)).optional(),
         isActive: z.boolean().optional(),
         password: z.string().min(6).optional(),
       }))

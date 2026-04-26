@@ -57,7 +57,8 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
   const [role, setRole] = useState('REGISTRAR');
   const [specialty, setSpecialty] = useState('');
   const [departmentId, setDepartmentId] = useState(NONE_DEPT);
-  const [allowedCategories, setAllowedCategories] = useState<string[]>([]);
+  const [allowedCategories,  setAllowedCategories]  = useState<string[]>([]);
+  const [acceptedCategories, setAcceptedCategories] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -69,7 +70,8 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
       setRole(editUser?.role ?? 'REGISTRAR');
       setSpecialty(editUser?.specialty ?? '');
       setDepartmentId(editUser?.departmentId ?? NONE_DEPT);
-      setAllowedCategories(editUser?.allowedCategories ?? []);
+      setAllowedCategories(editUser?.allowedCategories   ?? []);
+      setAcceptedCategories((editUser as any)?.acceptedCategories ?? []);
     }
   }, [open, editUser]);
 
@@ -88,11 +90,11 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
 
   const isPending = create.isPending || update.isPending;
 
-  const toggleCategory = (cat: string) => {
-    setAllowedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
-    );
-  };
+  const toggleCategory = (cat: string) =>
+    setAllowedCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
+
+  const toggleAccepted = (cat: string) =>
+    setAcceptedCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
 
   const handleSubmit = () => {
     if (!firstName.trim() || !lastName.trim()) { toast.error('Имя и фамилия обязательны'); return; }
@@ -107,7 +109,8 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
         middleName: middleName.trim() || undefined,
         specialty: specialty.trim() || undefined,
         departmentId: (departmentId && departmentId !== NONE_DEPT) ? departmentId : undefined,
-        allowedCategories: allowedCategories as any,
+        allowedCategories:  allowedCategories as any,
+        acceptedCategories: acceptedCategories as any,
         ...(password.trim() ? { password: password.trim() } : {}),
       });
     } else {
@@ -120,7 +123,8 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
         role: role as any,
         specialty: specialty.trim() || undefined,
         departmentId: (departmentId && departmentId !== NONE_DEPT) ? departmentId : undefined,
-        allowedCategories: allowedCategories as any,
+        allowedCategories:  allowedCategories as any,
+        acceptedCategories: acceptedCategories as any,
       });
     }
   };
@@ -202,22 +206,39 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Разрешённые категории пациентов</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {CATEGORY_OPTIONS.map((opt) => (
-                <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={allowedCategories.includes(opt.value)}
-                    onChange={() => toggleCategory(opt.value)}
-                    className="h-4 w-4"
-                  />
-                  {opt.label}
-                </label>
-              ))}
+          {(role === 'DOCTOR' || editUser?.role === 'DOCTOR') && (
+            <div className="space-y-2">
+              <Label>Принимаемые категории пациентов <span className="text-muted-foreground font-normal">(пусто = все)</span></Label>
+              <div className="grid grid-cols-2 gap-2">
+                {CATEGORY_OPTIONS.map((opt) => (
+                  <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox"
+                      checked={acceptedCategories.includes(opt.value)}
+                      onChange={() => toggleAccepted(opt.value)}
+                      className="h-4 w-4 accent-primary" />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {(role !== 'DOCTOR' && editUser?.role !== 'DOCTOR') && (
+            <div className="space-y-2">
+              <Label>Разрешённые категории <span className="text-muted-foreground font-normal">(для постановки в очередь)</span></Label>
+              <div className="grid grid-cols-2 gap-2">
+                {CATEGORY_OPTIONS.map((opt) => (
+                  <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox"
+                      checked={allowedCategories.includes(opt.value)}
+                      onChange={() => toggleCategory(opt.value)}
+                      className="h-4 w-4 accent-primary" />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter>
