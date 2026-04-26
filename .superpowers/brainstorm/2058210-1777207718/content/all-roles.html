@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>СЭО — Все роли</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Montserrat',sans-serif;background:#F0F2F5;color:#333;padding:28px 32px}
+:root{
+  --g:#00685B;--gold:#B39168;
+  --r:8px 40px 40px 8px;--rs:4px 16px 16px 4px;
+  --shadow:0 2px 8px rgba(0,0,0,.08);
+}
+h2{font-size:22px;font-weight:700;color:var(--g);margin-bottom:4px}
+.sub{font-family:'Open Sans',sans-serif;font-size:12px;color:#888;margin-bottom:20px}
+.gold-rule{height:2px;background:linear-gradient(90deg,var(--g),var(--gold),transparent);border-radius:1px;margin-bottom:28px}
+.role-section{margin-bottom:44px}
+.role-tag{display:inline-flex;align-items:center;gap:8px;background:var(--g);color:white;
+  font-size:11px;font-weight:700;letter-spacing:.4px;padding:5px 14px;
+  border-radius:var(--rs);margin-bottom:14px}
+.role-tag .dot{width:8px;height:8px;background:var(--gold);border-radius:50%}
+.screens-row{display:grid;gap:20px}
+.screens-row.col2{grid-template-columns:1fr 1fr}
+.screens-row.col1{grid-template-columns:1fr}
+.scr{border-radius:10px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1);border:1px solid #e2e8f0}
+.scr-label{font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
+
+/* ── Shared header ── */
+.hd{background:var(--g);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.hd-l{display:flex;align-items:center;gap:10px}
+.hd-logo{height:24px;width:68px;border:1px dashed rgba(179,145,104,.6);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:600;color:rgba(179,145,104,.8)}
+.hd-sep{width:1px;height:18px;background:rgba(255,255,255,.2)}
+.hd-sec{font-size:12px;color:rgba(255,255,255,.8);font-weight:500}
+.hd-r{display:flex;align-items:center;gap:8px}
+.av{width:28px;height:28px;background:rgba(179,145,104,.25);border:1.5px solid rgba(179,145,104,.5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--gold)}
+.av-name{font-size:10px;font-weight:600;color:white}
+.av-role{font-size:8px;color:rgba(255,255,255,.5)}
+.logout{width:26px;height:26px;background:rgba(255,255,255,.1);border-radius:5px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.7);font-size:12px}
+/* tabs */
+.tabs{background:white;border-bottom:1px solid #e2e8f0;display:flex;padding:0 16px}
+.tab{padding:10px 14px;font-size:10px;font-weight:600;color:#94a3b8;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer}
+.tab.on{color:var(--g);border-bottom-color:var(--g)}
+/* body */
+.bd{background:#F5F7F6;padding:14px 16px}
+/* cards */
+.card{background:white;border-radius:var(--r);border:1px solid #e8f0ef;padding:12px 14px;box-shadow:var(--shadow);margin-bottom:10px}
+.card-hd{font-size:9px;font-weight:700;color:#888;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
+/* inputs */
+.inp{background:#f0f8f6;border:1.5px solid #a8d5cf;border-radius:7px;padding:7px 11px;font-size:10px;color:#999;font-family:'Open Sans',sans-serif;margin-bottom:8px;width:100%}
+.sel-row{display:flex;gap:8px;margin-bottom:8px}
+.sel{flex:1;border:1px solid #e2e8f0;border-radius:7px;padding:6px 9px;font-size:9px;color:#64748b;background:#fafafa;font-family:'Open Sans',sans-serif}
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--g);color:white;border-radius:var(--rs);padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.4px;cursor:pointer}
+.btn-sm{padding:6px 12px;font-size:9px}
+.btn-outline{background:transparent;border:1px solid var(--g);color:var(--g);border-radius:var(--rs);padding:6px 12px;font-size:9px;font-weight:600}
+.btn-ghost{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;border-radius:var(--rs);padding:6px 12px;font-size:9px;font-weight:600}
+.btn-gold-ghost{background:rgba(179,145,104,.1);border:1px solid rgba(179,145,104,.4);color:var(--gold);border-radius:var(--rs);padding:6px 12px;font-size:9px;font-weight:600}
+.arrow{width:15px;height:15px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--gold);flex-shrink:0}
+/* badges */
+.bx{font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px}
+.bx-red{background:#fee2e2;color:#dc2626}
+.bx-green{background:#d1fae5;color:#065f46}
+.bx-gold{background:#fef3c7;color:#92400e}
+.bx-blue{background:#dbeafe;color:#1d4ed8}
+.bx-gray{background:#f1f5f9;color:#475569}
+
+/* ══ REGISTRAR ══ */
+.doc-group{background:white;border-radius:var(--r);border:1px solid #e8f0ef;margin-bottom:8px;overflow:hidden}
+.doc-gh{background:var(--g);color:white;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:600}
+.qcount{background:rgba(179,145,104,.2);border:1px solid rgba(179,145,104,.4);color:var(--gold);font-size:8px;font-weight:700;padding:2px 7px;border-radius:10px}
+.qrow{padding:7px 12px;display:flex;justify-content:space-between;align-items:center;font-size:10px;border-bottom:1px solid #f1f5f9;font-family:'Open Sans',sans-serif}
+.qrow:last-child{border-bottom:none}
+.qdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-right:7px}
+.pname{font-weight:600;color:#333}
+.pmeta{font-size:9px;color:#94a3b8;margin-top:1px}
+/* arrival confirm */
+.arrive-btn{background:#00685B;color:white;border-radius:var(--rs);padding:4px 10px;font-size:9px;font-weight:700}
+.arrived{background:#d1fae5;color:#065f46;border-radius:var(--rs);padding:4px 10px;font-size:9px;font-weight:600}
+
+/* ══ DOCTOR ══ */
+.cur-card{background:var(--g);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;color:white}
+.cur-lbl{font-size:8px;font-weight:700;color:rgba(255,255,255,.55);letter-spacing:.6px;margin-bottom:5px}
+.cur-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.cur-meta{font-size:9px;color:rgba(255,255,255,.65);margin-bottom:10px;font-family:'Open Sans',sans-serif}
+.cur-timer{color:var(--gold);font-weight:700}
+.cur-act{display:flex;gap:7px;flex-wrap:wrap}
+.pc{background:white;border-radius:var(--rs);border:1px solid #e8f0ef;border-left:3px solid var(--g);padding:9px 12px;margin-bottom:6px;font-family:'Open Sans',sans-serif}
+.pc.e{border-left-color:#dc2626}
+.pc.p{border-left-color:#f97316}
+.pc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}
+.pc-name{font-size:11px;font-weight:600;color:#333}
+.pc-meta{font-size:9px;color:#94a3b8}
+.pc-ft{display:flex;gap:10px;font-size:9px;color:#94a3b8}
+.pc-warn{color:#dc2626;font-weight:600}
+/* NOT YET ARRIVED badge */
+.not-arrived{background:#fef9c3;border:1px solid #fde047;border-radius:6px;padding:5px 10px;font-size:9px;color:#854d0e;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:6px}
+
+/* ══ DEPT HEAD FLOOR PLAN ══ */
+.fp-wrap{background:#F5F7F6}
+.fp-toolbar{background:white;padding:10px 14px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
+.fp-title{font-size:13px;font-weight:700;color:#333}
+.fp-layout{display:grid;grid-template-columns:1fr 220px;gap:0;min-height:260px}
+.fp-plan{padding:14px;background:#F5F7F6}
+.fp-legend{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:5px;font-size:9px;color:#555;font-family:'Open Sans',sans-serif}
+.leg-dot{width:10px;height:10px;border-radius:3px}
+.rooms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+/* room states */
+.room{border-radius:7px;padding:8px 9px;min-height:64px;border:1.5px solid transparent;position:relative;cursor:pointer;transition:all .2s}
+.room.free{background:white;border-color:#d1d5db}
+.room.active{background:#e8f5f3;border-color:var(--g)}
+.room.active:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,104,91,.2)}
+.room.brk{background:#fef9c3;border-color:#facc15}
+.room.off{background:#f1f5f9;border-color:#e2e8f0;opacity:.6}
+.room.dropzone{border:2px dashed #a8d5cf;background:#f0f8f6}
+.room-num{font-size:10px;font-weight:700;color:#333;margin-bottom:3px}
+.room-doc{font-size:9px;font-weight:600;color:var(--g);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room-q{font-size:8px;color:#64748b;margin-top:2px}
+.room-free-lbl{font-size:9px;color:#94a3b8;margin-top:8px}
+.room-brk-lbl{font-size:9px;color:#ca8a04;font-weight:600;margin-top:3px}
+/* drag drop hint */
+.drag-hint{position:absolute;top:4px;right:5px;font-size:9px;color:#94a3b8;font-family:'Open Sans',sans-serif}
+/* doctors sidebar */
+.fp-sidebar{background:white;border-left:1px solid #e2e8f0;padding:12px}
+.fp-sb-title{font-size:9px;font-weight:700;color:#888;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px}
+.doc-chip{background:#f0f8f6;border:1px solid #a8d5cf;border-radius:6px;padding:7px 9px;margin-bottom:6px;cursor:grab;display:flex;align-items:center;gap:8px}
+.doc-chip:active{cursor:grabbing;opacity:.7}
+.doc-chip.assigned{background:#e8f5f3;border-color:var(--g)}
+.doc-chip.unassigned{background:#fff7ed;border-color:#fed7aa}
+.chip-av{width:24px;height:24px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0}
+.chip-av.u{background:#f97316}
+.chip-name{font-size:10px;font-weight:600;color:#333}
+.chip-spec{font-size:8px;color:#94a3b8}
+.chip-cab{font-size:8px;color:var(--g);font-weight:600}
+.chip-icon{margin-left:auto;font-size:11px}
+.drop-hint-banner{background:#fff7ed;border:1px dashed #fed7aa;border-radius:6px;padding:7px 10px;font-size:9px;color:#92400e;text-align:center;font-family:'Open Sans',sans-serif;margin-top:8px}
+
+/* ══ DISPLAY BOARD ══ */
+.board{background:#0a0a0a;padding:16px;min-height:200px;font-family:'Montserrat',sans-serif}
+.b-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(179,145,104,.2)}
+.b-logo{width:70px;height:24px;border:1px dashed rgba(179,145,104,.4);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:7px;color:rgba(179,145,104,.6);font-weight:600}
+.b-title{font-size:11px;font-weight:700;color:white;letter-spacing:.3px}
+.b-clock{font-size:16px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
+.b-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.bcab{background:#161616;border-radius:var(--rs);border:1px solid #222;overflow:hidden}
+.bcab-hd{background:var(--g);padding:7px 11px;display:flex;justify-content:space-between;align-items:center}
+.bcab-num{font-size:11px;font-weight:800;color:white}
+.bcab-status{font-size:8px;color:rgba(255,255,255,.7)}
+.bcab-body{padding:8px 11px}
+.bcab-doc{font-size:10px;font-weight:600;color:#d1d5db;margin-bottom:6px}
+.bcab-cur{display:flex;flex-direction:column;gap:2px}
+.bcab-lbl{font-size:8px;color:#6b7280;letter-spacing:.4px}
+.bcab-patient{font-size:11px;font-weight:700;color:white}
+.bcab-cat{font-size:8px;color:#9ca3af;margin-top:1px}
+.bcab-q{margin-top:6px;display:flex;align-items:center;gap:5px}
+.bcab-qnum{font-size:9px;color:var(--gold);font-weight:600}
+.bcab-qbar{flex:1;height:3px;background:#222;border-radius:2px;overflow:hidden}
+.bcab-qfill{height:100%;background:var(--gold);border-radius:2px}
+/* break state */
+.bcab-brk{background:#161616}
+.bcab-brk-hd{background:#92400e;padding:7px 11px;display:flex;justify-content:space-between;align-items:center}
+.bcab-brk-txt{font-size:10px;color:#fef9c3;font-weight:600;text-align:center;padding:16px 0}
+
+/* ══ DIRECTOR DASHBOARD ══ */
+.dir-wrap{background:#F5F7F6}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 14px;background:white;border-bottom:1px solid #e2e8f0}
+.kpi{border-radius:7px;padding:9px 11px;background:#f8faf9;border:1px solid #e8f0ef}
+.kpi-val{font-size:18px;font-weight:800;color:var(--g)}
+.kpi-lbl{font-size:8px;color:#94a3b8;font-family:'Open Sans',sans-serif;margin-top:2px}
+.kpi-sub{font-size:9px;color:var(--gold);font-weight:600;margin-top:2px}
+.dir-body{padding:12px 14px}
+.dept-card{background:white;border-radius:var(--r);border:1px solid #e8f0ef;margin-bottom:8px;overflow:hidden}
+.dept-hd{background:#004d43;padding:8px 12px;display:flex;justify-content:space-between;align-items:center}
+.dept-name{font-size:11px;font-weight:700;color:white}
+.dept-stats{font-size:9px;color:rgba(255,255,255,.6);font-family:'Open Sans',sans-serif}
+.dept-docs{padding:8px 12px;display:flex;flex-direction:column;gap:4px}
+.dept-doc-row{display:flex;align-items:center;gap:8px;font-family:'Open Sans',sans-serif;font-size:10px}
+.dept-bar{flex:1;height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden}
+.dept-fill{height:100%;border-radius:3px}
+.dept-cnt{font-size:9px;font-weight:700;min-width:20px;text-align:right}
+
+/* ══ ADMIN ══ */
+.admin-bar{background:white;border-bottom:1px solid #e2e8f0;display:flex;padding:0 14px}
+.a-tab{padding:9px 13px;font-size:10px;font-weight:600;color:#94a3b8;border-bottom:2px solid transparent;margin-bottom:-1px}
+.a-tab.on{color:var(--g);border-bottom-color:var(--g)}
+.tbl-tool{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.tbl-title{font-size:12px;font-weight:700;color:#333}
+table{width:100%;border-collapse:collapse;font-family:'Open Sans',sans-serif}
+th{font-size:8px;font-weight:700;color:#94a3b8;letter-spacing:.5px;text-transform:uppercase;padding:6px 10px;border-bottom:1px solid #e2e8f0;text-align:left;background:#fafafa}
+td{font-size:10px;color:#333;padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.edit-btn{display:inline-flex;background:transparent;border:1px solid #e2e8f0;border-radius:var(--rs);padding:3px 9px;font-size:9px;color:var(--g);font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     РОЛЬ 1: РЕГИСТРАТОР
+════════════════════════════════════════ -->
+<div class="role-section">
+<div class="role-tag"><div class="dot"></div>РЕГИСТРАТОР</div>
+<p class="sub">Постановка пациента в очередь к врачу · Подтверждение прихода · Просмотр нагрузки</p>
+<div class="gold-rule"></div>
+<div class="screens-row col2">
+
+  <!-- Вкладка 1: Постановка -->
+  <div>
+    <div class="scr-label">Постановка в очередь</div>
+    <div class="scr">
+      <div class="hd">
+        <div class="hd-l"><div class="hd-logo">ЛОГОТИП</div><div class="hd-sep"></div><span class="hd-sec">Регистратура</span></div>
+        <div class="hd-r"><div class="av">АИ</div><div><div class="av-name">Иванова А.С.</div><div class="av-role">Регистратор</div></div><div class="hd-sep"></div><div class="logout">↩</div></div>
+      </div>
+      <div class="tabs">
+        <div class="tab on">Постановка в очередь</div>
+        <div class="tab">Список ожидания</div>
+      </div>
+      <div class="bd">
+        <div class="card">
+          <div class="card-hd">Поиск пациента</div>
+          <div class="inp" style="border-color:#a8d5cf">Иванов Марат Касымович / ИИН 850412300145</div>
+          <!-- found patient -->
+          <div style="background:#f0f8f6;border:1px solid #a8d5cf;border-radius:8px;padding:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#333">Алиев Марат Касымович</div>
+              <div style="font-size:9px;color:#64748b;margin-top:2px;font-family:'Open Sans',sans-serif">41 год · ИИН 850412300145</div>
+              <div style="display:flex;gap:5px;margin-top:5px">
+                <span class="bx bx-blue">ОСМС</span>
+                <span class="bx bx-gray">Сотрудник</span>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--g);font-weight:600">✓ Найден</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">Параметры записи</div>
+          <div class="sel-row">
+            <div class="sel" style="font-weight:600;color:#333;border-color:#a8d5cf">Приоритет: Плановый ▾</div>
+            <div class="sel" style="font-weight:600;color:#333;border-color:#a8d5cf">Категория: ОСМС ▾</div>
+          </div>
+          <div class="inp" style="font-weight:600;color:#333;border-color:#a8d5cf">Врач: Сейтов Д.Б. — Терапия (Каб. 204, 5 чел.) ▾</div>
+          <div style="display:flex;justify-content:flex-end">
+            <div class="btn"><span>Добавить в очередь</span><div class="arrow">→</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Вкладка 2: Список ожидания с подтверждением -->
+  <div>
+    <div class="scr-label">Список ожидания — подтверждение прихода</div>
+    <div class="scr">
+      <div class="hd">
+        <div class="hd-l"><div class="hd-logo">ЛОГОТИП</div><div class="hd-sep"></div><span class="hd-sec">Регистратура</span></div>
+        <div class="hd-r"><div class="av">АИ</div><div><div class="av-name">Иванова А.С.</div><div class="av-role">Регистратор</div></div><div class="hd-sep"></div><div class="logout">↩</div></div>
+      </div>
+      <div class="tabs"><div class="tab">Постановка в очередь</div><div class="tab on">Список ожидания</div></div>
+      <div class="bd">
+        <div class="doc-group">
+          <div class="doc-gh"><span>Сейтов Д.Б. · Каб. 204</span><span class="qcount">5 в очереди</span></div>
+          <div class="qrow">
+            <div style="display:flex;align-items:center">
+              <div class="qdot" style="background:#dc2626"></div>
+              <div><div class="pname">Алиев М.К.</div><div class="pmeta">ОСМС · Экстренный</div></div>
+            </div>
+            <div class="arrived">✓ Прибыл</div>
+          </div>
+          <div class="qrow">
+            <div style="display:flex;align-items:center">
+              <div class="qdot" style="background:var(--g)"></div>
+              <div><div class="pname">Нурова Г.А.</div><div class="pmeta">ОСМС · Плановый</div></div>
+            </div>
+            <div class="arrive-btn">Подтвердить приход</div>
+          </div>
+          <div class="qrow">
+            <div style="display:flex;align-items:center">
+              <div class="qdot" style="background:var(--g)"></div>
+              <div><div class="pname">Сидоров Н.В.</div><div class="pmeta">Платный · Плановый</div></div>
+            </div>
+            <div class="arrive-btn">Подтвердить приход</div>
+          </div>
+        </div>
+        <div class="doc-group">
+          <div class="doc-gh"><span>Иванов В.Н. · Каб. 107</span><span class="qcount">3 в очереди</span></div>
+          <div class="qrow">
+            <div style="display:flex;align-items:center">
+              <div class="qdot" style="background:var(--g)"></div>
+              <div><div class="pname">Петрова А.С.</div><div class="pmeta">Контингент · Плановый</div></div>
+            </div>
+            <div class="arrived">✓ Прибыл</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     РОЛЬ 2: ВРАЧ
+════════════════════════════════════════ -->
+<div class="role-section">
+<div class="role-tag"><div class="dot"></div>ВРАЧ</div>
+<p class="sub">Текущий пациент · Вызов следующего (только подтверждённые) · Запрос смены кабинета</p>
+<div class="gold-rule"></div>
+<div class="screens-row col2">
+
+  <div>
+    <div class="scr-label">Рабочее место врача</div>
+    <div class="scr">
+      <div class="hd">
+        <div class="hd-l"><div class="hd-logo">ЛОГОТИП</div><div class="hd-sep"></div><span class="hd-sec">Рабочее место врача</span></div>
+        <div class="hd-r"><div class="av">СД</div><div><div class="av-name">Сейтов Д.Б.</div><div class="av-role">Терапевт · Каб. 204</div></div><div class="hd-sep"></div><div class="logout">↩</div></div>
+      </div>
+      <div class="bd">
+        <!-- Current patient -->
+        <div class="cur-card">
+          <div class="cur-lbl">ТЕКУЩИЙ ПАЦИЕНТ</div>
+          <div class="cur-name">Алиев Марат Касымович</div>
+          <div class="cur-meta">41 год · ОСМС · <span class="cur-timer">В приёме 14 мин</span></div>
+          <div class="cur-act">
+            <div class="btn-ghost">Завершить приём</div>
+            <div class="btn-gold-ghost">Не явился</div>
+            <div class="btn-gold-ghost">Отложить</div>
+          </div>
+        </div>
+        <!-- Queue -->
+        <div style="font-size:9px;font-weight:700;color:#888;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">ОЖИДАЮТ — 4</div>
+        <!-- Not arrived yet -->
+        <div class="not-arrived">⏳ Нурова Г.А. — ожидает подтверждения прихода от регистратора</div>
+        <div class="pc e">
+          <div class="pc-top">
+            <div><div class="pc-name">Петрова Анна Сергеевна</div><div class="pc-meta">33 года · ОСМС</div></div>
+            <span class="bx bx-red">ЭКСТРЕННЫЙ</span>
+          </div>
+          <div class="pc-ft"><span>⏱ 10:22</span><span class="pc-warn">Ожидает 18 мин</span></div>
+        </div>
+        <div class="pc">
+          <div class="pc-top">
+            <div><div class="pc-name">Сидоров Николай В.</div><div class="pc-meta">58 лет · Платный</div></div>
+            <span class="bx bx-green">ПЛАНОВЫЙ</span>
+          </div>
+          <div class="pc-ft"><span>⏱ 10:35</span><span>Ожидает 5 мин</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="scr-label">Запрос смены кабинета</div>
+    <div class="scr">
+      <div class="hd">
+        <div class="hd-l"><div class="hd-logo">ЛОГОТИП</div><div class="hd-sep"></div><span class="hd-sec">Рабочее место врача</span></div>
+        <div class="hd-r"><div class="av">ИВ</div><div><div class="av-name">Иванов В.Н.</div><div class="av-role">Терапевт · Каб. 107</div></div><div class="hd-sep"></div><div class="logout">↩</div></div>
+      </div>
+      <div class="bd">
+        <div class="cur-card" style="background:#004d43">
+          <div class="cur-lbl">ТЕКУЩИЙ СТАТУС</div>
+          <div style="font-size:12px;font-weight:700;color:white;margin-bottom:4px">Кабинет 107</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.65);margin-bottom:12px;font-family:'Open Sans',sans-serif">Назначен с 08:00 по 14:00 · Активен</div>
+          <div class="cur-act">
+            <div class="btn-ghost">⏸ Перерыв</div>
+            <div class="btn-gold-ghost">↔ Запросить смену кабинета</div>
+          </div>
+        </div>
+        <!-- Request dialog mockup -->
+        <div class="card" style="border:1.5px solid #a8d5cf">
+          <div class="card-hd" style="color:var(--g)">ЗАПРОС НА СМЕНУ КАБИНЕТА</div>
+          <div style="font-size:10px;color:#64748b;margin-bottom:8px;font-family:'Open Sans',sans-serif">Причина:</div>
+          <div class="inp" style="color:#333;font-weight:500">Неисправность оборудования в каб. 107</div>
+          <div style="font-size:10px;color:#64748b;margin-bottom:6px;font-family:'Open Sans',sans-serif">Предпочтительный кабинет:</div>
+          <div class="sel" style="margin-bottom:10px;width:100%;font-weight:600;color:#333;border-color:#a8d5cf">Каб. 205 — Свободен ▾</div>
+          <div style="display:flex;justify-content:flex-end">
+            <div class="btn btn-sm">Отправить заведующему <div class="arrow">→</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     РОЛЬ 3: ЗАВЕДУЮЩИЙ ОТДЕЛЕНИЕМ — КЛЮЧЕВОЙ ЭКРАН
+════════════════════════════════════════ -->
+<div class="role-section">
+<div class="role-tag"><div class="dot"></div>ЗАВЕДУЮЩИЙ ОТДЕЛЕНИЕМ — КЛЮЧЕВАЯ ФИШКА</div>
+<p class="sub">Цифровая планировка отделения · Drag & Drop назначение врачей в кабинеты · Оперативное управление в реальном времени</p>
+<div class="gold-rule"></div>
+
+<div class="scr-label">Планировка отделения — назначение врачей в кабинеты</div>
+<div class="scr">
+  <div class="hd">
+    <div class="hd-l"><div class="hd-logo">ЛОГОТИП</div><div class="hd-sep"></div><span class="hd-sec">Управление отделением</span></div>
+    <div class="hd-r"><div class="av">АК</div><div><div class="av-name">Ахметова К.Г.</div><div class="av-role">Заведующий · Терапия</div></div><div class="hd-sep"></div><div class="logout">↩</div></div>
+  </div>
+  <div class="tabs">
+    <div class="tab on">Планировка</div>
+    <div class="tab">Дашборд отделения</div>
+    <div class="tab">Шаблоны смен</div>
+  </div>
+  <div class="fp-wrap">
+    <div class="fp-toolbar">
+      <div>
+        <div class="fp-title">Отделение терапии · Этаж 2</div>
+        <div style="font-size:10px;color:#64748b;font-family:'Open Sans',sans-serif;margin-top:2px">Перетащите карточку врача на кабинет для назначения</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div class="btn-outline btn-sm">📋 Применить шаблон смены ▾</div>
+        <div class="btn btn-sm">+ Назначить вручную <div class="arrow">→</div></div>
+      </div>
+    </div>
+    <div class="fp-layout">
+      <!-- Floor plan -->
+      <div class="fp-plan">
+        <div class="fp-legend">
+          <div class="leg"><div class="leg-dot" style="background:#e8f5f3;border:1.5px solid var(--g)"></div>Принимает</div>
+          <div class="leg"><div class="leg-dot" style="background:#fef9c3;border:1.5px solid #facc15"></div>Перерыв</div>
+          <div class="leg"><div class="leg-dot" style="background:white;border:1.5px solid #d1d5db"></div>Свободен</div>
+          <div class="leg"><div class="leg-dot" style="background:#f1f5f9;border:1.5px solid #e2e8f0;opacity:.6"></div>Не используется</div>
+        </div>
+        <div class="rooms-grid">
+          <!-- 201 active -->
+          <div class="room active">
+            <div class="drag-hint">✎</div>
+            <div class="room-num">Каб. 201</div>
+            <div class="room-doc">Жакупов Е.К.</div>
+            <div class="room-q">2 чел · Принимает</div>
+          </div>
+          <!-- 202 active -->
+          <div class="room active">
+            <div class="drag-hint">✎</div>
+            <div class="room-num">Каб. 202</div>
+            <div class="room-doc">Ахметова С.Б.</div>
+            <div class="room-q">5 чел · Принимает</div>
+          </div>
+          <!-- 203 free with dropzone hint -->
+          <div class="room free dropzone">
+            <div class="room-num">Каб. 203</div>
+            <div class="room-free-lbl">↓ Перетащите врача сюда</div>
+          </div>
+          <!-- 204 active -->
+          <div class="room active">
+            <div class="drag-hint">✎</div>
+            <div class="room-num">Каб. 204</div>
+            <div class="room-doc">Сейтов Д.Б.</div>
+            <div class="room-q">5 чел · Принимает</div>
+          </div>
+          <!-- 205 break -->
+          <div class="room brk">
+            <div class="drag-hint">✎</div>
+            <div class="room-num">Каб. 205</div>
+            <div class="room-doc" style="color:#ca8a04">Иванов В.Н.</div>
+            <div class="room-brk-lbl">⏸ Перерыв</div>
+          </div>
+          <!-- 206 free -->
+          <div class="room free">
+            <div class="room-num">Каб. 206</div>
+            <div class="room-free-lbl">Свободен</div>
+          </div>
+          <!-- 207 off -->
+          <div class="room off">
+            <div class="room-num">Каб. 207</div>
+            <div class="room-free-lbl">Не работает сегодня</div>
+          </div>
+          <!-- 208 active -->
+          <div class="room active">
+            <div class="drag-hint">✎</div>
+            <div class="room-num">Каб. 208</div>
+            <div class="room-doc">Нурова Г.К.</div>
+            <div class="room-q">3 чел · Принимает</div>
+          </div>
+        </div>
+      </div>
+      <!-- Sidebar: doctors -->
+      <div class="fp-sidebar">
+        <div class="fp-sb-title">Врачи отделения</div>
+        <div style="font-size:8px;color:var(--g);font-weight:700;letter-spacing:.4px;margin-bottom:6px">НАЗНАЧЕНЫ</div>
+        <div class="doc-chip assigned">
+          <div class="chip-av">ЖЕ</div>
+          <div><div class="chip-name">Жакупов Е.К.</div><div class="chip-spec">Терапевт</div><div class="chip-cab">Каб. 201</div></div>
+          <div class="chip-icon">⠿</div>
+        </div>
+        <div class="doc-chip assigned">
+          <div class="chip-av">АС</div>
+          <div><div class="chip-name">Ахметова С.Б.</div><div class="chip-spec">Терапевт</div><div class="chip-cab">Каб. 202</div></div>
+          <div class="chip-icon">⠿</div>
+        </div>
+        <div class="doc-chip assigned">
+          <div class="chip-av">СД</div>
+          <div><div class="chip-name">Сейтов Д.Б.</div><div class="chip-spec">Терапевт</div><div class="chip-cab">Каб. 204</div></div>
+          <div class="chip-icon">⠿</div>
+        </div>
+        <div class="doc-chip assigned" style="border-color:#fde047;background:#fef9c3">
+          <div class="chip-av" style="background:#ca8a04">ИВ</div>
+          <div><div class="chip-name">Иванов В.Н.</div><div class="chip-spec">Терапевт</div><div class="chip-cab" style="color:#ca8a04">Перерыв · 205</div></div>
+          <div class="chip-icon">⠿</div>
+        </div>
+
+        <div style="font-size:8px;color:#f97316;font-weight:700;letter-spacing:.4px;margin:10px 0 6px">БЕЗ КАБИНЕТА</div>
+        <div class="doc-chip unassigned">
+          <div class="chip-av u">НК</div>
+          <div><div class="chip-name">Нуров К.А.</div><div class="chip-spec">Терапевт</div><div class="chip-cab" style="color:#f97316">Не назначен</div></div>
+          <div class="chip-icon">⠿</div>
+        </div>
+
+        <div class="drop-hint-banner">
+          ☝ Перетащите врача на кабинет для назначения
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     РОЛЬ 4: РУКОВОДИТЕЛЬ (DIRECTOR)
+════════════════════════════════════════ -->
+<div class="role-section">
+<div class="role-tag"><div class="dot"></div>РУКОВОДИТЕЛЬ ПОЛИКЛИНИКИ</div>
+<p class="sub">Только просмотр · Сводный дашборд по всем отделениям · Аналитика в реальном времени</p>
+<div class="gold-rule"></div>
+
+<div class="scr-label">Дашборд руководителя</div>
+<div class="scr">
+  <div class="hd">
+    <div class="hd-l"><div class="hd-logo">ЛОГОТИП</div><div class="hd-sep"></div><span class="hd-sec">Панель руководителя</span></div>
+    <div class="hd-r"><div class="av" style="background:rgba(179,145,104,.35);border-color:var(--gold)">МА</div><div><div class="av-name">Мусаев А.К.</div><div class="av-role">Руководитель</div></div><div class="hd-sep"></div><div class="logout">↩</div></div>
+  </div>
+  <div class="dir-wrap">
+    <!-- KPI row -->
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-val">143</div><div class="kpi-lbl">Пациентов сегодня</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:#dc2626">3</div><div class="kpi-lbl">Экстренных</div><div class="kpi-sub">2 в очереди</div></div>
+      <div class="kpi"><div class="kpi-val">18 мин</div><div class="kpi-lbl">Среднее ожидание</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--gold)">87%</div><div class="kpi-lbl">Загрузка кабинетов</div></div>
+    </div>
+    <div class="dir-body">
+      <!-- Dept cards -->
+      <div class="dept-card">
+        <div class="dept-hd"><span class="dept-name">Терапия</span><span class="dept-stats">6 врачей · 34 чел в очереди · 8 кабинетов</span></div>
+        <div class="dept-docs">
+          <div class="dept-doc-row">
+            <span style="flex:0 0 100px;font-family:'Open Sans',sans-serif;font-size:9px;font-weight:600">Сейтов Д.Б.</span>
+            <div class="dept-bar"><div class="dept-fill" style="width:83%;background:var(--g)"></div></div>
+            <span class="dept-cnt" style="color:var(--g)">5</span>
+          </div>
+          <div class="dept-doc-row">
+            <span style="flex:0 0 100px;font-family:'Open Sans',sans-serif;font-size:9px;font-weight:600">Ахметова С.Б.</span>
+            <div class="dept-bar"><div class="dept-fill" style="width:60%;background:var(--gold)"></div></div>
+            <span class="dept-cnt" style="color:var(--gold)">5</span>
+          </div>
+          <div class="dept-doc-row">
+            <span style="flex:0 0 100px;font-family:'Open Sans',sans-serif;font-size:9px;font-weight:600">Иванов В.Н.</span>
+            <div class="dept-bar"><div class="dept-fill" style="width:20%;background:#e2e8f0"></div></div>
+            <span class="dept-cnt" style="color:#94a3b8">⏸</span>
+          </div>
+        </div>
+      </div>
+      <div class="dept-card">
+        <div class="dept-hd"><span class="dept-name">Хирургия</span><span class="dept-stats">4 врача · 12 чел в очереди · 5 кабинетов</span></div>
+        <div class="dept-docs">
+          <div class="dept-doc-row">
+            <span style="flex:0 0 100px;font-family:'Open Sans',sans-serif;font-size:9px;font-weight:600">Касымов Р.Б.</span>
+            <div class="dept-bar"><div class="dept-fill" style="width:40%;background:var(--g)"></div></div>
+            <span class="dept-cnt" style="color:var(--g)">3</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     РОЛЬ 5: ТАБЛО (DISPLAY BOARD) — ИСПРАВЛЕНО
+════════════════════════════════════════ -->
+<div class="role-section">
+<div class="role-tag"><div class="dot"></div>ЦИФРОВОЕ ТАБЛО — /board</div>
+<p class="sub">Бесталонная система — без номеров талонов · Показывает: Врач → Кабинет · Текущий пациент (имя) · Статус · Глубина очереди</p>
+<div class="gold-rule"></div>
+
+<div class="scr-label">Табло в зале ожидания</div>
+<div class="scr">
+  <div class="board">
+    <div class="b-hd">
+      <div class="b-logo">ЛОГОТИП</div>
+      <div class="b-title">Электронная очередь · Терапия</div>
+      <div class="b-clock">10:38</div>
+    </div>
+    <div class="b-grid">
+      <!-- Active cabinet -->
+      <div class="bcab">
+        <div class="bcab-hd">
+          <span class="bcab-num">Каб. 204</span>
+          <span class="bcab-status">● Принимает</span>
+        </div>
+        <div class="bcab-body">
+          <div class="bcab-doc">Сейтов Данияр Бекович</div>
+          <div class="bcab-cur">
+            <div class="bcab-lbl">СЕЙЧАС</div>
+            <div class="bcab-patient">Алиев М.К.</div>
+            <div class="bcab-cat">Плановый · ОСМС</div>
+          </div>
+          <div class="bcab-q">
+            <span class="bcab-qnum">5 ожидают</span>
+            <div class="bcab-qbar"><div class="bcab-qfill" style="width:83%"></div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Break -->
+      <div class="bcab bcab-brk">
+        <div class="bcab-brk-hd">
+          <span class="bcab-num">Каб. 205</span>
+          <span class="bcab-status">⏸ Перерыв</span>
+        </div>
+        <div class="bcab-body">
+          <div class="bcab-doc">Иванов Владимир Н.</div>
+          <div class="bcab-brk-txt">Перерыв<br><span style="font-size:9px;color:#6b7280">Возобновление в ~11:15</span></div>
+        </div>
+      </div>
+      <!-- Active cabinet 2 -->
+      <div class="bcab">
+        <div class="bcab-hd">
+          <span class="bcab-num">Каб. 107</span>
+          <span class="bcab-status">● Принимает</span>
+        </div>
+        <div class="bcab-body">
+          <div class="bcab-doc">Жакупов Ерлан К.</div>
+          <div class="bcab-cur">
+            <div class="bcab-lbl">СЕЙЧАС</div>
+            <div class="bcab-patient">Петрова А.С.</div>
+            <div class="bcab-cat">Плановый · Контингент</div>
+          </div>
+          <div class="bcab-q">
+            <span class="bcab-qnum">2 ожидают</span>
+            <div class="bcab-qbar"><div class="bcab-qfill" style="width:33%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     РОЛЬ 6: АДМИНИСТРАТОР
+════════════════════════════════════════ -->
+<div class="role-section">
+<div class="role-tag"><div class="dot"></div>АДМИНИСТРАТОР СИСТЕМЫ</div>
+<p class="sub">Управление пользователями, кабинетами, настройками категорий и шаблонами смен</p>
+<div class="gold-rule"></div>
+<div class="scr-label">Панель администратора — Пользователи</div>
+<div class="scr">
+  <div class="hd">
+    <div class="hd-l"><div class="hd-logo">ЛОГОТИП</div><div class="hd-sep"></div><span class="hd-sec">Администрирование</span></div>
+    <div class="hd-r"><div class="av">АА</div><div><div class="av-name">Асанов А.Б.</div><div class="av-role">Администратор</div></div><div class="hd-sep"></div><div class="logout">↩</div></div>
+  </div>
+  <div class="admin-bar">
+    <div class="a-tab on">Пользователи</div>
+    <div class="a-tab">Кабинеты</div>
+    <div class="a-tab">Категории</div>
+    <div class="a-tab">Статистика</div>
+  </div>
+  <div class="bd">
+    <div class="tbl-tool">
+      <span class="tbl-title">Пользователи системы</span>
+      <div class="btn btn-sm">Создать пользователя <div class="arrow">→</div></div>
+    </div>
+    <table>
+      <thead><tr>
+        <th>ФИО</th><th>Логин</th><th>Роль</th><th>Отделение</th><th>Категории</th><th></th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td style="font-weight:600">Иванова Анна С.</td>
+          <td style="color:#64748b">registrar1</td>
+          <td><span class="bx bx-blue">Регистратор</span></td>
+          <td style="color:#64748b">Приёмное</td>
+          <td><span class="bx bx-gray">ОСМС · Контингент</span></td>
+          <td><div class="edit-btn">Изменить</div></td>
+        </tr>
+        <tr>
+          <td style="font-weight:600">Сейтов Данияр Б.</td>
+          <td style="color:#64748b">doctor1</td>
+          <td><span class="bx bx-green">Врач</span></td>
+          <td style="color:#64748b">Терапия</td>
+          <td style="color:#94a3b8">—</td>
+          <td><div class="edit-btn">Изменить</div></td>
+        </tr>
+        <tr>
+          <td style="font-weight:600">Ахметова Г.К.</td>
+          <td style="color:#64748b">head1</td>
+          <td><span class="bx bx-gold">Зав. отд.</span></td>
+          <td style="color:#64748b">Хирургия</td>
+          <td style="color:#94a3b8">—</td>
+          <td><div class="edit-btn">Изменить</div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+</body>
+</html>

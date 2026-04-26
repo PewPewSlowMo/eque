@@ -36,7 +36,20 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('dependencies',{}\\), indent=2\\)\\)\")",
       "Bash(pnpm --filter frontend exec tsc --noEmit)",
       "Bash(pnpm --filter frontend build)",
-      "Bash(pnpm --filter backend exec tsc --noEmit)"
+      "Bash(pnpm --filter backend exec tsc --noEmit)",
+      "Bash(git *)",
+      "Bash(docker network ls *)",
+      "Bash(ip route *)",
+      "Bash(awk '{print $7; exit}')",
+      "Bash(awk '{print $1}')",
+      "Bash(docker-compose up *)",
+      "Bash(ps *)",
+      "Bash(kill 1354849)",
+      "Bash(docker network inspect *)",
+      "Bash(docker volume *)",
+      "Bash(bash *)",
+      "Bash(python3 -m http.server 56647)",
+      "Bash(echo \"Server PID: $!\")"
     ]
   }
 }

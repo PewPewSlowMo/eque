@@ -1,0 +1,120 @@
+<h2>Структура навигации и основного макета</h2>
+<p class="subtitle">Как организован экран после входа в систему? Синяя + тёмная палитра (A+B) уже выбрана — здесь выбираем скелет страницы.</p>
+
+<div class="cards">
+
+  <!-- Option A: Top bar only (current pattern, improved) -->
+  <div class="card" data-choice="topbar" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f1f5f9;font-family:sans-serif;padding:0;border-radius:8px;overflow:hidden">
+      <!-- Header -->
+      <div style="background:#1e40af;color:white;padding:0 14px;height:44px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-weight:800;font-size:14px;letter-spacing:.5px">СЭО</span>
+          <span style="opacity:.5;font-size:12px">/</span>
+          <span style="font-size:12px;opacity:.85">Регистратура</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="background:rgba(255,255,255,.15);border-radius:20px;padding:3px 10px;font-size:10px">Иванова А.С.</div>
+          <div style="width:28px;height:28px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px">↩</div>
+        </div>
+      </div>
+      <!-- Content area -->
+      <div style="padding:12px 14px">
+        <div style="display:flex;gap:1px;background:#e2e8f0;border-radius:6px;padding:2px;margin-bottom:12px;width:fit-content">
+          <div style="background:white;padding:5px 14px;border-radius:4px;font-size:10px;font-weight:600;color:#1e40af;box-shadow:0 1px 3px rgba(0,0,0,.1)">Постановка в очередь</div>
+          <div style="padding:5px 14px;font-size:10px;color:#64748b">Список ожидания</div>
+        </div>
+        <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:12px">
+          <div style="font-size:10px;color:#64748b;margin-bottom:6px;font-weight:500">ПОИСК ПАЦИЕНТА</div>
+          <div style="background:#f8faff;border:1px solid #c7d2fe;border-radius:6px;padding:7px 10px;font-size:11px;color:#94a3b8;margin-bottom:8px">Введите ФИО или ИИН...</div>
+          <div style="display:flex;gap:6px">
+            <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:6px 8px;font-size:9px;color:#64748b">Приоритет ▾</div>
+            <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:6px 8px;font-size:9px;color:#64748b">Категория ▾</div>
+            <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:6px 8px;font-size:9px;color:#64748b">Врач ▾</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Верхняя панель + вкладки</h3>
+      <p>Текущий паттерн, улучшенный. Синяя шапка, вкладки под ней. Привычно, минимум кликов. Подходит для рабочих мест с одной задачей (регистратор, врач).</p>
+    </div>
+  </div>
+
+  <!-- Option B: Slim left sidebar (icon + label) -->
+  <div class="card" data-choice="sidebar" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f1f5f9;font-family:sans-serif;padding:0;border-radius:8px;overflow:hidden">
+      <div style="display:flex;height:152px">
+        <!-- Sidebar -->
+        <div style="width:130px;background:#1e3a8a;display:flex;flex-direction:column;padding:12px 0">
+          <div style="padding:0 12px 16px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:10px">
+            <span style="font-weight:800;font-size:13px;color:white;letter-spacing:.5px">СЭО</span>
+          </div>
+          <div style="background:rgba(255,255,255,.15);margin:0 8px;border-radius:6px;padding:7px 8px;display:flex;align-items:center;gap:7px;margin-bottom:4px">
+            <span style="font-size:13px">📋</span><span style="font-size:10px;color:white;font-weight:600">Постановка</span>
+          </div>
+          <div style="margin:0 8px;border-radius:6px;padding:7px 8px;display:flex;align-items:center;gap:7px;margin-bottom:4px">
+            <span style="font-size:13px">👥</span><span style="font-size:10px;color:rgba(255,255,255,.6)">Ожидание</span>
+          </div>
+          <div style="margin:0 8px;border-radius:6px;padding:7px 8px;display:flex;align-items:center;gap:7px">
+            <span style="font-size:13px">📊</span><span style="font-size:10px;color:rgba(255,255,255,.6)">Статистика</span>
+          </div>
+          <div style="flex:1"></div>
+          <div style="padding:8px 12px;border-top:1px solid rgba(255,255,255,.1);margin-top:8px">
+            <div style="font-size:9px;color:rgba(255,255,255,.5)">Иванова А.С.</div>
+          </div>
+        </div>
+        <!-- Content -->
+        <div style="flex:1;padding:12px">
+          <div style="font-size:11px;font-weight:700;color:#1e3a8a;margin-bottom:8px">Постановка в очередь</div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;padding:10px">
+            <div style="background:#f8faff;border:1px solid #c7d2fe;border-radius:5px;padding:6px 8px;font-size:10px;color:#94a3b8;margin-bottom:6px">Поиск пациента...</div>
+            <div style="display:flex;gap:4px">
+              <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:5px 6px;font-size:9px;color:#64748b">Приоритет ▾</div>
+              <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:5px 6px;font-size:9px;color:#64748b">Категория ▾</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Боковая синяя панель навигации</h3>
+      <p>Левый сайдбар в тёмно-синем, контент справа. Более современно. Хорошо для Admin/Director с несколькими разделами. Занимает ~130px ширины.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Context-aware (topbar default, sidebar for admin) -->
+  <div class="card" data-choice="adaptive" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f1f5f9;font-family:sans-serif;padding:10px;border-radius:8px">
+      <div style="font-size:9px;font-weight:700;color:#64748b;letter-spacing:.8px;margin-bottom:6px">РЕГИСТРАТОР / ВРАЧ</div>
+      <div style="background:#1e40af;color:white;padding:7px 10px;border-radius:5px 5px 0 0;font-size:10px;display:flex;justify-content:space-between"><span style="font-weight:700">СЭО</span><span style="opacity:.7">Регистратура</span></div>
+      <div style="background:white;border:1px solid #e2e8f0;border-radius:0 0 5px 5px;padding:8px;margin-bottom:10px">
+        <div style="display:flex;gap:1px;background:#f1f5f9;border-radius:4px;padding:2px;width:fit-content;margin-bottom:6px">
+          <div style="background:white;padding:3px 10px;border-radius:3px;font-size:9px;color:#1e40af;font-weight:600">Постановка</div>
+          <div style="padding:3px 10px;font-size:9px;color:#64748b">Очередь</div>
+        </div>
+        <div style="background:#f8faff;border:1px solid #c7d2fe;border-radius:4px;padding:5px 8px;font-size:9px;color:#94a3b8">Поиск...</div>
+      </div>
+      <div style="font-size:9px;font-weight:700;color:#64748b;letter-spacing:.8px;margin-bottom:6px">ADMIN / DIRECTOR</div>
+      <div style="display:flex;height:55px;border-radius:5px;overflow:hidden;border:1px solid #e2e8f0">
+        <div style="width:80px;background:#1e3a8a;padding:6px;display:flex;flex-direction:column;gap:3px">
+          <div style="background:rgba(255,255,255,.2);border-radius:3px;padding:3px 5px;font-size:8px;color:white">Пользователи</div>
+          <div style="border-radius:3px;padding:3px 5px;font-size:8px;color:rgba(255,255,255,.5)">Кабинеты</div>
+          <div style="border-radius:3px;padding:3px 5px;font-size:8px;color:rgba(255,255,255,.5)">Настройки</div>
+        </div>
+        <div style="flex:1;background:white;padding:6px 8px">
+          <div style="font-size:9px;font-weight:700;color:#1e3a8a;margin-bottom:4px">Пользователи</div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <div style="display:flex;gap:4px;font-size:8px;color:#64748b;background:#f8fafc;padding:3px 5px;border-radius:3px"><span style="flex:2">Иванов И.И.</span><span style="flex:1;color:#1e40af">Врач</span></div>
+            <div style="display:flex;gap:4px;font-size:8px;color:#64748b;background:#f8fafc;padding:3px 5px;border-radius:3px"><span style="flex:2">Алиева Г.К.</span><span style="flex:1;color:#6d28d9">Регистратор</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Адаптивный (по роли)</h3>
+      <p>Простые роли (врач, регистратор) → верхняя панель с вкладками. Admin/Director → боковой сайдбар с разделами. Оптимально для каждой роли, чуть сложнее в реализации.</p>
+    </div>
+  </div>
+
+</div>

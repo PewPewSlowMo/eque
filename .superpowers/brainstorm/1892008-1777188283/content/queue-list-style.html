@@ -1,0 +1,138 @@
+<h2>Как выглядит список пациентов в очереди?</h2>
+<p class="subtitle">Регистратор и врач смотрят на этот список весь рабочий день. Выберите стиль отображения.</p>
+
+<div class="cards">
+
+  <!-- Option A: Compact table rows with left accent border -->
+  <div class="card" data-choice="table" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:sans-serif;padding:12px;background:#f8fafc;border-radius:8px">
+      <div style="background:#0f2d6b;color:white;padding:7px 12px;border-radius:6px 6px 0 0;font-size:10px;display:flex;justify-content:space-between;margin:-12px -12px 10px">
+        <span style="font-weight:700">Список ожидания</span>
+        <span style="opacity:.7">8 пациентов</span>
+      </div>
+      <!-- Table header -->
+      <div style="display:flex;gap:0;font-size:9px;color:#94a3b8;font-weight:600;letter-spacing:.5px;padding:4px 10px;margin-bottom:2px">
+        <span style="flex:3">ПАЦИЕНТ</span>
+        <span style="flex:2">ВРАЧ</span>
+        <span style="flex:1.5;text-align:center">КАБ.</span>
+        <span style="flex:2;text-align:right">СТАТУС</span>
+      </div>
+      <!-- Rows -->
+      <div style="border-left:3px solid #dc2626;background:white;padding:6px 10px;margin-bottom:2px;border-radius:0 5px 5px 0;display:flex;align-items:center;font-size:10px">
+        <span style="flex:3;font-weight:600;color:#111827">Алиев М.К.</span>
+        <span style="flex:2;color:#64748b">Сейтов Д.Б.</span>
+        <span style="flex:1.5;text-align:center;color:#64748b">204</span>
+        <span style="flex:2;text-align:right"><span style="background:#fee2e2;color:#dc2626;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:600">ЭКСТРЕННЫЙ</span></span>
+      </div>
+      <div style="border-left:3px solid #f97316;background:white;padding:6px 10px;margin-bottom:2px;border-radius:0 5px 5px 0;display:flex;align-items:center;font-size:10px">
+        <span style="flex:3;font-weight:600;color:#111827">Петрова А.С.</span>
+        <span style="flex:2;color:#64748b">Иванов В.Н.</span>
+        <span style="flex:1.5;text-align:center;color:#64748b">107</span>
+        <span style="flex:2;text-align:right"><span style="background:#ffedd5;color:#c2410c;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:600">СТАЦИОНАР</span></span>
+      </div>
+      <div style="border-left:3px solid #0f2d6b;background:white;padding:6px 10px;margin-bottom:2px;border-radius:0 5px 5px 0;display:flex;align-items:center;font-size:10px">
+        <span style="flex:3;font-weight:600;color:#111827">Сидоров Н.В.</span>
+        <span style="flex:2;color:#64748b">Сейтов Д.Б.</span>
+        <span style="flex:1.5;text-align:center;color:#64748b">204</span>
+        <span style="flex:2;text-align:right"><span style="background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:600">ПЛАНОВЫЙ</span></span>
+      </div>
+      <div style="border-left:3px solid #16a34a;background:white;padding:6px 10px;border-radius:0 5px 5px 0;display:flex;align-items:center;font-size:10px">
+        <span style="flex:3;font-weight:600;color:#111827">Ахметова Г.К.</span>
+        <span style="flex:2;color:#64748b">Иванов В.Н.</span>
+        <span style="flex:1.5;text-align:center;color:#64748b">107</span>
+        <span style="flex:2;text-align:right"><span style="background:#dcfce7;color:#166534;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:600">ОСМС</span></span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Компактные строки с акцентной полосой</h3>
+      <p>Таблица с цветной левой границей по приоритету. Максимум данных на экране — важно когда очередь 20+ человек. Быстро сканируется взглядом.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Cards with more info -->
+  <div class="card" data-choice="cards" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:sans-serif;padding:12px;background:#f8fafc;border-radius:8px">
+      <div style="background:#0f2d6b;color:white;padding:7px 12px;border-radius:6px 6px 0 0;font-size:10px;display:flex;justify-content:space-between;margin:-12px -12px 10px">
+        <span style="font-weight:700">Список ожидания</span>
+        <span style="opacity:.7">8 пациентов</span>
+      </div>
+      <div style="background:white;border:1px solid #fecaca;border-left:4px solid #dc2626;border-radius:6px;padding:8px 10px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#111827">Алиев Марат Касымович</div>
+            <div style="font-size:9px;color:#64748b;margin-top:1px">ИИН 850412300145 · 41 год</div>
+          </div>
+          <span style="background:#dc2626;color:white;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700">ЭКСТРЕННЫЙ</span>
+        </div>
+        <div style="display:flex;gap:8px;font-size:9px;color:#64748b">
+          <span>👨‍⚕️ Сейтов Д.Б.</span>
+          <span>🚪 Каб. 204</span>
+          <span>⏱ 10:15</span>
+          <span style="color:#dc2626;font-weight:600">Ожидает 23 мин</span>
+        </div>
+      </div>
+      <div style="background:white;border:1px solid #fed7aa;border-left:4px solid #f97316;border-radius:6px;padding:8px 10px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#111827">Петрова Анна Сергеевна</div>
+            <div style="font-size:9px;color:#64748b;margin-top:1px">ИИН 930715400231 · 33 года</div>
+          </div>
+          <span style="background:#f97316;color:white;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700">СТАЦИОНАР</span>
+        </div>
+        <div style="display:flex;gap:8px;font-size:9px;color:#64748b">
+          <span>👨‍⚕️ Иванов В.Н.</span>
+          <span>🚪 Каб. 107</span>
+          <span>⏱ 10:22</span>
+          <span>Ожидает 16 мин</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Карточки с деталями</h3>
+      <p>Каждый пациент — отдельная карточка с ФИО полностью, ИИН, временем ожидания, иконками. Богато, но на экране меньше людей за раз (3–4 вместо 8–10).</p>
+    </div>
+  </div>
+
+  <!-- Option C: Hybrid - grouped by doctor -->
+  <div class="card" data-choice="grouped" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:sans-serif;padding:12px;background:#f8fafc;border-radius:8px">
+      <div style="background:#0f2d6b;color:white;padding:7px 12px;border-radius:6px 6px 0 0;font-size:10px;display:flex;justify-content:space-between;margin:-12px -12px 10px">
+        <span style="font-weight:700">Список ожидания</span>
+        <span style="opacity:.7">2 врача · 8 пациентов</span>
+      </div>
+      <!-- Doctor group 1 -->
+      <div style="background:#eef2ff;border-radius:6px;padding:6px 8px;margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="font-size:10px;font-weight:700;color:#0f2d6b">Сейтов Д.Б. · Каб. 204</span>
+          <span style="background:#0f2d6b;color:white;font-size:8px;padding:1px 6px;border-radius:10px">5 в очереди</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="background:white;border-left:3px solid #dc2626;padding:4px 7px;border-radius:0 4px 4px 0;display:flex;justify-content:space-between;font-size:9px">
+            <span style="font-weight:600">Алиев М.К.</span><span style="color:#dc2626;font-weight:600">ЭКСТР · 23 мин</span>
+          </div>
+          <div style="background:white;border-left:3px solid #0f2d6b;padding:4px 7px;border-radius:0 4px 4px 0;display:flex;justify-content:space-between;font-size:9px">
+            <span style="font-weight:600">Сидоров Н.В.</span><span style="color:#64748b">ПЛАН · 8 мин</span>
+          </div>
+        </div>
+      </div>
+      <!-- Doctor group 2 -->
+      <div style="background:#eef2ff;border-radius:6px;padding:6px 8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="font-size:10px;font-weight:700;color:#0f2d6b">Иванов В.Н. · Каб. 107</span>
+          <span style="background:#0f2d6b;color:white;font-size:8px;padding:1px 6px;border-radius:10px">3 в очереди</span>
+        </div>
+        <div style="background:white;border-left:3px solid #f97316;padding:4px 7px;border-radius:0 4px 4px 0;display:flex;justify-content:space-between;font-size:9px;margin-bottom:2px">
+          <span style="font-weight:600">Петрова А.С.</span><span style="color:#f97316;font-weight:600">СТАЦ · 16 мин</span>
+        </div>
+        <div style="background:white;border-left:3px solid #16a34a;padding:4px 7px;border-radius:0 4px 4px 0;display:flex;justify-content:space-between;font-size:9px">
+          <span style="font-weight:600">Ахметова Г.К.</span><span style="color:#64748b">ОСМС · 5 мин</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Группировка по врачам</h3>
+      <p>Строки внутри групп-врачей с цветным приоритетом. Регистратор сразу видит нагрузку на каждого врача. Оптимально для вида «Список ожидания» у регистратора.</p>
+    </div>
+  </div>
+
+</div>

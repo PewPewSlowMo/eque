@@ -5,8 +5,31 @@ import { PatientSearch } from './registrar/PatientSearch';
 import { useQueueSocket } from './registrar/useQueueSocket';
 import { toast } from 'sonner';
 
-/* ─── constants ─────────────────────────────────── */
-const MAX_SLOTS = 20;
+/* ─── schedule helpers ──────────────────────────── */
+function slotsFromSchedule(sched: { startTime: string; endTime: string; breaks: Array<{ startTime: string; endTime: string }> }): string[] {
+  const [sh, sm] = sched.startTime.split(':').map(Number);
+  const [eh, em] = sched.endTime.split(':').map(Number);
+  const startMins = sh * 60 + sm;
+  const endMins   = eh * 60 + em;
+  const breakRanges = sched.breaks.map(b => {
+    const [bs, bsm] = b.startTime.split(':').map(Number);
+    const [be, bem] = b.endTime.split(':').map(Number);
+    return [bs * 60 + bsm, be * 60 + bem] as [number, number];
+  });
+  const slots: string[] = [];
+  for (let m = startMins; m < endMins; m += 15) {
+    if (!breakRanges.some(([s, e]) => m >= s && m < e)) {
+      slots.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
+    }
+  }
+  return slots;
+}
+
+/* ISO weekday: 1=Mon … 7=Sun */
+function isoWeekday(d: Date): number {
+  const js = d.getDay(); // 0=Sun
+  return js === 0 ? 7 : js;
+}
 
 const CATEGORY_OPTS = [
   { value: 'OSMS',          label: 'ОСМС' },
@@ -22,16 +45,6 @@ const PRIORITY_OPTS = [
   { value: 'INPATIENT', label: 'Стационарный' },
   { value: 'EMERGENCY', label: 'Экстренный' },
 ];
-
-/* 15-min slots 08:00–12:45 */
-function makeSlots(): string[] {
-  const slots: string[] = [];
-  for (let h = 8; h < 13; h++)
-    for (const m of [0, 15, 30, 45])
-      slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-  return slots;
-}
-const ALL_SLOTS = makeSlots();
 
 function isoDate(d: Date) { return d.toISOString().slice(0, 10); }
 
@@ -59,10 +72,10 @@ type Patient = {
   middleName?: string | null; phone?: string | null; iin?: string | null;
 };
 
-/* ─── SlotCell — shows "free / MAX" ─────────────── */
-function SlotCell({ booked, onClick }: { booked: number; onClick: () => void }) {
-  const free = Math.max(0, MAX_SLOTS - booked);
-  const pct  = booked / MAX_SLOTS;
+/* ─── SlotCell — shows "free / total" ───────────── */
+function SlotCell({ booked, maxSlots, onClick }: { booked: number; maxSlots: number; onClick: () => void }) {
+  const free = Math.max(0, maxSlots - booked);
+  const pct  = maxSlots > 0 ? booked / maxSlots : 1;
 
   const bg  = pct >= 0.75 ? '#fef2f2' : pct >= 0.45 ? '#fefce8' : '#ecfdf5';
   const brd = pct >= 0.75 ? '#fca5a5' : pct >= 0.45 ? '#fcd34d' : '#86efac';
@@ -72,7 +85,7 @@ function SlotCell({ booked, onClick }: { booked: number; onClick: () => void }) 
     return (
       <div className="w-full text-center text-[9px] font-semibold py-1 rounded"
         style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b' }}>
-        0/{MAX_SLOTS}
+        0/{maxSlots}
       </div>
     );
   }
@@ -82,14 +95,14 @@ function SlotCell({ booked, onClick }: { booked: number; onClick: () => void }) 
       className="w-full text-center rounded py-1 transition-all hover:brightness-95 leading-tight"
       style={{ background: bg, border: `1px solid ${brd}`, color: clr }}>
       <span className="text-[10px] font-bold">{free}</span>
-      <span className="text-[8px] font-normal opacity-70">/{MAX_SLOTS}</span>
+      <span className="text-[8px] font-normal opacity-70">/{maxSlots}</span>
     </button>
   );
 }
 
 /* ─── TimePicker popup ───────────────────────────── */
-function TimePicker({ doctor, date, takenTimes, patient, category, priority, onClose, onBooked }: {
-  doctor: any; date: Date; takenTimes: string[];
+function TimePicker({ doctor, date, takenTimes, availableSlots, patient, category, priority, onClose, onBooked }: {
+  doctor: any; date: Date; takenTimes: string[]; availableSlots: string[];
   patient: Patient; category: string; priority: string;
   onClose: () => void; onBooked: () => void;
 }) {
@@ -109,7 +122,7 @@ function TimePicker({ doctor, date, takenTimes, patient, category, priority, onC
 
   const source = (user as any)?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
   const dateLabel = `${date.getDate()} ${MONTH_SHORT[date.getMonth()]}`;
-  const taken = takenTimes as string[];
+  const freeCount = availableSlots.filter(t => !takenTimes.includes(t)).length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center"
@@ -121,14 +134,12 @@ function TimePicker({ doctor, date, takenTimes, patient, category, priority, onC
           <span className="text-[11px] font-bold text-foreground">
             {doctor.lastName} {doctor.firstName[0]}. · {dateLabel}
           </span>
-          <span className="text-[8px] text-muted-foreground">
-            {ALL_SLOTS.length - taken.length} свободных
-          </span>
+          <span className="text-[8px] text-muted-foreground">{freeCount} свободных</span>
         </div>
 
         <div className="grid grid-cols-5 gap-1 mb-3">
-          {ALL_SLOTS.map(t => {
-            const isTaken = taken.includes(t);
+          {availableSlots.map(t => {
+            const isTaken = takenTimes.includes(t);
             return (
               <button key={t} disabled={isTaken}
                 onClick={() => !isTaken && setSelected(t === selected ? null : t)}
@@ -363,7 +374,7 @@ function CalendarTab() {
   const [priority, setPriority]     = useState('WALK_IN');
   const [weekOffset, setWeekOffset] = useState(0);
   const [specFilter, setSpecFilter] = useState('');
-  const [picker, setPicker]         = useState<{ doctor: any; date: Date } | null>(null);
+  const [picker, setPicker]         = useState<{ doctor: any; date: Date; slots: string[] } | null>(null);
 
   const week      = useMemo(() => buildWeek(weekOffset), [weekOffset]);
   const startDate = isoDate(week[0]);
@@ -371,6 +382,7 @@ function CalendarTab() {
   const today     = isoDate(new Date());
 
   const { data: allDoctors = [] } = trpc.users.getDoctors.useQuery({ departmentId: '' });
+  const { data: allSchedules = [] } = trpc.schedules.getAll.useQuery(undefined, { staleTime: 60_000 });
 
   const { data: slotMap = {} } = trpc.queue.getScheduledSlots.useQuery(
     { startDate, endDate }, { staleTime: 30_000 },
@@ -537,19 +549,26 @@ function CalendarTab() {
                     </div>
                   </td>
                   {week.map(d => {
-                    const dstr = isoDate(d);
+                    const dstr  = isoDate(d);
                     const isPast = dstr < today;
                     const booked = (slotMap as any)[doc.id]?.[dstr] ?? 0;
+                    const slots  = (allSchedules as any[]).find(
+                      s => s.doctorId === doc.id && s.dayOfWeek === isoWeekday(d)
+                    );
+                    const daySlots = slots ? slotsFromSchedule(slots) : null;
                     return (
                       <td key={dstr} className="border-b border-r border-border px-1 py-1">
-                        {isPast ? (
-                          <div className="text-center text-[9px] text-muted-foreground/30">—</div>
+                        {isPast || daySlots === null ? (
+                          <div className={`text-center text-[9px] ${
+                            isPast ? 'text-muted-foreground/30' : 'text-slate-300'
+                          }`}>—</div>
                         ) : (
                           <SlotCell
                             booked={booked}
+                            maxSlots={daySlots.length}
                             onClick={() => {
                               if (!patient) { toast.error('Сначала выберите пациента'); return; }
-                              setPicker({ doctor: doc, date: d });
+                              setPicker({ doctor: doc, date: d, slots: daySlots });
                             }}
                           />
                         )}
@@ -584,6 +603,7 @@ function CalendarTab() {
         <TimePicker
           doctor={picker.doctor} date={picker.date}
           takenTimes={takenTimes as string[]}
+          availableSlots={picker.slots}
           patient={patient} category={category} priority={priority}
           onClose={() => setPicker(null)}
           onBooked={() => { setPicker(null); setPatient(null); }}

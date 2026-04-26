@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>СЭО — Брендбук v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: #F5F5F5;
+  color: #333;
+  padding: 28px;
+}
+
+/* ── Разделители и заголовки ── */
+.section-title {
+  font-size: 13px; font-weight: 700; color: #00685B;
+  letter-spacing: .3px; margin-bottom: 4px;
+}
+.section-sub {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 11px; color: #888; margin-bottom: 16px;
+}
+.gold-rule {
+  height: 2px;
+  background: linear-gradient(90deg, #00685B 0%, #B39168 40%, transparent 100%);
+  border-radius: 1px;
+  margin-bottom: 24px;
+}
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 36px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 36px; }
+.screen-label {
+  font-size: 10px; font-weight: 700; color: #94a3b8;
+  letter-spacing: .8px; text-transform: uppercase; margin-bottom: 8px;
+}
+.screen-wrap {
+  border-radius: 10px; overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,.1);
+  border: 1px solid #e2e8f0;
+}
+
+/* ── Цветовые токены ── */
+:root {
+  --green: #00685B;
+  --gold: #B39168;
+  --text: #333333;
+  --bg: #FFFFFF;
+  --muted: #6b7280;
+  --border: #e2e8f0;
+  --surface: #f8faf9;
+  --r: 8px 40px 40px 8px;    /* split-block radius */
+  --r-sm: 4px 16px 16px 4px; /* маленький вариант */
+}
+
+/* ══════════════════════════════
+   ЭКРАН 1 — LOGIN
+══════════════════════════════ */
+.login-bg {
+  background: #00685B;
+  min-height: 300px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  padding: 24px;
+}
+/* Тонкий орнаментальный намёк — круги как отражение паттерна */
+.login-bg::before {
+  content: '';
+  position: absolute;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  border: 1px solid rgba(179,145,104,.12);
+  top: -100px; right: -80px;
+}
+.login-bg::after {
+  content: '';
+  position: absolute;
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.06);
+  bottom: -60px; left: -40px;
+}
+.login-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 28px 24px;
+  width: 240px;
+  position: relative;
+  box-shadow: 0 20px 48px rgba(0,0,0,.2);
+}
+.logo-block {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 20px; padding-bottom: 16px;
+  border-bottom: 1px solid #e8f0ef;
+}
+.logo-emblem-ph {
+  width: 40px; height: 40px; flex-shrink: 0;
+  border: 1.5px dashed #B39168;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7px; font-weight: 600; color: #B39168;
+  line-height: 1.3; text-align: center;
+}
+.logo-text-ph {
+  display: flex; flex-direction: column; gap: 1px;
+}
+.logo-name {
+  font-size: 9px; font-weight: 700; color: #00685B; line-height: 1.3;
+}
+.logo-sub {
+  font-size: 8px; color: #94a3b8; font-family: 'Open Sans', sans-serif;
+}
+.field-label {
+  font-size: 9px; font-weight: 700; color: #888;
+  letter-spacing: .5px; text-transform: uppercase; margin-bottom: 5px;
+}
+.field-input {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 11px; color: #999;
+  width: 100%; margin-bottom: 12px;
+  font-family: 'Open Sans', sans-serif;
+  background: #fafafa;
+}
+.btn-login {
+  background: #00685B;
+  color: white;
+  border-radius: var(--r);
+  padding: 11px 16px;
+  text-align: center;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .6px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer;
+}
+.arrow-circle {
+  width: 18px; height: 18px;
+  border: 1.5px solid #B39168;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: #B39168; flex-shrink: 0;
+}
+
+/* ══════════════════════════════
+   ЭКРАН 2 — APP HEADER
+══════════════════════════════ */
+.app-wrap { background: #F5F5F5; }
+.app-header {
+  background: #00685B;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+.header-logo {
+  display: flex; align-items: center; gap: 10px;
+}
+.header-logo-ph {
+  height: 30px; width: 80px;
+  border: 1.5px dashed rgba(179,145,104,.6);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; font-weight: 600; color: rgba(179,145,104,.8);
+}
+.header-sep { width: 1px; height: 22px; background: rgba(255,255,255,.2); }
+.header-section { font-size: 12px; color: rgba(255,255,255,.75); font-weight: 500; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.avatar {
+  width: 32px; height: 32px;
+  background: rgba(179,145,104,.25);
+  border: 1.5px solid rgba(179,145,104,.5);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #B39168;
+}
+.user-info .name { font-size: 11px; font-weight: 600; color: #fff; }
+.user-info .role { font-size: 9px; color: rgba(255,255,255,.5); margin-top: 1px; }
+.logout {
+  width: 30px; height: 30px;
+  background: rgba(255,255,255,.1);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.7); font-size: 13px;
+}
+/* Tabs */
+.app-tabs {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  padding: 0 18px;
+}
+.tab {
+  padding: 11px 16px;
+  font-size: 11px; font-weight: 600; color: #94a3b8;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px; cursor: pointer;
+}
+.tab.active { color: #00685B; border-bottom-color: #00685B; }
+/* Content */
+.app-body { padding: 16px 18px; }
+.split-card {
+  background: white;
+  border-radius: var(--r);
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  border: 1px solid #e8f0ef;
+  margin-bottom: 10px;
+}
+.card-heading {
+  font-size: 9px; font-weight: 700; color: #888;
+  letter-spacing: .6px; text-transform: uppercase; margin-bottom: 8px;
+}
+.search-box {
+  background: #f0f8f6;
+  border: 1.5px solid #a8d5cf;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 10px; color: #999;
+  font-family: 'Open Sans', sans-serif;
+  margin-bottom: 10px; width: 100%;
+}
+.row-selects { display: flex; gap: 8px; }
+.sel {
+  flex: 1; border: 1px solid #e2e8f0;
+  border-radius: 8px; padding: 6px 10px;
+  font-size: 10px; color: #6b7280; background: #fafafa;
+}
+
+/* ══════════════════════════════
+   ЭКРАН 3 — REGISTRAR LIST
+══════════════════════════════ */
+.doc-group {
+  background: white;
+  border-radius: var(--r);
+  border: 1px solid #e8f0ef;
+  margin-bottom: 10px; overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.doc-group-hd {
+  background: #00685B;
+  color: white; padding: 9px 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; font-weight: 600;
+}
+.count-badge {
+  background: rgba(179,145,104,.2);
+  border: 1px solid rgba(179,145,104,.45);
+  color: #B39168; font-size: 9px; font-weight: 700;
+  padding: 2px 8px; border-radius: 10px;
+}
+.doc-row {
+  padding: 8px 14px; display: flex;
+  justify-content: space-between; align-items: center;
+  font-size: 10px; font-family: 'Open Sans', sans-serif;
+  border-bottom: 1px solid #f1f5f9;
+}
+.doc-row:last-child { border-bottom: none; }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.row-left { display: flex; align-items: center; gap: 8px; }
+.pname { font-weight: 600; color: #333; }
+.badge {
+  font-size: 9px; font-weight: 700;
+  padding: 2px 7px; border-radius: 8px;
+}
+.b-red   { background: #fee2e2; color: #dc2626; }
+.b-green { background: #d1fae5; color: #065f46; }
+.b-gold  { background: #fef3c7; color: #92400e; }
+.b-blue  { background: #dbeafe; color: #1d4ed8; }
+
+/* ══════════════════════════════
+   ЭКРАН 4 — DOCTOR VIEW
+══════════════════════════════ */
+.current-card {
+  background: #00685B;
+  border-radius: var(--r);
+  padding: 14px 18px;
+  margin-bottom: 12px;
+  color: white;
+}
+.cur-label { font-size: 9px; font-weight: 700; color: rgba(255,255,255,.55); letter-spacing: .6px; margin-bottom: 6px; }
+.cur-name  { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.cur-meta  { font-size: 9px; color: rgba(255,255,255,.65); margin-bottom: 12px; font-family: 'Open Sans', sans-serif; }
+.cur-timer { color: #B39168; font-weight: 700; }
+.cur-actions { display: flex; gap: 8px; }
+.btn-white {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  color: white; border-radius: var(--r-sm);
+  padding: 7px 14px; font-size: 10px; font-weight: 600;
+}
+.btn-gold {
+  background: rgba(179,145,104,.15);
+  border: 1px solid rgba(179,145,104,.45);
+  color: #B39168; border-radius: var(--r-sm);
+  padding: 7px 14px; font-size: 10px; font-weight: 600;
+}
+.queue-label { font-size: 9px; font-weight: 700; color: #888; letter-spacing: .6px; text-transform: uppercase; margin-bottom: 8px; }
+.patient-card {
+  background: white; border-radius: var(--r-sm);
+  border: 1px solid #e8f0ef;
+  border-left: 3px solid #00685B;
+  padding: 10px 14px; margin-bottom: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  font-family: 'Open Sans', sans-serif;
+}
+.patient-card.emerg { border-left-color: #dc2626; }
+.pc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
+.pc-name   { font-size: 11px; font-weight: 600; color: #333; }
+.pc-meta   { font-size: 9px; color: #94a3b8; margin-top: 1px; }
+.pc-footer { display: flex; gap: 12px; font-size: 9px; color: #94a3b8; }
+.wait-warn { color: #dc2626; font-weight: 600; }
+
+/* ══════════════════════════════
+   ЭКРАН 5 — DISPLAY BOARD
+══════════════════════════════ */
+.board {
+  background: #0a0a0a;
+  min-height: 220px;
+  padding: 16px;
+  font-family: 'Montserrat', sans-serif;
+}
+.board-hd {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid rgba(179,145,104,.2);
+}
+.board-logo-ph {
+  width: 80px; height: 28px;
+  border: 1px dashed rgba(179,145,104,.4);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; color: rgba(179,145,104,.6); font-weight: 600;
+}
+.board-title { font-size: 12px; font-weight: 700; color: white; letter-spacing: .3px; }
+.board-clock { font-size: 16px; font-weight: 700; color: #B39168; font-variant-numeric: tabular-nums; }
+.board-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.cab-card {
+  background: #161616;
+  border-radius: var(--r-sm);
+  border: 1px solid #222;
+  overflow: hidden;
+}
+.cab-hd {
+  background: #00685B;
+  padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;
+}
+.cab-num { font-size: 14px; font-weight: 800; color: white; }
+.cab-wait { font-size: 9px; color: rgba(255,255,255,.7); }
+.cab-body { padding: 8px 12px; }
+.cab-doc { font-size: 10px; font-weight: 600; color: #d1d5db; margin-bottom: 6px; }
+.cab-patient { display: flex; align-items: center; gap: 6px; }
+.ticket {
+  font-size: 18px; font-weight: 800;
+  color: #B39168; letter-spacing: -.5px;
+}
+.patient-info { font-size: 9px; color: #9ca3af; line-height: 1.5; }
+
+/* ══════════════════════════════
+   ЭКРАН 6 — ADMIN TABLE
+══════════════════════════════ */
+.admin-wrap { background: #F5F5F5; }
+.admin-header {
+  background: #00685B;
+  height: 48px;
+  display: flex; align-items: center; padding: 0 16px;
+  gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+.admin-logo-ph {
+  height: 24px; width: 64px;
+  border: 1px dashed rgba(179,145,104,.5);
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7px; color: rgba(179,145,104,.7); font-weight: 600;
+}
+.admin-title { font-size: 12px; color: white; font-weight: 600; }
+.admin-role { font-size: 9px; color: rgba(255,255,255,.5); margin-left: auto; }
+.admin-tabs-bar {
+  background: white; border-bottom: 1px solid #e2e8f0;
+  display: flex; padding: 0 16px;
+}
+.admin-tab {
+  padding: 9px 14px; font-size: 10px; font-weight: 600;
+  color: #94a3b8; border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.admin-tab.active { color: #00685B; border-bottom-color: #00685B; }
+.admin-body { padding: 14px 16px; }
+.table-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.table-title { font-size: 13px; font-weight: 700; color: #333; }
+.btn-add {
+  background: #00685B; color: white;
+  border-radius: var(--r-sm);
+  padding: 7px 14px; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; gap: 6px;
+}
+.table { width: 100%; border-collapse: collapse; font-family: 'Open Sans', sans-serif; }
+.th {
+  font-size: 9px; font-weight: 700; color: #888;
+  letter-spacing: .5px; text-transform: uppercase;
+  padding: 7px 10px; border-bottom: 1px solid #e2e8f0;
+  text-align: left; background: #fafafa;
+}
+.td {
+  font-size: 10px; color: #333; padding: 8px 10px;
+  border-bottom: 1px solid #f1f5f9; vertical-align: middle;
+}
+.role-badge {
+  font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 8px;
+  background: #d1fae5; color: #065f46;
+}
+.role-badge.reg { background: #dbeafe; color: #1d4ed8; }
+.role-badge.head { background: #fef3c7; color: #92400e; }
+.edit-btn {
+  background: transparent; border: 1px solid #e2e8f0;
+  border-radius: var(--r-sm);
+  padding: 4px 10px; font-size: 9px; color: #00685B;
+  font-weight: 600; cursor: pointer;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ══ SECTION: LOGIN + HEADER ══ -->
+<p class="section-title">Страница входа + Шапка приложения</p>
+<p class="section-sub">Инверсный логотип на изумрудном фоне · Плоские кнопки · Фирменное скругление · Золото — только акцент</p>
+<div class="gold-rule"></div>
+
+<div class="grid-2">
+  <div>
+    <div class="screen-label">Вход в систему</div>
+    <div class="screen-wrap">
+      <div class="login-bg">
+        <div class="login-card">
+          <div class="logo-block">
+            <div class="logo-emblem-ph">ЭМБЛЕМА</div>
+            <div class="logo-text-ph">
+              <div class="logo-name">Национальный госпиталь<br>МЦ УДП РК</div>
+              <div class="logo-sub">Система электронной очереди</div>
+            </div>
+          </div>
+          <div class="field-label">Логин</div>
+          <div class="field-input">Введите логин</div>
+          <div class="field-label">Пароль</div>
+          <div class="field-input">••••••••</div>
+          <div class="btn-login">
+            ВОЙТИ В СИСТЕМУ
+            <div class="arrow-circle">→</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="screen-label">Шапка — регистратор</div>
+    <div class="screen-wrap">
+      <div class="app-wrap">
+        <div class="app-header">
+          <div class="header-logo">
+            <div class="header-logo-ph">ЛОГОТИП</div>
+            <div class="header-sep"></div>
+            <span class="header-section">Регистратура</span>
+          </div>
+          <div class="header-right">
+            <div class="avatar">АИ</div>
+            <div class="user-info">
+              <div class="name">Иванова А.С.</div>
+              <div class="role">Регистратор</div>
+            </div>
+            <div class="header-sep"></div>
+            <div class="logout">↩</div>
+          </div>
+        </div>
+        <div class="app-tabs">
+          <div class="tab active">Постановка в очередь</div>
+          <div class="tab">Список ожидания</div>
+        </div>
+        <div class="app-body">
+          <div class="split-card">
+            <div class="card-heading">Поиск пациента</div>
+            <div class="search-box">Введите ФИО или ИИН...</div>
+            <div class="row-selects">
+              <div class="sel">Приоритет ▾</div>
+              <div class="sel">Категория ▾</div>
+              <div class="sel">Врач ▾</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION: QUEUE VIEWS ══ -->
+<p class="section-title">Рабочие места: Регистратор и Врач</p>
+<p class="section-sub">Группировка по врачам для регистратора · Карточки пациентов для врача</p>
+<div class="gold-rule"></div>
+
+<div class="grid-2">
+  <!-- Registrar grouped -->
+  <div>
+    <div class="screen-label">Регистратор — список ожидания</div>
+    <div class="doc-group">
+      <div class="doc-group-hd">
+        <span>Сейтов Д.Б. · Каб. 204</span>
+        <span class="count-badge">5 в очереди</span>
+      </div>
+      <div class="doc-row">
+        <div class="row-left">
+          <div class="dot" style="background:#dc2626"></div>
+          <span class="pname">Алиев М.К.</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="badge b-red">ЭКСТР</span>
+          <span style="font-size:9px;color:#dc2626;font-weight:700">27 мин</span>
+        </div>
+      </div>
+      <div class="doc-row">
+        <div class="row-left">
+          <div class="dot" style="background:#f97316"></div>
+          <span class="pname">Нурова Г.А.</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="badge b-gold">ОСМС</span>
+          <span style="font-size:9px;color:#94a3b8">14 мин</span>
+        </div>
+      </div>
+      <div class="doc-row">
+        <div class="row-left">
+          <div class="dot" style="background:#00685B"></div>
+          <span class="pname">Сидоров Н.В.</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="badge b-green">ПЛАН</span>
+          <span style="font-size:9px;color:#94a3b8">8 мин</span>
+        </div>
+      </div>
+    </div>
+    <div class="doc-group">
+      <div class="doc-group-hd">
+        <span>Иванов В.Н. · Каб. 107</span>
+        <span class="count-badge">3 в очереди</span>
+      </div>
+      <div class="doc-row">
+        <div class="row-left">
+          <div class="dot" style="background:#00685B"></div>
+          <span class="pname">Петрова А.С.</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="badge b-blue">КОНТИНГЕНТ</span>
+          <span style="font-size:9px;color:#94a3b8">5 мин</span>
+        </div>
+      </div>
+      <div class="doc-row">
+        <div class="row-left">
+          <div class="dot" style="background:#00685B"></div>
+          <span class="pname">Ахметова Г.К.</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="badge b-green">ПЛАН</span>
+          <span style="font-size:9px;color:#94a3b8">2 мин</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Doctor view -->
+  <div>
+    <div class="screen-label">Врач — текущий пациент + очередь</div>
+    <div class="current-card">
+      <div class="cur-label">ТЕКУЩИЙ ПАЦИЕНТ</div>
+      <div class="cur-name">Алиев Марат Касымович</div>
+      <div class="cur-meta">ИИН 850412300145 · 41 год · <span class="cur-timer">В приёме 12 мин</span></div>
+      <div class="cur-actions">
+        <div class="btn-white">Завершить</div>
+        <div class="btn-gold">Не явился</div>
+        <div class="btn-gold">Отложить</div>
+      </div>
+    </div>
+    <div class="queue-label">Ожидают — 3</div>
+    <div class="patient-card emerg">
+      <div class="pc-header">
+        <div>
+          <div class="pc-name">Петрова Анна Сергеевна</div>
+          <div class="pc-meta">33 года · ОСМС</div>
+        </div>
+        <span class="badge b-red">ЭКСТРЕННЫЙ</span>
+      </div>
+      <div class="pc-footer">
+        <span>⏱ 10:22</span>
+        <span class="wait-warn">Ожидает 18 мин</span>
+      </div>
+    </div>
+    <div class="patient-card">
+      <div class="pc-header">
+        <div>
+          <div class="pc-name">Сидоров Николай Васильевич</div>
+          <div class="pc-meta">58 лет · Платный</div>
+        </div>
+        <span class="badge b-green">ПЛАНОВЫЙ</span>
+      </div>
+      <div class="pc-footer">
+        <span>⏱ 10:35</span>
+        <span>Ожидает 5 мин</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION: DISPLAY BOARD ══ -->
+<p class="section-title">Табло (Display Board) — /board</p>
+<p class="section-sub">Тёмный фон · Изумрудные заголовки кабинетов · Золото для номеров талонов</p>
+<div class="gold-rule"></div>
+
+<div style="margin-bottom:36px">
+  <div class="screen-wrap">
+    <div class="board">
+      <div class="board-hd">
+        <div class="board-logo-ph">ЛОГОТИП</div>
+        <div class="board-title">Электронная очередь</div>
+        <div class="board-clock">10:38</div>
+      </div>
+      <div class="board-grid">
+        <div class="cab-card">
+          <div class="cab-hd">
+            <span class="cab-num">Каб. 204</span>
+            <span class="cab-wait">3 ожидают</span>
+          </div>
+          <div class="cab-body">
+            <div class="cab-doc">Сейтов Д.Б.</div>
+            <div class="cab-patient">
+              <div class="ticket">A-047</div>
+              <div class="patient-info">Алиев М.К.<br><span style="color:#dc2626;font-size:8px;font-weight:600">ЭКСТРЕННЫЙ</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="cab-card">
+          <div class="cab-hd">
+            <span class="cab-num">Каб. 107</span>
+            <span class="cab-wait">2 ожидают</span>
+          </div>
+          <div class="cab-body">
+            <div class="cab-doc">Иванов В.Н.</div>
+            <div class="cab-patient">
+              <div class="ticket">B-031</div>
+              <div class="patient-info">Петрова А.С.<br><span style="color:#6b7280;font-size:8px">ПЛАНОВЫЙ</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="cab-card">
+          <div class="cab-hd">
+            <span class="cab-num">Каб. 312</span>
+            <span class="cab-wait">1 ожидает</span>
+          </div>
+          <div class="cab-body">
+            <div class="cab-doc">Ахметова С.К.</div>
+            <div class="cab-patient">
+              <div class="ticket">C-018</div>
+              <div class="patient-info">Нурова Г.А.<br><span style="color:#6b7280;font-size:8px">ОСМС</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECTION: ADMIN PANEL ══ -->
+<p class="section-title">Панель администратора</p>
+<p class="section-sub">Таблицы с фирменным скруглением кнопок · Изумрудные CTA · Вкладки как в основном интерфейсе</p>
+<div class="gold-rule"></div>
+
+<div style="margin-bottom:36px">
+  <div class="screen-wrap">
+    <div class="admin-wrap">
+      <div class="admin-header">
+        <div class="admin-logo-ph">ЛОГОТИП</div>
+        <span class="header-sep" style="background:rgba(255,255,255,.2);width:1px;height:18px"></span>
+        <span class="admin-title">Администрирование</span>
+        <span class="admin-role">Сейтов Д.Б. · Администратор</span>
+      </div>
+      <div class="admin-tabs-bar">
+        <div class="admin-tab active">Пользователи</div>
+        <div class="admin-tab">Кабинеты</div>
+        <div class="admin-tab">Категории</div>
+        <div class="admin-tab">Статистика</div>
+      </div>
+      <div class="admin-body">
+        <div class="table-toolbar">
+          <span class="table-title">Пользователи системы</span>
+          <div class="btn-add">
+            Создать пользователя
+            <div class="arrow-circle" style="width:14px;height:14px;font-size:8px">→</div>
+          </div>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="th">ФИО</th>
+              <th class="th">Логин</th>
+              <th class="th">Роль</th>
+              <th class="th">Отделение</th>
+              <th class="th"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td" style="font-weight:600">Иванова Анна Сергеевна</td>
+              <td class="td" style="color:#6b7280">registrar1</td>
+              <td class="td"><span class="role-badge reg">Регистратор</span></td>
+              <td class="td" style="color:#6b7280">Приёмное</td>
+              <td class="td"><div class="edit-btn">Изменить</div></td>
+            </tr>
+            <tr>
+              <td class="td" style="font-weight:600">Сейтов Данияр Бекович</td>
+              <td class="td" style="color:#6b7280">doctor1</td>
+              <td class="td"><span class="role-badge">Врач</span></td>
+              <td class="td" style="color:#6b7280">Терапия</td>
+              <td class="td"><div class="edit-btn">Изменить</div></td>
+            </tr>
+            <tr>
+              <td class="td" style="font-weight:600">Ахметова Гульнара Кайратовна</td>
+              <td class="td" style="color:#6b7280">head1</td>
+              <td class="td"><span class="role-badge head">Зав. отд.</span></td>
+              <td class="td" style="color:#6b7280">Хирургия</td>
+              <td class="td"><div class="edit-btn">Изменить</div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

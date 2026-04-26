@@ -74,11 +74,45 @@ model User {
   createdQueueEntries QueueEntry[]       @relation("CreatedBy")
   doctorQueueEntries  QueueEntry[]       @relation("DoctorQueue")
   assignments         DoctorAssignment[] @relation("AssignedDoctor")
+  doctorSchedules     DoctorSchedule[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+// ============================================================================
+// DOCTOR SCHEDULES
+// ============================================================================
+
+model DoctorSchedule {
+  id        String          @id @default(cuid())
+  doctorId  String
+  doctor    User            @relation(fields: [doctorId], references: [id])
+  dayOfWeek Int             // 1=Пн … 7=Вс (ISO weekday)
+  startTime String          // "08:00"
+  endTime   String          // "14:00"
+  isActive  Boolean         @default(true)
+  breaks    ScheduleBreak[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([doctorId, dayOfWeek])
+  @@index([doctorId])
+  @@map("doctor_schedules")
+}
+
+model ScheduleBreak {
+  id         String         @id @default(cuid())
+  scheduleId String
+  schedule   DoctorSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  startTime  String         // "12:00"
+  endTime    String         // "13:00"
+  label      String?
+
+  @@map("schedule_breaks")
 }
 
 // ============================================================================
