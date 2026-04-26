@@ -23,24 +23,29 @@ const PRIORITY_OPTS = [
   { value: 'EMERGENCY', label: 'Экстренный' },
 ];
 
+/* 15-min slots 08:00–12:45 */
 function makeSlots(): string[] {
   const slots: string[] = [];
-  for (let h = 8; h < 13; h++) {
-    for (const m of [0, 15, 30, 45]) {
+  for (let h = 8; h < 13; h++)
+    for (const m of [0, 15, 30, 45])
       slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-    }
-  }
   return slots;
 }
 const ALL_SLOTS = makeSlots();
 
 function isoDate(d: Date) { return d.toISOString().slice(0, 10); }
 
-function buildWeek(startOffset = 0, days = 7): Date[] {
-  return Array.from({ length: days }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() + startOffset + i);
-    d.setHours(0, 0, 0, 0);
+/* Build 7-day week starting from Monday, offset in weeks */
+function buildWeek(weekOffset = 0): Date[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dow = today.getDay(); // 0=Sun
+  const daysToMonday = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + daysToMonday + weekOffset * 7);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
     return d;
   });
 }
@@ -54,33 +59,35 @@ type Patient = {
   middleName?: string | null; phone?: string | null; iin?: string | null;
 };
 
-/* ─── SlotCell ───────────────────────────────────── */
+/* ─── SlotCell — shows "free / MAX" ─────────────── */
 function SlotCell({ booked, onClick }: { booked: number; onClick: () => void }) {
-  const free = MAX_SLOTS - booked;
-  const pct = booked / MAX_SLOTS;
-
-  if (free <= 0) {
-    return (
-      <button disabled className="w-full text-center rounded py-1 text-[9px] font-semibold opacity-60"
-        style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b' }}>
-        0
-      </button>
-    );
-  }
+  const free = Math.max(0, MAX_SLOTS - booked);
+  const pct  = booked / MAX_SLOTS;
 
   const bg  = pct >= 0.75 ? '#fef2f2' : pct >= 0.45 ? '#fefce8' : '#ecfdf5';
   const brd = pct >= 0.75 ? '#fca5a5' : pct >= 0.45 ? '#fcd34d' : '#86efac';
   const clr = pct >= 0.75 ? '#991b1b' : pct >= 0.45 ? '#92400e' : '#166534';
 
+  if (free === 0) {
+    return (
+      <div className="w-full text-center text-[9px] font-semibold py-1 rounded"
+        style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b' }}>
+        0/{MAX_SLOTS}
+      </div>
+    );
+  }
+
   return (
-    <button onClick={onClick} className="w-full text-center rounded py-1 text-[10px] font-bold transition-all hover:brightness-95"
+    <button onClick={onClick}
+      className="w-full text-center rounded py-1 transition-all hover:brightness-95 leading-tight"
       style={{ background: bg, border: `1px solid ${brd}`, color: clr }}>
-      {free}
+      <span className="text-[10px] font-bold">{free}</span>
+      <span className="text-[8px] font-normal opacity-70">/{MAX_SLOTS}</span>
     </button>
   );
 }
 
-/* ─── TimePicker ─────────────────────────────────── */
+/* ─── TimePicker popup ───────────────────────────── */
 function TimePicker({ doctor, date, takenTimes, patient, category, priority, onClose, onBooked }: {
   doctor: any; date: Date; takenTimes: string[];
   patient: Patient; category: string; priority: string;
@@ -94,18 +101,19 @@ function TimePicker({ doctor, date, takenTimes, patient, category, priority, onC
     onSuccess: () => {
       toast.success(`${patient.lastName} записан на ${selected}`);
       utils.queue.getScheduledSlots.invalidate();
+      utils.queue.getScheduledTimes.invalidate();
       onBooked();
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const source = user?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
+  const source = (user as any)?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
   const dateLabel = `${date.getDate()} ${MONTH_SHORT[date.getMonth()]}`;
+  const taken = takenTimes as string[];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: 'rgba(0,0,0,.25)' }}
-      onClick={onClose}>
+      style={{ background: 'rgba(0,0,0,.28)' }} onClick={onClose}>
       <div className="bg-white shadow-2xl p-4 w-[320px]"
         style={{ borderRadius: '8px 28px 28px 8px', border: '1.5px solid #a8d4cd' }}
         onClick={e => e.stopPropagation()}>
@@ -114,19 +122,19 @@ function TimePicker({ doctor, date, takenTimes, patient, category, priority, onC
             {doctor.lastName} {doctor.firstName[0]}. · {dateLabel}
           </span>
           <span className="text-[8px] text-muted-foreground">
-            {ALL_SLOTS.length - takenTimes.length} свободных
+            {ALL_SLOTS.length - taken.length} свободных
           </span>
         </div>
 
         <div className="grid grid-cols-5 gap-1 mb-3">
           {ALL_SLOTS.map(t => {
-            const taken = takenTimes.includes(t);
+            const isTaken = taken.includes(t);
             return (
-              <button key={t} disabled={taken}
-                onClick={() => !taken && setSelected(t === selected ? null : t)}
+              <button key={t} disabled={isTaken}
+                onClick={() => !isTaken && setSelected(t === selected ? null : t)}
                 className="py-1 text-center text-[9px] font-semibold rounded transition-colors"
                 style={
-                  taken
+                  isTaken
                     ? { background: '#f8fafc', color: '#cbd5e1', textDecoration: 'line-through', border: '1px solid #e2e8f0' }
                     : t === selected
                     ? { background: '#00685B', color: '#fff', border: '1px solid #00685B' }
@@ -151,12 +159,9 @@ function TimePicker({ doctor, date, takenTimes, patient, category, priority, onC
               const at = new Date(date);
               at.setHours(h, m, 0, 0);
               addMutation.mutate({
-                doctorId: doctor.id,
-                patientId: patient.id,
-                priority: priority as any,
-                category: category as any,
-                source: source as any,
-                scheduledAt: at.toISOString(),
+                doctorId: doctor.id, patientId: patient.id,
+                priority: priority as any, category: category as any,
+                source: source as any, scheduledAt: at.toISOString(),
               });
             }}
             className="text-[9px] font-bold text-white px-4 py-1.5 disabled:opacity-40 transition-opacity"
@@ -169,9 +174,188 @@ function TimePicker({ doctor, date, takenTimes, patient, category, priority, onC
   );
 }
 
-/* ─── RegistrarView ──────────────────────────────── */
-export function RegistrarView() {
+/* ─── QueueTab — arrival + payment ──────────────── */
+const PRIORITY_CLR: Record<string, string> = {
+  EMERGENCY: '#dc2626', INPATIENT: '#ea580c', SCHEDULED: '#ca8a04', WALK_IN: '#16a34a',
+};
+const STATUS_LABEL: Record<string, string> = {
+  WAITING_ARRIVAL: 'Не прибыл', ARRIVED: 'Прибыл',
+  CALLED: 'Вызван', IN_PROGRESS: 'На приёме',
+};
+const CAT_SHORT: Record<string, string> = {
+  PAID_ONCE: 'Платный', PAID_CONTRACT: 'Договор',
+  OSMS: 'ОСМС', CONTINGENT: 'Контингент', EMPLOYEE: 'Сотрудник',
+};
+
+function QueueRow({ entry }: { entry: any }) {
+  const utils = trpc.useUtils();
+
+  const arrive = trpc.queue.confirmArrival.useMutation({
+    onSuccess: () => { utils.queue.getByDoctor.invalidate(); toast.success('Приход отмечен'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const pay = trpc.queue.confirmPayment.useMutation({
+    onSuccess: () => { utils.queue.getByDoctor.invalidate(); toast.success('Оплата подтверждена'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const cancel = trpc.queue.cancel.useMutation({
+    onSuccess: () => { utils.queue.getByDoctor.invalidate(); toast.info('Запись отменена'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const isTerminal = ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(entry.status);
+  const needsArrival  = entry.status === 'WAITING_ARRIVAL';
+  const needsPayment  = !entry.paymentConfirmed && !isTerminal;
+
+  return (
+    <div className="flex items-center gap-2.5 px-3 py-2 border-b border-border/60 hover:bg-primary/5 transition-colors">
+      {/* priority dot */}
+      <span className="w-1.5 h-1.5 rounded-full shrink-0"
+        style={{ background: PRIORITY_CLR[entry.priority] ?? '#94a3b8' }} />
+
+      {/* patient name + meta */}
+      <div className="flex-1 min-w-0">
+        <div className="text-[10px] font-semibold text-foreground truncate">
+          {entry.patient.lastName} {entry.patient.firstName}
+          {entry.patient.middleName ? ` ${entry.patient.middleName[0]}.` : ''}
+        </div>
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          <span className="text-[8px] text-muted-foreground">
+            {CAT_SHORT[entry.category] ?? entry.category}
+          </span>
+          <span className="text-[8px] text-muted-foreground">·</span>
+          <span className="text-[8px] text-muted-foreground">
+            {STATUS_LABEL[entry.status] ?? entry.status}
+          </span>
+          {entry.scheduledAt && (
+            <>
+              <span className="text-[8px] text-muted-foreground">·</span>
+              <span className="text-[8px] font-medium text-primary">
+                {new Date(entry.scheduledAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* doctor + cabinet */}
+      <div className="text-right shrink-0 hidden sm:block">
+        <div className="text-[8px] text-muted-foreground truncate max-w-[90px]">
+          {entry.doctor?.lastName ?? '—'}
+        </div>
+        {entry.cabinet && (
+          <div className="text-[8px] text-muted-foreground">каб. {entry.cabinet.number}</div>
+        )}
+      </div>
+
+      {/* actions */}
+      {!isTerminal && (
+        <div className="flex items-center gap-1 shrink-0">
+          {needsArrival && (
+            <button
+              onClick={() => arrive.mutate({ entryId: entry.id })}
+              disabled={arrive.isPending}
+              className="text-[8px] font-semibold px-2 py-1 transition-colors disabled:opacity-40"
+              style={{
+                background: '#ecfdf5', border: '1px solid #86efac', color: '#166534',
+                borderRadius: '3px 10px 10px 3px',
+              }}>
+              Пришёл
+            </button>
+          )}
+          {needsPayment && (
+            <button
+              onClick={() => pay.mutate({ entryId: entry.id })}
+              disabled={pay.isPending}
+              className="text-[8px] font-semibold px-2 py-1 transition-colors disabled:opacity-40"
+              style={{
+                background: '#fefce8', border: '1px solid #fcd34d', color: '#92400e',
+                borderRadius: '3px 10px 10px 3px',
+              }}>
+              Оплата ✓
+            </button>
+          )}
+          <button
+            onClick={() => { if (confirm(`Отменить запись ${entry.patient.lastName}?`)) cancel.mutate({ entryId: entry.id }); }}
+            disabled={cancel.isPending}
+            className="text-[9px] text-destructive/50 hover:text-destructive px-1 transition-colors"
+            title="Отменить">×</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DoctorQueueGroup({ assignment }: { assignment: any }) {
+  const { data: entries = [] } = trpc.queue.getByDoctor.useQuery(
+    { doctorId: assignment.doctorId },
+    { refetchInterval: 20_000 },
+  );
+
+  const active = (entries as any[])
+    .filter((e: any) => !['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(e.status))
+    .map((e: any) => ({ ...e, doctor: assignment.doctor, cabinet: assignment.cabinet }));
+
+  return (
+    <div className="rounded overflow-hidden border border-border">
+      <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-border">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[7px] font-bold text-white shrink-0"
+            style={{ background: '#00685B' }}>
+            {assignment.doctor.lastName[0]}{assignment.doctor.firstName[0]}
+          </div>
+          <div>
+            <span className="text-[10px] font-semibold text-foreground">
+              {assignment.doctor.lastName} {assignment.doctor.firstName}
+            </span>
+            {assignment.doctor.specialty && (
+              <span className="text-[8px] text-muted-foreground ml-1.5">· {assignment.doctor.specialty}</span>
+            )}
+            <span className="text-[8px] text-muted-foreground ml-1.5">· каб. {assignment.cabinet.number}</span>
+          </div>
+        </div>
+        <span className="text-[8px] font-bold text-white px-1.5 py-0.5 rounded-full"
+          style={{ background: active.length > 0 ? '#00685B' : '#94a3b8' }}>
+          {active.length}
+        </span>
+      </div>
+      {active.length === 0 ? (
+        <div className="text-[9px] text-muted-foreground text-center py-3">Очередь пуста</div>
+      ) : (
+        active.map((e: any) => <QueueRow key={e.id} entry={e} />)
+      )}
+    </div>
+  );
+}
+
+function QueueTab() {
   useQueueSocket();
+  const { data: assignments = [], isLoading } = trpc.assignments.getActive.useQuery(
+    undefined, { refetchInterval: 30_000 },
+  );
+
+  if (isLoading) return <div className="text-sm text-muted-foreground p-6 text-center">Загрузка...</div>;
+
+  if ((assignments as any[]).length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground">
+        <span className="text-3xl opacity-20">⚕</span>
+        <span className="text-sm">Нет активных врачей</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3 space-y-3 overflow-y-auto" style={{ height: '100%' }}>
+      {(assignments as any[]).map((a: any) => (
+        <DoctorQueueGroup key={a.id} assignment={a} />
+      ))}
+    </div>
+  );
+}
+
+/* ─── CalendarTab ────────────────────────────────── */
+function CalendarTab() {
   const { user } = useUser();
 
   const [patient, setPatient]       = useState<Patient | null>(null);
@@ -181,7 +365,7 @@ export function RegistrarView() {
   const [specFilter, setSpecFilter] = useState('');
   const [picker, setPicker]         = useState<{ doctor: any; date: Date } | null>(null);
 
-  const week      = useMemo(() => buildWeek(weekOffset * 7), [weekOffset]);
+  const week      = useMemo(() => buildWeek(weekOffset), [weekOffset]);
   const startDate = isoDate(week[0]);
   const endDate   = isoDate(week[week.length - 1]);
   const today     = isoDate(new Date());
@@ -189,8 +373,7 @@ export function RegistrarView() {
   const { data: allDoctors = [] } = trpc.users.getDoctors.useQuery({ departmentId: '' });
 
   const { data: slotMap = {} } = trpc.queue.getScheduledSlots.useQuery(
-    { startDate, endDate },
-    { staleTime: 30_000 },
+    { startDate, endDate }, { staleTime: 30_000 },
   );
 
   const { data: takenTimes = [] } = trpc.queue.getScheduledTimes.useQuery(
@@ -199,9 +382,9 @@ export function RegistrarView() {
   );
 
   const specialties = useMemo(() => {
-    const set = new Set<string>();
-    (allDoctors as any[]).forEach((d: any) => { if (d.specialty) set.add(d.specialty); });
-    return Array.from(set).sort();
+    const s = new Set<string>();
+    (allDoctors as any[]).forEach((d: any) => { if (d.specialty) s.add(d.specialty); });
+    return Array.from(s).sort();
   }, [allDoctors]);
 
   const doctors = useMemo(() => {
@@ -215,36 +398,25 @@ export function RegistrarView() {
     : CATEGORY_OPTS;
 
   return (
-    <div className="flex overflow-hidden" style={{ height: 'calc(100vh - var(--header-h, 44px))' }}>
-
-      {/* ── SPECIALTY SIDEBAR ── */}
+    <div className="flex overflow-hidden h-full">
+      {/* Specialty sidebar */}
       <div className="shrink-0 border-r border-border flex flex-col bg-slate-50 overflow-y-auto" style={{ width: '130px' }}>
         <div className="px-2 py-1.5 border-b border-border bg-white">
-          <input
-            className="w-full text-[9px] border border-border rounded px-1.5 py-1 outline-none"
-            placeholder="Поиск..."
-            value={specFilter}
-            onChange={e => setSpecFilter(e.target.value)}
-          />
+          <input className="w-full text-[9px] border border-border rounded px-1.5 py-1 outline-none"
+            placeholder="Поиск..." value={specFilter} onChange={e => setSpecFilter(e.target.value)} />
         </div>
-        <button
-          onClick={() => setSpecFilter('')}
+        <button onClick={() => setSpecFilter('')}
           className={`px-2.5 py-1.5 text-[9px] text-left border-l-2 transition-colors ${
-            !specFilter ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent'
-          }`}
-        >
+            !specFilter ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent'}`}>
           Все
           <span className="float-right text-[8px] bg-slate-200 rounded-full px-1.5">{(allDoctors as any[]).length}</span>
         </button>
         {specialties.map(spec => {
           const cnt = (allDoctors as any[]).filter((d: any) => d.specialty === spec).length;
           return (
-            <button key={spec}
-              onClick={() => setSpecFilter(spec === specFilter ? '' : spec)}
+            <button key={spec} onClick={() => setSpecFilter(spec === specFilter ? '' : spec)}
               className={`px-2.5 py-1.5 text-[9px] text-left border-l-2 transition-colors ${
-                specFilter === spec ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent hover:bg-primary/5'
-              }`}
-            >
+                specFilter === spec ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent hover:bg-primary/5'}`}>
               {spec}
               {cnt > 1 && <span className="float-right text-[8px] bg-slate-200 rounded-full px-1.5">{cnt}</span>}
             </button>
@@ -252,9 +424,8 @@ export function RegistrarView() {
         })}
       </div>
 
-      {/* ── MAIN ── */}
+      {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
-
         {/* Top bar */}
         <div className="bg-slate-50 border-b border-border px-3 py-2 flex items-center gap-3 flex-wrap shrink-0">
           {patient ? (
@@ -283,8 +454,7 @@ export function RegistrarView() {
             {allowedCats.map(o => (
               <button key={o.value} onClick={() => setCategory(o.value)}
                 className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border transition-colors ${
-                  category === o.value ? 'bg-primary text-white border-primary' : 'bg-white text-muted-foreground border-border'
-                }`}>
+                  category === o.value ? 'bg-primary text-white border-primary' : 'bg-white text-muted-foreground border-border'}`}>
                 {o.label}
               </button>
             ))}
@@ -297,8 +467,7 @@ export function RegistrarView() {
             {PRIORITY_OPTS.map(o => (
               <button key={o.value} onClick={() => setPriority(o.value)}
                 className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border transition-colors ${
-                  priority === o.value ? 'bg-primary text-white border-primary' : 'bg-white text-muted-foreground border-border'
-                }`}>
+                  priority === o.value ? 'bg-primary text-white border-primary' : 'bg-white text-muted-foreground border-border'}`}>
                 {o.label}
               </button>
             ))}
@@ -319,7 +488,7 @@ export function RegistrarView() {
           </div>
         </div>
 
-        {/* Calendar table */}
+        {/* Calendar */}
         <div className="flex-1 overflow-auto">
           <table className="w-full border-collapse" style={{ minWidth: '560px' }}>
             <thead className="sticky top-0 z-10">
@@ -332,8 +501,8 @@ export function RegistrarView() {
                   const isToday = isoDate(d) === today;
                   return (
                     <th key={isoDate(d)}
-                      className={`text-center border-b border-r border-border px-1 py-1 bg-slate-50`}
-                      style={{ width: 'var(--cal-col-w, 68px)', minWidth: 'var(--cal-col-w, 68px)' }}>
+                      className="text-center border-b border-r border-border px-1 py-1 bg-slate-50"
+                      style={{ width: 'var(--cal-col-w, 72px)', minWidth: 'var(--cal-col-w, 72px)' }}>
                       <span className={`block text-[8px] ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
                         {DAY_NAMES[d.getDay()]}
                       </span>
@@ -347,9 +516,7 @@ export function RegistrarView() {
             </thead>
             <tbody>
               {(doctors as any[]).length === 0 && (
-                <tr>
-                  <td colSpan={8} className="text-center py-12 text-sm text-muted-foreground">Нет врачей</td>
-                </tr>
+                <tr><td colSpan={8} className="text-center py-12 text-sm text-muted-foreground">Нет врачей</td></tr>
               )}
               {(doctors as any[]).map((doc: any) => (
                 <tr key={doc.id} className="hover:bg-primary/5 transition-colors">
@@ -394,16 +561,18 @@ export function RegistrarView() {
             </tbody>
           </table>
 
+          {/* Legend */}
           <div className="border-t border-border px-3 py-1.5 flex items-center gap-4 bg-slate-50 sticky bottom-0">
-            <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground">
-              <span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#ecfdf5', border: '1px solid #86efac' }} />Есть места
-            </div>
-            <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground">
-              <span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#fefce8', border: '1px solid #fcd34d' }} />Заполняется
-            </div>
-            <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground">
-              <span className="w-3 h-3 rounded-sm inline-block" style={{ background: '#fee2e2', border: '1px solid #fca5a5' }} />Почти занят
-            </div>
+            {[
+              { bg: '#ecfdf5', brd: '#86efac', label: 'Есть места' },
+              { bg: '#fefce8', brd: '#fcd34d', label: 'Заполняется' },
+              { bg: '#fee2e2', brd: '#fca5a5', label: 'Почти занят' },
+            ].map(({ bg, brd, label }) => (
+              <div key={label} className="flex items-center gap-1.5 text-[8px] text-muted-foreground">
+                <span className="w-3 h-3 rounded-sm inline-block" style={{ background: bg, border: `1px solid ${brd}` }} />
+                {label}
+              </div>
+            ))}
             {!patient && (
               <span className="ml-auto text-[9px] text-amber-600 font-medium">Выберите пациента для записи</span>
             )}
@@ -413,16 +582,48 @@ export function RegistrarView() {
 
       {picker && patient && (
         <TimePicker
-          doctor={picker.doctor}
-          date={picker.date}
+          doctor={picker.doctor} date={picker.date}
           takenTimes={takenTimes as string[]}
-          patient={patient}
-          category={category}
-          priority={priority}
+          patient={patient} category={category} priority={priority}
           onClose={() => setPicker(null)}
           onBooked={() => { setPicker(null); setPatient(null); }}
         />
       )}
+    </div>
+  );
+}
+
+/* ─── RegistrarView — two tabs ───────────────────── */
+export function RegistrarView() {
+  useQueueSocket();
+  const [tab, setTab] = useState<'calendar' | 'queue'>('calendar');
+
+  return (
+    <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - var(--header-h, 44px))' }}>
+      {/* Tab bar */}
+      <div className="flex items-center border-b border-border bg-white px-4 shrink-0">
+        {[
+          { key: 'calendar', label: 'Запись пациентов' },
+          { key: 'queue',    label: 'Очередь' },
+        ].map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key as any)}
+            className={`text-[10px] font-semibold px-4 py-2.5 border-b-2 transition-colors ${
+              tab === t.key
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div className="flex-1 overflow-hidden">
+        {tab === 'calendar' ? <CalendarTab /> : <QueueTab />}
+      </div>
     </div>
   );
 }
