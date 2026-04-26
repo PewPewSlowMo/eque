@@ -40,7 +40,12 @@ const PRIORITY_OPTS = [
   { value: 'EMERGENCY', label: 'Экстренный' },
 ];
 
-function isoDate(d: Date) { return d.toISOString().slice(0, 10); }
+function isoDate(d: Date) {
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const dy = String(d.getDate()).padStart(2, '0');
+  return `${y}-${mo}-${dy}`;
+}
 
 /* Build 7-day week starting from Monday, offset in weeks */
 function buildWeek(weekOffset = 0): Date[] {
@@ -116,7 +121,11 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
 
   const source = (user as any)?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
   const dateLabel = `${date.getDate()} ${MONTH_SHORT[date.getMonth()]}`;
-  const freeCount = availableSlots.filter(t => !takenTimes.includes(t)).length;
+  const takenLocal = takenTimes.map(iso => {
+    const d = new Date(iso);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  });
+  const freeCount = availableSlots.filter(t => !takenLocal.includes(t)).length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center"
@@ -133,7 +142,7 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
 
         <div className="grid grid-cols-5 gap-1 mb-3">
           {availableSlots.map(t => {
-            const isTaken = takenTimes.includes(t);
+            const isTaken = takenLocal.includes(t);
             return (
               <button key={t} disabled={isTaken}
                 onClick={() => !isTaken && setSelected(t === selected ? null : t)}

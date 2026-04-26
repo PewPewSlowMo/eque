@@ -443,15 +443,10 @@ export const createQueueRouter = (
           select: { scheduledAt: true },
         });
 
-        // Return list of "HH:MM" strings that are already booked
+        // Return ISO timestamp strings; frontend converts to local HH:MM
         return entries
           .filter((e) => e.scheduledAt)
-          .map((e) => {
-            const d = e.scheduledAt!;
-            const h = String(d.getHours()).padStart(2, '0');
-            const m = String(d.getMinutes()).padStart(2, '0');
-            return `${h}:${m}`;
-          });
+          .map((e) => e.scheduledAt!.toISOString());
       }),
 
     // Daily stats (for department head / director)
