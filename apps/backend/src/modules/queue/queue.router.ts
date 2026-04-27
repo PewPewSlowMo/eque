@@ -394,7 +394,7 @@ export const createQueueRouter = (
         return prisma.queueEntry.findMany({
           where: {
             patientId: input.patientId,
-            status: { notIn: TERMINAL_STATUSES },
+            status: { notIn: TERMINAL_STATUSES as any },
           },
           include: {
             patient: { select: PATIENT_SELECT },
