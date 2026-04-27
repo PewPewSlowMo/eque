@@ -510,15 +510,17 @@ function CalendarTab() {
                   ВРАЧ
                 </th>
                 {week.map(d => {
-                  const isToday = isoDate(d) === today;
+                  const isToday   = isoDate(d) === today;
+                  const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                  const thBg = isToday ? '#fefce8' : isWeekend ? '#fff1f2' : '#f8fafc';
                   return (
                     <th key={isoDate(d)}
-                      className="text-center border-b border-r border-border px-1 py-1 bg-slate-50"
-                      style={{ width: 'var(--cal-col-w, 72px)', minWidth: 'var(--cal-col-w, 72px)' }}>
-                      <span className={`block text-[8px] ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
+                      className="text-center border-b border-r border-border px-1 py-1"
+                      style={{ width: 'var(--cal-col-w, 72px)', minWidth: 'var(--cal-col-w, 72px)', background: thBg }}>
+                      <span className={`block text-[8px] ${isToday ? 'text-amber-600' : isWeekend ? 'text-rose-400' : 'text-muted-foreground'}`}>
                         {DAY_NAMES[d.getDay()]}
                       </span>
-                      <span className={`block text-[14px] font-bold leading-tight ${isToday ? 'text-primary' : 'text-foreground'}`}>
+                      <span className={`block text-[14px] font-bold leading-tight ${isToday ? 'text-amber-600' : isWeekend ? 'text-rose-500' : 'text-foreground'}`}>
                         {d.getDate()}
                       </span>
                     </th>
@@ -549,15 +551,18 @@ function CalendarTab() {
                     </div>
                   </td>
                   {week.map(d => {
-                    const dstr  = isoDate(d);
-                    const isPast = dstr < today;
+                    const dstr      = isoDate(d);
+                    const isPast    = dstr < today;
+                    const isToday   = dstr === today;
+                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                     const booked = (slotMap as any)[doc.id]?.[dstr] ?? 0;
                     const slots = (allSchedules as any[]).find(
                       s => s.doctorId === doc.id && isoDate(new Date(s.date)) === dstr
                     );
                     const daySlots = slots ? slotsFromSchedule(slots) : null;
+                    const tdBg = isToday ? '#fefce8' : isWeekend ? '#fff1f2' : undefined;
                     return (
-                      <td key={dstr} className="border-b border-r border-border px-1 py-1">
+                      <td key={dstr} className="border-b border-r border-border px-1 py-1" style={tdBg ? { background: tdBg } : undefined}>
                         {isPast || daySlots === null ? (
                           <div className={`text-center text-[9px] ${
                             isPast ? 'text-muted-foreground/30' : 'text-slate-300'
