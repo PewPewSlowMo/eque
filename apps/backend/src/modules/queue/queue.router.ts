@@ -387,6 +387,23 @@ export const createQueueRouter = (
         return updated;
       }),
 
+    // Active (non-terminal) entries for a patient (for registrar patient panel)
+    getByPatient: trpc.protectedProcedure
+      .input(z.object({ patientId: z.string() }))
+      .query(async ({ input }) => {
+        return prisma.queueEntry.findMany({
+          where: {
+            patientId: input.patientId,
+            status: { notIn: TERMINAL_STATUSES },
+          },
+          include: {
+            patient: { select: PATIENT_SELECT },
+            doctor: { select: { id: true, firstName: true, lastName: true, specialty: true } },
+          },
+          orderBy: { scheduledAt: 'asc' },
+        });
+      }),
+
     // Scheduled slot counts per doctor per date (for registrar calendar grid)
     getScheduledSlots: trpc.protectedProcedure
       .input(

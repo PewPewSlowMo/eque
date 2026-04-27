@@ -55,7 +55,7 @@ function buildWeek(weekOffset = 0): Date[] {
   const daysToMonday = dow === 0 ? -6 : 1 - dow;
   const monday = new Date(today);
   monday.setDate(today.getDate() + daysToMonday + weekOffset * 7);
-  return Array.from({ length: 14 }, (_, i) => {
+  return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     return d;
@@ -368,6 +368,157 @@ function QueueTab() {
   );
 }
 
+/* ─── PatientAppointmentsPanel ───────────────────── */
+const STATUS_LABEL_P: Record<string, string> = {
+  WAITING_ARRIVAL: 'Ожидает', ARRIVED: 'Прибыл',
+  CALLED: 'Вызван', IN_PROGRESS: 'На приёме',
+};
+const PAID_CATS = ['PAID_ONCE', 'PAID_CONTRACT'];
+
+function PatientAppointmentsPanel({ patient }: { patient: Patient }) {
+  const utils = trpc.useUtils();
+
+  const { data: entries = [], isLoading } = trpc.queue.getByPatient.useQuery(
+    { patientId: patient.id },
+    { refetchInterval: 15_000 },
+  );
+
+  const arrive = trpc.queue.confirmArrival.useMutation({
+    onSuccess: () => { utils.queue.getByPatient.invalidate(); toast.success('Приход отмечен'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const pay = trpc.queue.confirmPayment.useMutation({
+    onSuccess: () => { utils.queue.getByPatient.invalidate(); toast.success('Оплата принята'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const cancel = trpc.queue.cancel.useMutation({
+    onSuccess: () => {
+      utils.queue.getByPatient.invalidate();
+      utils.queue.getScheduledSlots.invalidate();
+      toast.info('Запись отменена');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const reschedule = trpc.queue.cancel.useMutation({
+    onSuccess: () => {
+      utils.queue.getByPatient.invalidate();
+      utils.queue.getScheduledSlots.invalidate();
+      toast.success('Запись отменена — выберите новое время в календаре');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="shrink-0 border-l border-border flex flex-col bg-white overflow-hidden" style={{ width: '260px' }}>
+      <div className="px-3 py-2 border-b border-border bg-slate-50 shrink-0">
+        <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide">Записи пациента</div>
+        <div className="text-[10px] font-bold text-foreground mt-0.5">
+          {patient.lastName} {patient.firstName}
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {isLoading && (
+          <div className="text-[9px] text-muted-foreground text-center py-6">Загрузка...</div>
+        )}
+        {!isLoading && (entries as any[]).length === 0 && (
+          <div className="text-[9px] text-muted-foreground text-center py-6 px-3">
+            Активных записей нет
+          </div>
+        )}
+        {(entries as any[]).map((e: any) => {
+          const isPaid      = PAID_CATS.includes(e.category);
+          const needArrival = e.status === 'WAITING_ARRIVAL';
+          const needPayment = !e.paymentConfirmed && !['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(e.status);
+          const schedTime   = e.scheduledAt
+            ? new Date(e.scheduledAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+            : null;
+
+          return (
+            <div key={e.id} className="border-b border-border/60 px-3 py-2.5">
+              {/* Doctor + time */}
+              <div className="flex items-start justify-between gap-1 mb-1.5">
+                <div>
+                  <div className="text-[10px] font-semibold text-foreground leading-tight">
+                    {e.doctor?.lastName} {e.doctor?.firstName?.[0]}.
+                  </div>
+                  {e.doctor?.specialty && (
+                    <div className="text-[8px] text-muted-foreground">{e.doctor.specialty}</div>
+                  )}
+                </div>
+                {schedTime && (
+                  <span className="text-[8px] font-medium text-primary shrink-0">{schedTime}</span>
+                )}
+              </div>
+
+              {/* Status badge */}
+              <div className="mb-2">
+                <span className="text-[8px] px-1.5 py-0.5 rounded-full font-medium"
+                  style={{ background: '#f1f5f9', color: '#64748b' }}>
+                  {STATUS_LABEL_P[e.status] ?? e.status}
+                </span>
+                {needPayment && (
+                  <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full font-medium"
+                    style={{ background: '#fef3c7', color: '#92400e' }}>
+                    Не оплачен
+                  </span>
+                )}
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-wrap gap-1">
+                {isPaid && needPayment && (
+                  <button
+                    onClick={() => pay.mutate({ entryId: e.id })}
+                    disabled={pay.isPending}
+                    className="text-[8px] font-semibold px-2 py-1 disabled:opacity-40"
+                    style={{ background: '#fefce8', border: '1px solid #fcd34d', color: '#92400e', borderRadius: '3px 10px 10px 3px' }}>
+                    Принять оплату
+                  </button>
+                )}
+                {!isPaid && needArrival && (
+                  <button
+                    onClick={() => arrive.mutate({ entryId: e.id })}
+                    disabled={arrive.isPending}
+                    className="text-[8px] font-semibold px-2 py-1 disabled:opacity-40"
+                    style={{ background: '#ecfdf5', border: '1px solid #86efac', color: '#166534', borderRadius: '3px 10px 10px 3px' }}>
+                    Пришёл
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    if (confirm('Перенести запись? Текущая запись будет отменена — выберите новое время в календаре.')) {
+                      reschedule.mutate({ entryId: e.id, reason: 'Перенос' });
+                    }
+                  }}
+                  disabled={reschedule.isPending}
+                  className="text-[8px] font-semibold px-2 py-1 disabled:opacity-40"
+                  style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: '3px 10px 10px 3px' }}>
+                  Перенести
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`Отменить запись ${patient.lastName}?`)) {
+                      cancel.mutate({ entryId: e.id });
+                    }
+                  }}
+                  disabled={cancel.isPending}
+                  className="text-[8px] font-semibold px-2 py-1 disabled:opacity-40"
+                  style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#be123c', borderRadius: '3px 10px 10px 3px' }}>
+                  Отменить
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ─── CalendarTab ────────────────────────────────── */
 function CalendarTab() {
   const { user } = useUser();
@@ -486,12 +637,12 @@ function CalendarTab() {
           </div>
 
           <div className="flex items-center gap-2 ml-auto">
-            <button onClick={() => setWeekOffset(w => w - 2)} disabled={weekOffset <= 0}
+            <button onClick={() => setWeekOffset(w => w - 1)} disabled={weekOffset <= 0}
               className="text-muted-foreground disabled:opacity-30 px-1">◀</button>
             <span className="text-[10px] font-semibold whitespace-nowrap">
-              {week[0].getDate()} {MONTH_SHORT[week[0].getMonth()]} – {week[13].getDate()} {MONTH_SHORT[week[13].getMonth()]}
+              {week[0].getDate()} – {week[6].getDate()} {MONTH_SHORT[week[6].getMonth()]}
             </span>
-            <button onClick={() => setWeekOffset(w => w + 2)} className="text-muted-foreground px-1">▶</button>
+            <button onClick={() => setWeekOffset(w => w + 1)} className="text-muted-foreground px-1">▶</button>
             <button onClick={() => setWeekOffset(0)}
               className="text-[9px] font-semibold text-primary border border-primary/30 px-2 py-0.5"
               style={{ borderRadius: '3px 12px 12px 3px' }}>
@@ -603,6 +754,8 @@ function CalendarTab() {
           </div>
         </div>
       </div>
+
+      {patient && <PatientAppointmentsPanel patient={patient} />}
 
       {picker && patient && (
         <TimePicker
