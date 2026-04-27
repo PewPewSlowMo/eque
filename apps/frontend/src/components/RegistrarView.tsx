@@ -55,7 +55,7 @@ function buildWeek(weekOffset = 0): Date[] {
   const daysToMonday = dow === 0 ? -6 : 1 - dow;
   const monday = new Date(today);
   monday.setDate(today.getDate() + daysToMonday + weekOffset * 7);
-  return Array.from({ length: 7 }, (_, i) => {
+  return Array.from({ length: 14 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     return d;
@@ -486,12 +486,12 @@ function CalendarTab() {
           </div>
 
           <div className="flex items-center gap-2 ml-auto">
-            <button onClick={() => setWeekOffset(w => w - 1)} disabled={weekOffset <= 0}
+            <button onClick={() => setWeekOffset(w => w - 2)} disabled={weekOffset <= 0}
               className="text-muted-foreground disabled:opacity-30 px-1">◀</button>
             <span className="text-[10px] font-semibold whitespace-nowrap">
-              {week[0].getDate()} – {week[6].getDate()} {MONTH_SHORT[week[6].getMonth()]}
+              {week[0].getDate()} {MONTH_SHORT[week[0].getMonth()]} – {week[13].getDate()} {MONTH_SHORT[week[13].getMonth()]}
             </span>
-            <button onClick={() => setWeekOffset(w => w + 1)} className="text-muted-foreground px-1">▶</button>
+            <button onClick={() => setWeekOffset(w => w + 2)} className="text-muted-foreground px-1">▶</button>
             <button onClick={() => setWeekOffset(0)}
               className="text-[9px] font-semibold text-primary border border-primary/30 px-2 py-0.5"
               style={{ borderRadius: '3px 12px 12px 3px' }}>
