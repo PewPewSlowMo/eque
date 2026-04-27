@@ -344,26 +344,109 @@ function DoctorQueueGroup({ assignment }: { assignment: any }) {
 
 function QueueTab() {
   useQueueSocket();
-  const { data: assignments = [], isLoading } = trpc.assignments.getActive.useQuery(
-    undefined, { refetchInterval: 30_000 },
+  const todayStr = isoDate(new Date());
+  const [nameFilter, setNameFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState(todayStr);
+  const [deptFilter, setDeptFilter] = useState('');
+
+  const { data: departments = [] } = trpc.departments.getAll.useQuery();
+  const { data: rawEntries = [], isLoading } = trpc.queue.getForRegistrar.useQuery(
+    { date: dateFilter || undefined, departmentId: deptFilter || undefined },
+    { refetchInterval: 20_000 },
   );
 
-  if (isLoading) return <div className="text-sm text-muted-foreground p-6 text-center">Загрузка...</div>;
+  const entries = useMemo(() => {
+    if (!nameFilter.trim()) return rawEntries as any[];
+    const q = nameFilter.trim().toLowerCase();
+    return (rawEntries as any[]).filter((e: any) => {
+      const full = `${e.patient.lastName} ${e.patient.firstName} ${e.patient.middleName ?? ''}`.toLowerCase();
+      return full.includes(q);
+    });
+  }, [rawEntries, nameFilter]);
 
-  if ((assignments as any[]).length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground">
-        <span className="text-3xl opacity-20">⚕</span>
-        <span className="text-sm">Нет активных врачей</span>
-      </div>
-    );
-  }
+  const groups = useMemo(() => {
+    const map = new Map<string, { doctor: any; entries: any[] }>();
+    for (const e of entries as any[]) {
+      if (!map.has(e.doctorId)) map.set(e.doctorId, { doctor: e.doctor, entries: [] });
+      map.get(e.doctorId)!.entries.push(e);
+    }
+    return Array.from(map.values());
+  }, [entries]);
+
+  const isDirty = nameFilter || dateFilter !== todayStr || deptFilter;
 
   return (
-    <div className="p-3 space-y-3 overflow-y-auto" style={{ height: '100%' }}>
-      {(assignments as any[]).map((a: any) => (
-        <DoctorQueueGroup key={a.id} assignment={a} />
-      ))}
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Filter bar */}
+      <div className="shrink-0 bg-slate-50 border-b border-border px-3 py-2 flex items-center gap-2 flex-wrap">
+        <input
+          placeholder="Поиск по ФИО..."
+          value={nameFilter}
+          onChange={e => setNameFilter(e.target.value)}
+          className="text-[9px] border border-border rounded px-2 py-1.5 outline-none focus:border-primary bg-white"
+          style={{ width: '180px' }}
+        />
+        <input
+          type="date"
+          value={dateFilter}
+          onChange={e => setDateFilter(e.target.value)}
+          className="text-[9px] border border-border rounded px-2 py-1.5 outline-none focus:border-primary bg-white"
+        />
+        <select
+          value={deptFilter}
+          onChange={e => setDeptFilter(e.target.value)}
+          className="text-[9px] border border-border rounded px-2 py-1.5 outline-none focus:border-primary bg-white"
+          style={{ maxWidth: '170px' }}
+        >
+          <option value="">Все отделения</option>
+          {(departments as any[]).map((d: any) => (
+            <option key={d.id} value={d.id}>{d.name}</option>
+          ))}
+        </select>
+        {isDirty && (
+          <button
+            onClick={() => { setNameFilter(''); setDateFilter(todayStr); setDeptFilter(''); }}
+            className="text-[9px] text-muted-foreground hover:text-foreground border border-border rounded px-2 py-1.5 bg-white">
+            Сбросить
+          </button>
+        )}
+        <span className="ml-auto text-[9px] text-muted-foreground font-medium">
+          {(entries as any[]).length} зап.
+        </span>
+      </div>
+
+      {/* List */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        {isLoading && (
+          <div className="text-[9px] text-muted-foreground text-center py-8">Загрузка...</div>
+        )}
+        {!isLoading && groups.length === 0 && (
+          <div className="text-[9px] text-muted-foreground text-center py-12">Нет записей</div>
+        )}
+        {groups.map(({ doctor, entries: doctorEntries }) => (
+          <div key={doctor?.id} className="rounded overflow-hidden border border-border">
+            <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-border">
+              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[7px] font-bold text-white shrink-0"
+                style={{ background: '#00685B' }}>
+                {doctor?.lastName?.[0]}{doctor?.firstName?.[0]}
+              </div>
+              <div>
+                <span className="text-[10px] font-semibold text-foreground">
+                  {doctor?.lastName} {doctor?.firstName}
+                </span>
+                {doctor?.specialty && (
+                  <span className="text-[8px] text-muted-foreground ml-1.5">· {doctor.specialty}</span>
+                )}
+              </div>
+              <span className="ml-auto text-[8px] font-bold text-white px-1.5 py-0.5 rounded-full"
+                style={{ background: '#00685B' }}>
+                {doctorEntries.length}
+              </span>
+            </div>
+            {doctorEntries.map((e: any) => <QueueRow key={e.id} entry={e} />)}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

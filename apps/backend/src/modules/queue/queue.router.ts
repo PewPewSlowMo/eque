@@ -387,6 +387,40 @@ export const createQueueRouter = (
         return updated;
       }),
 
+    // All active entries for registrar queue tab (with optional date / department filters)
+    getForRegistrar: trpc.protectedProcedure
+      .input(z.object({
+        date:         z.string().optional(), // ISO date "2026-04-27"
+        departmentId: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const where: any = { status: { notIn: TERMINAL_STATUSES as any } };
+
+        if (input.date) {
+          const d = new Date(input.date);
+          d.setHours(0, 0, 0, 0);
+          const next = new Date(d);
+          next.setDate(next.getDate() + 1);
+          where.OR = [
+            { scheduledAt: { gte: d, lt: next } },
+            { scheduledAt: null, createdAt: { gte: d, lt: next } },
+          ];
+        }
+
+        if (input.departmentId) {
+          where.doctor = { departmentId: input.departmentId };
+        }
+
+        return prisma.queueEntry.findMany({
+          where,
+          include: {
+            patient: { select: PATIENT_SELECT },
+            doctor:  { select: { id: true, firstName: true, lastName: true, specialty: true } },
+          },
+          orderBy: [{ scheduledAt: 'asc' }, { createdAt: 'asc' }],
+        });
+      }),
+
     // Active (non-terminal) entries for a patient (for registrar patient panel)
     getByPatient: trpc.protectedProcedure
       .input(z.object({ patientId: z.string() }))
