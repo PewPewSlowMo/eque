@@ -40,6 +40,10 @@
 @layer base {
   * { @apply border-border; }
 
+  html {
+    zoom: 1.5;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: 'Montserrat', 'Open Sans', system-ui, sans-serif;
