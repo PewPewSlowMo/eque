@@ -427,10 +427,10 @@ function CalendarTab() {
           if (cnt === 0) return null;
           return (
             <button key={dept.id} onClick={() => setDeptFilter(dept.id === deptFilter ? '' : dept.id)}
-              className={`px-2.5 py-1.5 text-[9px] text-left border-l-2 transition-colors leading-snug ${
+              className={`px-2.5 py-1.5 text-[6px] text-left border-l-2 transition-colors leading-snug ${
                 deptFilter === dept.id ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent hover:bg-primary/5'}`}>
               {dept.name}
-              <span className="float-right text-[8px] bg-slate-200 rounded-full px-1.5 ml-1">{cnt}</span>
+              <span className="float-right text-[6px] bg-slate-200 rounded-full px-1.5 ml-1">{cnt}</span>
             </button>
           );
         })}
