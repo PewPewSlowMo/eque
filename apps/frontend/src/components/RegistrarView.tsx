@@ -370,7 +370,7 @@ function QueueTab() {
 
 /* ─── PatientAppointmentsPanel ───────────────────── */
 const STATUS_LABEL_P: Record<string, string> = {
-  WAITING_ARRIVAL: 'Ожидает', ARRIVED: 'Прибыл',
+  WAITING_ARRIVAL: 'Ожидаем', ARRIVED: 'Прибыл',
   CALLED: 'Вызван', IN_PROGRESS: 'На приёме',
 };
 const PAID_CATS = ['PAID_ONCE', 'PAID_CONTRACT'];
