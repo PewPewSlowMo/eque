@@ -375,8 +375,292 @@ const STATUS_LABEL_P: Record<string, string> = {
 };
 const PAID_CATS = ['PAID_ONCE', 'PAID_CONTRACT'];
 
+const CANCEL_REASONS = [
+  'Изменение самочувствия',
+  'Личные / семейные обстоятельства',
+  'Занятость (работа, учёба)',
+  'Записался в другое место',
+  'Другое',
+];
+
+function CancelDialog({ entry, patient, onClose, onDone }: {
+  entry: any; patient: Patient; onClose: () => void; onDone: () => void;
+}) {
+  const [selected, setSelected] = useState('');
+  const [custom, setCustom]     = useState('');
+  const utils = trpc.useUtils();
+
+  const cancelMut = trpc.queue.cancel.useMutation({
+    onSuccess: () => {
+      utils.queue.getByPatient.invalidate();
+      utils.queue.getScheduledSlots.invalidate();
+      toast.info('Запись отменена');
+      onDone();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const finalReason = selected === 'Другое' ? custom.trim() : selected;
+  const canConfirm  = selected && (selected !== 'Другое' || custom.trim().length > 0);
+  const schedTime   = entry.scheduledAt
+    ? new Date(entry.scheduledAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+    : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,.28)' }} onClick={onClose}>
+      <div className="bg-white shadow-2xl p-4 w-[320px]"
+        style={{ borderRadius: '8px 28px 28px 8px', border: '1.5px solid #fca5a5' }}
+        onClick={e => e.stopPropagation()}>
+
+        <div className="mb-3">
+          <div className="text-[11px] font-bold text-foreground">Причина отмены</div>
+          <div className="text-[9px] text-muted-foreground mt-0.5">
+            {patient.lastName} {patient.firstName}{schedTime ? ` · ${schedTime}` : ''}
+          </div>
+        </div>
+
+        <div className="space-y-1 mb-3">
+          {CANCEL_REASONS.map(reason => (
+            <label key={reason}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded cursor-pointer transition-colors ${
+                selected === reason ? 'bg-rose-50 border border-rose-200' : 'border border-transparent hover:bg-slate-50'
+              }`}>
+              <input type="radio" name="cancel-reason"
+                checked={selected === reason}
+                onChange={() => { setSelected(reason); setCustom(''); }}
+                className="accent-rose-500 shrink-0" />
+              <span className="text-[9px] text-foreground">{reason}</span>
+            </label>
+          ))}
+          {selected === 'Другое' && (
+            <div className="px-2.5 pt-1">
+              <input autoFocus placeholder="Укажите причину..."
+                value={custom} onChange={e => setCustom(e.target.value)}
+                className="w-full text-[9px] border border-border rounded px-2 py-1.5 outline-none focus:border-primary" />
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 justify-end">
+          <button onClick={onClose}
+            className="text-[9px] px-3 py-1.5 border border-border rounded text-muted-foreground">
+            Назад
+          </button>
+          <button disabled={!canConfirm || cancelMut.isPending}
+            onClick={() => cancelMut.mutate({ entryId: entry.id, reason: finalReason })}
+            className="text-[9px] font-bold text-white px-4 py-1.5 disabled:opacity-40"
+            style={{ background: '#be123c', borderRadius: '4px 16px 16px 4px' }}>
+            {cancelMut.isPending ? '...' : 'Отменить запись'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RescheduleDialog({ entry, patient, onClose, onDone }: {
+  entry: any; patient: Patient; onClose: () => void; onDone: () => void;
+}) {
+  const [weekOffset, setWeekOffset]   = useState(0);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const { user } = useUser();
+  const utils = trpc.useUtils();
+
+  const week      = useMemo(() => buildWeek(weekOffset), [weekOffset]);
+  const startDate = isoDate(week[0]);
+  const endDate   = isoDate(week[6]);
+  const today     = isoDate(new Date());
+
+  const { data: schedules = [] } = trpc.schedules.getForDateRange.useQuery(
+    { startDate, endDate }, { staleTime: 60_000 },
+  );
+  const { data: slotMap = {} } = trpc.queue.getScheduledSlots.useQuery(
+    { startDate, endDate }, { staleTime: 30_000 },
+  );
+  const { data: takenTimes = [] } = trpc.queue.getScheduledTimes.useQuery(
+    { doctorId: entry.doctorId, date: selectedDay ? isoDate(selectedDay) : '' },
+    { enabled: !!selectedDay, staleTime: 10_000 },
+  );
+
+  const doctorSchedules = useMemo(
+    () => (schedules as any[]).filter(s => s.doctorId === entry.doctorId),
+    [schedules, entry.doctorId],
+  );
+
+  const selectedDaySched = selectedDay
+    ? doctorSchedules.find(s => isoDate(new Date(s.date)) === isoDate(selectedDay))
+    : null;
+  const availableSlots = selectedDaySched ? slotsFromSchedule(selectedDaySched) : [];
+
+  const takenLocal = (takenTimes as string[]).map(iso => {
+    const d = new Date(iso);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  });
+  const currentSlot = entry.scheduledAt
+    ? (() => { const d = new Date(entry.scheduledAt); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()
+    : null;
+  const takenFiltered = takenLocal.filter(t => t !== currentSlot);
+  const freeCount = availableSlots.filter(t => !takenFiltered.includes(t)).length;
+
+  const cancelMut = trpc.queue.cancel.useMutation();
+  const addMut    = trpc.queue.add.useMutation({
+    onSuccess: () => {
+      utils.queue.getByPatient.invalidate();
+      utils.queue.getScheduledSlots.invalidate();
+      utils.queue.getScheduledTimes.invalidate();
+      toast.success('Запись перенесена');
+      onDone();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const isPending = cancelMut.isPending || addMut.isPending;
+
+  async function handleConfirm() {
+    if (!selectedDay || !selectedTime) return;
+    try {
+      await cancelMut.mutateAsync({ entryId: entry.id, reason: 'Перенос записи' });
+      const [h, m] = selectedTime.split(':').map(Number);
+      const at = new Date(selectedDay);
+      at.setHours(h, m, 0, 0);
+      const source = (user as any)?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
+      addMut.mutate({
+        doctorId: entry.doctorId, patientId: patient.id,
+        priority: entry.priority, category: entry.category,
+        source, scheduledAt: at.toISOString(),
+      });
+    } catch { /* cancelMut error already toasted */ }
+  }
+
+  function changeWeek(delta: number) {
+    setWeekOffset(w => w + delta);
+    setSelectedDay(null);
+    setSelectedTime(null);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,.28)' }} onClick={onClose}>
+      <div className="bg-white shadow-2xl p-4 w-[380px]"
+        style={{ borderRadius: '8px 28px 28px 8px', border: '1.5px solid #bfdbfe' }}
+        onClick={e => e.stopPropagation()}>
+
+        <div className="mb-3">
+          <div className="text-[11px] font-bold text-foreground">Перенос записи</div>
+          <div className="text-[9px] text-muted-foreground mt-0.5">
+            {patient.lastName} {patient.firstName} · {entry.doctor?.lastName} {entry.doctor?.firstName?.[0]}.
+          </div>
+        </div>
+
+        {/* Week nav */}
+        <div className="flex items-center justify-between mb-2">
+          <button onClick={() => changeWeek(-1)} disabled={weekOffset <= 0}
+            className="text-muted-foreground disabled:opacity-30 px-1 text-[11px]">◀</button>
+          <span className="text-[9px] font-semibold">
+            {week[0].getDate()} – {week[6].getDate()} {MONTH_SHORT[week[6].getMonth()]}
+          </span>
+          <button onClick={() => changeWeek(1)} className="text-muted-foreground px-1 text-[11px]">▶</button>
+        </div>
+
+        {/* Day buttons */}
+        <div className="grid grid-cols-7 gap-1 mb-3">
+          {week.map(d => {
+            const dstr      = isoDate(d);
+            const isPast    = dstr < today;
+            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+            const isToday   = dstr === today;
+            const sched     = doctorSchedules.find(s => isoDate(new Date(s.date)) === dstr);
+            const total     = sched ? slotsFromSchedule(sched).length : 0;
+            const booked    = (slotMap as any)[entry.doctorId]?.[dstr] ?? 0;
+            const free      = Math.max(0, total - booked);
+            const isSelected = selectedDay && isoDate(selectedDay) === dstr;
+
+            return (
+              <button key={dstr}
+                disabled={isPast || !sched || free === 0}
+                onClick={() => { setSelectedDay(d); setSelectedTime(null); }}
+                className="flex flex-col items-center py-1.5 rounded transition-colors disabled:opacity-25"
+                style={
+                  isSelected
+                    ? { background: '#00685B', border: '1.5px solid #00685B' }
+                    : isToday
+                    ? { background: '#fefce8', border: '1px solid #fcd34d' }
+                    : isWeekend
+                    ? { background: '#fff1f2', border: '1px solid #fecdd3' }
+                    : sched && free > 0
+                    ? { background: '#f0fdf4', border: '1px solid #86efac' }
+                    : { background: '#f8fafc', border: '1px solid #e2e8f0' }
+                }>
+                <span className={`text-[7px] ${isSelected ? 'text-white/70' : 'text-muted-foreground'}`}>
+                  {DAY_NAMES[d.getDay()]}
+                </span>
+                <span className={`text-[11px] font-bold leading-tight ${isSelected ? 'text-white' : isToday ? 'text-amber-600' : 'text-foreground'}`}>
+                  {d.getDate()}
+                </span>
+                {sched && free > 0 && !isSelected && (
+                  <span className="text-[6px] text-green-700 font-medium">{free}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Time slots */}
+        {selectedDay && (
+          <div className="mb-3">
+            <div className="flex justify-between items-baseline mb-1.5">
+              <span className="text-[9px] font-semibold">
+                {selectedDay.getDate()} {MONTH_SHORT[selectedDay.getMonth()]}
+              </span>
+              <span className="text-[8px] text-muted-foreground">{freeCount} свободных</span>
+            </div>
+            {availableSlots.length === 0 ? (
+              <div className="text-[9px] text-muted-foreground text-center py-2">Нет расписания</div>
+            ) : (
+              <div className="grid grid-cols-6 gap-1">
+                {availableSlots.map(t => {
+                  const isTaken = takenFiltered.includes(t);
+                  return (
+                    <button key={t} disabled={isTaken}
+                      onClick={() => !isTaken && setSelectedTime(t === selectedTime ? null : t)}
+                      className="py-1 text-center text-[8px] font-semibold rounded transition-colors"
+                      style={
+                        isTaken
+                          ? { background: '#f8fafc', color: '#cbd5e1', textDecoration: 'line-through', border: '1px solid #e2e8f0' }
+                          : t === selectedTime
+                          ? { background: '#00685B', color: '#fff', border: '1px solid #00685B' }
+                          : { background: '#fff', color: '#1a1a1a', border: '1px solid #e2e8f0' }
+                      }>
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-2 justify-end">
+          <button onClick={onClose}
+            className="text-[9px] px-3 py-1.5 border border-border rounded text-muted-foreground">
+            Отмена
+          </button>
+          <button disabled={!selectedTime || isPending} onClick={handleConfirm}
+            className="text-[9px] font-bold text-white px-4 py-1.5 disabled:opacity-40"
+            style={{ background: '#1d4ed8', borderRadius: '4px 16px 16px 4px' }}>
+            {isPending ? '...' : `Перенести${selectedTime ? ' на ' + selectedTime : ''}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PatientAppointmentsPanel({ patient }: { patient: Patient }) {
   const utils = trpc.useUtils();
+  const [cancelEntry, setCancelEntry]       = useState<any | null>(null);
+  const [rescheduleEntry, setRescheduleEntry] = useState<any | null>(null);
 
   const { data: entries = [], isLoading } = trpc.queue.getByPatient.useQuery(
     { patientId: patient.id },
@@ -393,129 +677,109 @@ function PatientAppointmentsPanel({ patient }: { patient: Patient }) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const cancel = trpc.queue.cancel.useMutation({
-    onSuccess: () => {
-      utils.queue.getByPatient.invalidate();
-      utils.queue.getScheduledSlots.invalidate();
-      toast.info('Запись отменена');
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const reschedule = trpc.queue.cancel.useMutation({
-    onSuccess: () => {
-      utils.queue.getByPatient.invalidate();
-      utils.queue.getScheduledSlots.invalidate();
-      toast.success('Запись отменена — выберите новое время в календаре');
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
   return (
-    <div className="shrink-0 border-l border-border flex flex-col bg-white overflow-hidden" style={{ width: '260px' }}>
-      <div className="px-3 py-2 border-b border-border bg-slate-50 shrink-0">
-        <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide">Записи пациента</div>
-        <div className="text-[10px] font-bold text-foreground mt-0.5">
-          {patient.lastName} {patient.firstName}
+    <>
+      <div className="shrink-0 border-l border-border flex flex-col bg-white overflow-hidden" style={{ width: '260px' }}>
+        <div className="px-3 py-2 border-b border-border bg-slate-50 shrink-0">
+          <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide">Записи пациента</div>
+          <div className="text-[10px] font-bold text-foreground mt-0.5">
+            {patient.lastName} {patient.firstName}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {isLoading && (
+            <div className="text-[9px] text-muted-foreground text-center py-6">Загрузка...</div>
+          )}
+          {!isLoading && (entries as any[]).length === 0 && (
+            <div className="text-[9px] text-muted-foreground text-center py-6 px-3">
+              Активных записей нет
+            </div>
+          )}
+          {(entries as any[]).map((e: any) => {
+            const isPaid      = PAID_CATS.includes(e.category);
+            const needArrival = e.status === 'WAITING_ARRIVAL';
+            const needPayment = !e.paymentConfirmed && !['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(e.status);
+            const schedTime   = e.scheduledAt
+              ? new Date(e.scheduledAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+              : null;
+
+            return (
+              <div key={e.id} className="border-b border-border/60 px-3 py-2.5">
+                <div className="flex items-start justify-between gap-1 mb-1.5">
+                  <div>
+                    <div className="text-[10px] font-semibold text-foreground leading-tight">
+                      {e.doctor?.lastName} {e.doctor?.firstName?.[0]}.
+                    </div>
+                    {e.doctor?.specialty && (
+                      <div className="text-[8px] text-muted-foreground">{e.doctor.specialty}</div>
+                    )}
+                  </div>
+                  {schedTime && (
+                    <span className="text-[8px] font-medium text-primary shrink-0">{schedTime}</span>
+                  )}
+                </div>
+
+                <div className="mb-2">
+                  <span className="text-[8px] px-1.5 py-0.5 rounded-full font-medium"
+                    style={{ background: '#f1f5f9', color: '#64748b' }}>
+                    {STATUS_LABEL_P[e.status] ?? e.status}
+                  </span>
+                  {needPayment && (
+                    <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full font-medium"
+                      style={{ background: '#fef3c7', color: '#92400e' }}>
+                      Не оплачен
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-1">
+                  {isPaid && needPayment && (
+                    <button onClick={() => pay.mutate({ entryId: e.id })} disabled={pay.isPending}
+                      className="text-[8px] font-semibold px-2 py-1 disabled:opacity-40"
+                      style={{ background: '#fefce8', border: '1px solid #fcd34d', color: '#92400e', borderRadius: '3px 10px 10px 3px' }}>
+                      Принять оплату
+                    </button>
+                  )}
+                  {!isPaid && needArrival && (
+                    <button onClick={() => arrive.mutate({ entryId: e.id })} disabled={arrive.isPending}
+                      className="text-[8px] font-semibold px-2 py-1 disabled:opacity-40"
+                      style={{ background: '#ecfdf5', border: '1px solid #86efac', color: '#166534', borderRadius: '3px 10px 10px 3px' }}>
+                      Пришёл
+                    </button>
+                  )}
+                  <button onClick={() => setRescheduleEntry(e)}
+                    className="text-[8px] font-semibold px-2 py-1"
+                    style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: '3px 10px 10px 3px' }}>
+                    Перенести
+                  </button>
+                  <button onClick={() => setCancelEntry(e)}
+                    className="text-[8px] font-semibold px-2 py-1"
+                    style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#be123c', borderRadius: '3px 10px 10px 3px' }}>
+                    Отменить
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {isLoading && (
-          <div className="text-[9px] text-muted-foreground text-center py-6">Загрузка...</div>
-        )}
-        {!isLoading && (entries as any[]).length === 0 && (
-          <div className="text-[9px] text-muted-foreground text-center py-6 px-3">
-            Активных записей нет
-          </div>
-        )}
-        {(entries as any[]).map((e: any) => {
-          const isPaid      = PAID_CATS.includes(e.category);
-          const needArrival = e.status === 'WAITING_ARRIVAL';
-          const needPayment = !e.paymentConfirmed && !['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(e.status);
-          const schedTime   = e.scheduledAt
-            ? new Date(e.scheduledAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-            : null;
-
-          return (
-            <div key={e.id} className="border-b border-border/60 px-3 py-2.5">
-              {/* Doctor + time */}
-              <div className="flex items-start justify-between gap-1 mb-1.5">
-                <div>
-                  <div className="text-[10px] font-semibold text-foreground leading-tight">
-                    {e.doctor?.lastName} {e.doctor?.firstName?.[0]}.
-                  </div>
-                  {e.doctor?.specialty && (
-                    <div className="text-[8px] text-muted-foreground">{e.doctor.specialty}</div>
-                  )}
-                </div>
-                {schedTime && (
-                  <span className="text-[8px] font-medium text-primary shrink-0">{schedTime}</span>
-                )}
-              </div>
-
-              {/* Status badge */}
-              <div className="mb-2">
-                <span className="text-[8px] px-1.5 py-0.5 rounded-full font-medium"
-                  style={{ background: '#f1f5f9', color: '#64748b' }}>
-                  {STATUS_LABEL_P[e.status] ?? e.status}
-                </span>
-                {needPayment && (
-                  <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full font-medium"
-                    style={{ background: '#fef3c7', color: '#92400e' }}>
-                    Не оплачен
-                  </span>
-                )}
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex flex-wrap gap-1">
-                {isPaid && needPayment && (
-                  <button
-                    onClick={() => pay.mutate({ entryId: e.id })}
-                    disabled={pay.isPending}
-                    className="text-[8px] font-semibold px-2 py-1 disabled:opacity-40"
-                    style={{ background: '#fefce8', border: '1px solid #fcd34d', color: '#92400e', borderRadius: '3px 10px 10px 3px' }}>
-                    Принять оплату
-                  </button>
-                )}
-                {!isPaid && needArrival && (
-                  <button
-                    onClick={() => arrive.mutate({ entryId: e.id })}
-                    disabled={arrive.isPending}
-                    className="text-[8px] font-semibold px-2 py-1 disabled:opacity-40"
-                    style={{ background: '#ecfdf5', border: '1px solid #86efac', color: '#166534', borderRadius: '3px 10px 10px 3px' }}>
-                    Пришёл
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    if (confirm('Перенести запись? Текущая запись будет отменена — выберите новое время в календаре.')) {
-                      reschedule.mutate({ entryId: e.id, reason: 'Перенос' });
-                    }
-                  }}
-                  disabled={reschedule.isPending}
-                  className="text-[8px] font-semibold px-2 py-1 disabled:opacity-40"
-                  style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: '3px 10px 10px 3px' }}>
-                  Перенести
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`Отменить запись ${patient.lastName}?`)) {
-                      cancel.mutate({ entryId: e.id });
-                    }
-                  }}
-                  disabled={cancel.isPending}
-                  className="text-[8px] font-semibold px-2 py-1 disabled:opacity-40"
-                  style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#be123c', borderRadius: '3px 10px 10px 3px' }}>
-                  Отменить
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+      {cancelEntry && (
+        <CancelDialog
+          entry={cancelEntry} patient={patient}
+          onClose={() => setCancelEntry(null)}
+          onDone={() => setCancelEntry(null)}
+        />
+      )}
+      {rescheduleEntry && (
+        <RescheduleDialog
+          entry={rescheduleEntry} patient={patient}
+          onClose={() => setRescheduleEntry(null)}
+          onDone={() => setRescheduleEntry(null)}
+        />
+      )}
+    </>
   );
 }
 
