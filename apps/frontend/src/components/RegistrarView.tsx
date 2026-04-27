@@ -376,7 +376,7 @@ function CalendarTab() {
   const [category, setCategory]     = useState('OSMS');
   const [priority, setPriority]     = useState('WALK_IN');
   const [weekOffset, setWeekOffset] = useState(0);
-  const [specFilter, setSpecFilter] = useState('');
+  const [deptFilter, setDeptFilter] = useState('');
   const [picker, setPicker]         = useState<{ doctor: any; date: Date; slots: string[] } | null>(null);
 
   const week      = useMemo(() => buildWeek(weekOffset), [weekOffset]);
@@ -384,8 +384,9 @@ function CalendarTab() {
   const endDate   = isoDate(week[week.length - 1]);
   const today     = isoDate(new Date());
 
-  const { data: allDoctors = [] } = trpc.users.getDoctors.useQuery({ departmentId: '' });
-  const { data: allSchedules = [] } = trpc.schedules.getForDateRange.useQuery(
+  const { data: allDoctors = [] }    = trpc.users.getDoctors.useQuery({ departmentId: '' });
+  const { data: departments = [] }   = trpc.departments.getAll.useQuery();
+  const { data: allSchedules = [] }  = trpc.schedules.getForDateRange.useQuery(
     { startDate, endDate }, { staleTime: 60_000 },
   );
 
@@ -398,17 +399,11 @@ function CalendarTab() {
     { enabled: !!picker, staleTime: 10_000 },
   );
 
-  const specialties = useMemo(() => {
-    const s = new Set<string>();
-    (allDoctors as any[]).forEach((d: any) => { if (d.specialty) s.add(d.specialty); });
-    return Array.from(s).sort();
-  }, [allDoctors]);
-
   const doctors = useMemo(() => {
     let list = allDoctors as any[];
-    if (specFilter) list = list.filter((d: any) => d.specialty === specFilter);
+    if (deptFilter) list = list.filter((d: any) => d.departmentId === deptFilter);
     return list;
-  }, [allDoctors, specFilter]);
+  }, [allDoctors, deptFilter]);
 
   const allowedCats = (user as any)?.allowedCategories?.length
     ? CATEGORY_OPTS.filter(o => (user as any).allowedCategories.includes(o.value))
@@ -416,26 +411,26 @@ function CalendarTab() {
 
   return (
     <div className="flex overflow-hidden h-full">
-      {/* Specialty sidebar */}
-      <div className="shrink-0 border-r border-border flex flex-col bg-slate-50 overflow-y-auto" style={{ width: '130px' }}>
-        <div className="px-2 py-1.5 border-b border-border bg-white">
-          <input className="w-full text-[9px] border border-border rounded px-1.5 py-1 outline-none"
-            placeholder="Поиск..." value={specFilter} onChange={e => setSpecFilter(e.target.value)} />
+      {/* Department sidebar */}
+      <div className="shrink-0 border-r border-border flex flex-col bg-slate-50 overflow-y-auto" style={{ width: '150px' }}>
+        <div className="px-2.5 py-1.5 border-b border-border bg-white shrink-0">
+          <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide">Отделения</span>
         </div>
-        <button onClick={() => setSpecFilter('')}
+        <button onClick={() => setDeptFilter('')}
           className={`px-2.5 py-1.5 text-[9px] text-left border-l-2 transition-colors ${
-            !specFilter ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent'}`}>
+            !deptFilter ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent hover:bg-primary/5'}`}>
           Все
           <span className="float-right text-[8px] bg-slate-200 rounded-full px-1.5">{(allDoctors as any[]).length}</span>
         </button>
-        {specialties.map(spec => {
-          const cnt = (allDoctors as any[]).filter((d: any) => d.specialty === spec).length;
+        {(departments as any[]).map((dept: any) => {
+          const cnt = (allDoctors as any[]).filter((d: any) => d.departmentId === dept.id).length;
+          if (cnt === 0) return null;
           return (
-            <button key={spec} onClick={() => setSpecFilter(spec === specFilter ? '' : spec)}
-              className={`px-2.5 py-1.5 text-[9px] text-left border-l-2 transition-colors ${
-                specFilter === spec ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent hover:bg-primary/5'}`}>
-              {spec}
-              {cnt > 1 && <span className="float-right text-[8px] bg-slate-200 rounded-full px-1.5">{cnt}</span>}
+            <button key={dept.id} onClick={() => setDeptFilter(dept.id === deptFilter ? '' : dept.id)}
+              className={`px-2.5 py-1.5 text-[9px] text-left border-l-2 transition-colors leading-snug ${
+                deptFilter === dept.id ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent hover:bg-primary/5'}`}>
+              {dept.name}
+              <span className="float-right text-[8px] bg-slate-200 rounded-full px-1.5 ml-1">{cnt}</span>
             </button>
           );
         })}
