@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { trpc } from '@/lib/trpc';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { UserPlus, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Patient {
@@ -51,49 +51,78 @@ export function PatientSearch({ onSelect, selected }: PatientSearchProps) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  function openCreate() {
+    const parts = query.trim().split(/\s+/);
+    setNewPatient({
+      lastName:   parts[0] ?? '',
+      firstName:  parts[1] ?? '',
+      middleName: parts[2] ?? '',
+      phone: '', iin: '',
+    });
+    setOpen(false);
+    setCreateOpen(true);
+  }
+
   if (selected) {
     return (
-      <div className="flex items-center justify-between p-3 border rounded-md bg-secondary/30">
+      <div className="flex items-center justify-between px-3 py-1.5 border rounded-md bg-secondary/30">
         <div>
-          <p className="font-medium text-sm">
+          <p className="font-medium text-[10px]">
             {selected.lastName} {selected.firstName} {selected.middleName ?? ''}
           </p>
-          {selected.phone && <p className="text-xs text-muted-foreground">{selected.phone}</p>}
+          {selected.phone && <p className="text-[9px] text-muted-foreground">{selected.phone}</p>}
         </div>
-        <Button variant="ghost" size="sm" onClick={() => onSelect(null)}>
+        <button className="text-[9px] text-muted-foreground hover:text-foreground ml-2" onClick={() => onSelect(null)}>
           Изменить
-        </Button>
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="relative">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+        <input
           ref={inputRef}
-          placeholder="Поиск по ФИО, телефону, ИИН..."
+          placeholder="Поиск пациента по ФИО, ИИН, телефону..."
           value={query}
           onChange={e => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
-          className="pl-9"
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          className="pl-8 pr-3 py-1.5 text-[10px] border border-border rounded outline-none focus:border-primary transition-colors bg-white"
+          style={{ width: '260px' }}
         />
       </div>
 
       {open && debouncedQuery.length >= 1 && (
-        <div className="border rounded-md bg-background shadow-md max-h-48 overflow-y-auto">
-          {results.length === 0 ? (
-            <p className="text-sm text-muted-foreground p-3">Пациенты не найдены</p>
+        <div className="absolute top-full left-0 mt-1 z-50 border border-border rounded-md bg-white shadow-lg overflow-hidden"
+          style={{ width: '300px', maxHeight: '220px', overflowY: 'auto' }}>
+          {(results as Patient[]).length === 0 ? (
+            <div className="px-3 py-2.5 flex flex-col gap-1.5">
+              <span className="text-[9px] text-muted-foreground">Пациент не найден</span>
+              <button
+                onMouseDown={e => { e.preventDefault(); openCreate(); }}
+                className="text-left text-[9px] font-semibold text-primary hover:underline">
+                + Создать пациента{query.trim() ? ` «${query.trim()}»` : ''}
+              </button>
+            </div>
           ) : (
-            (results as Patient[]).map((p) => (
+            (results as Patient[]).map(p => (
               <button
                 key={p.id}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
-                onClick={() => { onSelect(p); setOpen(false); setQuery(''); }}
-              >
-                <span className="font-medium">{p.lastName} {p.firstName} {p.middleName ?? ''}</span>
-                {p.phone && <span className="ml-2 text-muted-foreground">{p.phone}</span>}
+                onMouseDown={e => { e.preventDefault(); onSelect(p); setOpen(false); setQuery(''); }}
+                className="w-full text-left px-3 py-2 hover:bg-primary/5 transition-colors border-b border-border/40 last:border-0">
+                <div className="text-[10px] font-semibold text-foreground">
+                  {p.lastName} {p.firstName} {p.middleName ?? ''}
+                </div>
+                {(p.phone || p.iin) && (
+                  <div className="text-[8px] text-muted-foreground mt-0.5">
+                    {p.iin && <span>{p.iin}</span>}
+                    {p.iin && p.phone && <span className="mx-1">·</span>}
+                    {p.phone && <span>{p.phone}</span>}
+                  </div>
+                )}
               </button>
             ))
           )}
@@ -101,12 +130,6 @@ export function PatientSearch({ onSelect, selected }: PatientSearchProps) {
       )}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="w-full">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Создать нового пациента
-          </Button>
-        </DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Новый пациент</DialogTitle>
