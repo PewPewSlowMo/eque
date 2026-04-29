@@ -28,12 +28,11 @@ export function Layout({ children, title, adminSwitcher }: LayoutProps) {
       >
         {/* Left: logo + title */}
         <div className="flex items-center gap-3 shrink-0">
-          <span
-            className="text-[11px] font-bold tracking-wide px-2 py-1 rounded-sm"
-            style={{ color: '#B39168', border: '1px solid rgba(179,145,104,.4)' }}
-          >
-            УЛТ. ГОСПИТАЛЬ
-          </span>
+          <img
+            src="/logo.png"
+            alt="Национальный госпиталь"
+            style={{ height: '32px', width: 'auto' }}
+          />
           {title && (
             <>
               <span className="w-px h-4" style={{ background: 'rgba(255,255,255,.18)' }} />

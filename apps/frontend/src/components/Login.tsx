@@ -29,15 +29,12 @@ export function Login() {
       <div className="w-full max-w-sm px-4">
         {/* Logo block */}
         <div className="text-center mb-8">
-          <div
-            className="inline-block text-[11px] font-bold tracking-wider px-3 py-1.5 mb-4 rounded-sm"
-            style={{ border: '1px solid rgba(179,145,104,.5)', color: '#B39168' }}
-          >
-            УЛТ. ГОСПИТАЛЬ
-          </div>
-          <div className="text-white text-xl font-bold leading-tight">
-            Национальный госпиталь
-          </div>
+          <img
+            src="/logo.png"
+            alt="Национальный госпиталь"
+            className="mx-auto mb-4"
+            style={{ height: '90px', width: 'auto' }}
+          />
           <div className="text-white/50 text-sm mt-1">
             Система электронной очереди
           </div>
