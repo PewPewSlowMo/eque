@@ -45,7 +45,7 @@ export function DisplayBoard() {
   }, [queryClient]);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#0d1117', fontFamily: 'Montserrat, sans-serif' }}>
+    <div className="h-full flex flex-col overflow-hidden" style={{ background: '#0d1117', fontFamily: 'Montserrat, sans-serif' }}>
       {/* header */}
       <div className="flex items-center justify-between px-6 py-3 shrink-0"
         style={{ background: '#00685B' }}>

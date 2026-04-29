@@ -23,7 +23,7 @@ export function Login() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center"
+      className="h-full flex items-center justify-center"
       style={{ background: 'linear-gradient(135deg, #00685B 0%, #004d44 100%)' }}
     >
       <div className="w-full max-w-sm px-4">

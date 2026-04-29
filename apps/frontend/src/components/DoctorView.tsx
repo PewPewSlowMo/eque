@@ -39,10 +39,7 @@ export function DoctorView() {
   const panelWidth = 'var(--q-panel-width, 240px)';
 
   return (
-    <div
-      className="flex overflow-hidden"
-      style={{ height: 'calc(100vh - var(--header-h, 44px))' }}
-    >
+    <div className="flex overflow-hidden h-full">
       {/* ── LEFT: queue list ── */}
       <div
         className="flex flex-col border-r border-border bg-slate-50 shrink-0"

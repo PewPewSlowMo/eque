@@ -42,11 +42,22 @@
 
   html {
     zoom: 1.5;
+    /* After zoom 1.5× these CSS dimensions fill exactly 100vw × 100vh visually */
+    width: calc(100vw / 1.5);
+    height: calc(100vh / 1.5);
+    overflow: hidden;
   }
 
   body {
     @apply bg-background text-foreground;
     font-family: 'Montserrat', 'Open Sans', system-ui, sans-serif;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
   }
 }
 

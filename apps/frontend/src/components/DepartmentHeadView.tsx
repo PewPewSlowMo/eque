@@ -216,7 +216,7 @@ export function DepartmentHeadView() {
   });
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - var(--header-h, 44px))' }}>
+    <div className="flex flex-col overflow-hidden h-full">
 
       {/* nav bar */}
       <div className="flex items-center justify-between px-4 py-2 shrink-0"

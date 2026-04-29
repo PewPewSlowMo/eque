@@ -1124,7 +1124,7 @@ export function RegistrarView() {
   const [tab, setTab] = useState<'calendar' | 'queue'>('calendar');
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - var(--header-h, 44px))' }}>
+    <div className="flex flex-col overflow-hidden h-full">
       {/* Tab bar */}
       <div className="flex items-center border-b border-border bg-white px-4 shrink-0">
         {[

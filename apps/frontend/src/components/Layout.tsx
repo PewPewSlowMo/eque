@@ -21,7 +21,7 @@ export function Layout({ children, title, adminSwitcher }: LayoutProps) {
   const { user, logout } = useUser();
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col">
+    <div className="h-full bg-slate-100 flex flex-col overflow-hidden">
       <header
         className="flex items-center justify-between px-4 shrink-0 gap-3"
         style={{ background: '#00685B', height: 'var(--header-h, 44px)' }}
@@ -81,7 +81,7 @@ export function Layout({ children, title, adminSwitcher }: LayoutProps) {
         )}
       </header>
 
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 min-h-0 overflow-hidden">
         {children}
       </main>
     </div>

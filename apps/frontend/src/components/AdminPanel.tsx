@@ -12,7 +12,7 @@ export function AdminPanel() {
   const isAdmin = user?.role === 'ADMIN';
 
   return (
-    <div className="space-y-4">
+    <div className="h-full overflow-y-auto p-4">
       <Tabs defaultValue={isAdmin ? 'users' : 'schedules'}>
         <TabsList>
           {isAdmin && <TabsTrigger value="users">Пользователи</TabsTrigger>}
