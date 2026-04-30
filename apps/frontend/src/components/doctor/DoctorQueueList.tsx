@@ -20,6 +20,7 @@ interface QueueEntry {
   status: string;
   priority: string;
   paymentConfirmed: boolean;
+  scheduledAt?: string | null;
   waitMinutes?: number;
   patient: { firstName: string; lastName: string; middleName?: string | null };
 }
@@ -69,8 +70,9 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
   const canCallNext = entries.some(e => e.status === 'ARRIVED' && e.paymentConfirmed);
   const anyPending  = callNext.isPending || callSpecific.isPending;
 
-  const scheduled = entries.filter(e => e.priority !== 'WALK_IN');
-  const walkIn    = entries.filter(e => e.priority === 'WALK_IN');
+  // Walk-in = no scheduled slot (scheduledAt is null/undefined), regardless of priority label
+  const scheduled = entries.filter(e => e.scheduledAt != null);
+  const walkIn    = entries.filter(e => e.scheduledAt == null);
 
   if (entries.length === 0) {
     return (
