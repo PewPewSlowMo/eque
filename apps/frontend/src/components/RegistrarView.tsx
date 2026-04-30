@@ -897,6 +897,28 @@ function CalendarTab() {
     { enabled: !!picker, staleTime: 10_000 },
   );
 
+  const utils = trpc.useUtils();
+  const walkInMut = trpc.queue.add.useMutation({
+    onSuccess: () => {
+      utils.queue.getScheduledSlots.invalidate();
+      toast.success('Пациент добавлен в живую очередь');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const addWalkIn = (doc: any, date: Date) => {
+    if (!patient) { toast.error('Сначала выберите пациента'); return; }
+    const source = (user as any)?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
+    walkInMut.mutate({
+      doctorId: doc.id,
+      patientId: patient.id,
+      priority: 'WALK_IN',
+      category,
+      scheduledAt: undefined,
+      source,
+    });
+  };
+
   const doctors = useMemo(() => {
     let list = allDoctors as any[];
     if (deptFilter) list = list.filter((d: any) => d.departmentId === deptFilter);
@@ -1066,14 +1088,25 @@ function CalendarTab() {
                             isPast ? 'text-muted-foreground/30' : 'text-slate-300'
                           }`}>—</div>
                         ) : (
-                          <SlotCell
-                            booked={booked}
-                            maxSlots={daySlots.length}
-                            onClick={() => {
-                              if (!patient) { toast.error('Сначала выберите пациента'); return; }
-                              setPicker({ doctor: doc, date: d, slots: daySlots });
-                            }}
-                          />
+                          <div className="flex flex-col gap-0.5">
+                            <SlotCell
+                              booked={booked}
+                              maxSlots={daySlots.length}
+                              onClick={() => {
+                                if (!patient) { toast.error('Сначала выберите пациента'); return; }
+                                setPicker({ doctor: doc, date: d, slots: daySlots });
+                              }}
+                            />
+                            <button
+                              onClick={() => addWalkIn(doc, d)}
+                              disabled={walkInMut.isPending}
+                              className="w-full text-[7px] font-bold py-0.5 rounded transition-all hover:brightness-95 disabled:opacity-40"
+                              style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#92400e', borderRadius: '2px 6px 6px 2px' }}
+                              title="Добавить в живую очередь"
+                            >
+                              + ЖО
+                            </button>
+                          </div>
                         )}
                       </td>
                     );
