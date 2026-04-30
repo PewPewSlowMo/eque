@@ -47,6 +47,15 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
     onError: (e: any) => toast.error(e.message),
   });
 
+  const callSpecific = trpc.queue.callSpecific.useMutation({
+    onSuccess: (result: any) => {
+      utils.queue.getByDoctor.invalidate({ doctorId });
+      onCallSuccess?.();
+      toast.success(`Вызван: ${result.called.patient.lastName} ${result.called.patient.firstName}`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const markNoShow = trpc.queue.markNoShow.useMutation({
     onSuccess: () => { utils.queue.getByDoctor.invalidate({ doctorId }); toast.info('Отмечена неявка'); },
     onError: (e: any) => toast.error(e.message),
@@ -69,15 +78,15 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {/* Call next button */}
+      {/* Call next by priority button */}
       <div className="px-2 py-2 border-b border-border bg-white sticky top-0 z-10">
         <button
           onClick={() => callNext.mutate({ doctorId })}
-          disabled={!canCallNext || callNext.isPending}
+          disabled={!canCallNext || callNext.isPending || callSpecific.isPending}
           className="w-full h-8 text-[10px] font-bold text-white disabled:opacity-40 transition-opacity"
           style={{ background: '#00685B', borderRadius: '4px 20px 20px 4px' }}
         >
-          {callNext.isPending ? 'Вызов...' : 'Вызвать следующего'}
+          {callNext.isPending ? 'Вызов...' : 'По приоритету'}
         </button>
       </div>
 
@@ -138,6 +147,16 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
                 </span>
               )}
               <div className="flex items-center gap-1">
+                {entry.status === 'ARRIVED' && entry.paymentConfirmed && (
+                  <button
+                    onClick={() => callSpecific.mutate({ entryId: entry.id })}
+                    disabled={callSpecific.isPending || callNext.isPending}
+                    className="text-[8px] font-bold text-white px-2 py-0.5 disabled:opacity-40 transition-opacity"
+                    style={{ background: '#00685B', borderRadius: '2px 8px 8px 2px' }}
+                  >
+                    Вызвать
+                  </button>
+                )}
                 {canNoShow && (
                   <button
                     onClick={() => markNoShow.mutate({ entryId: entry.id })}

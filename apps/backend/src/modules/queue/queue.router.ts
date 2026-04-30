@@ -276,6 +276,59 @@ export const createQueueRouter = (
         return { called };
       }),
 
+    // Doctor calls a specific patient by entryId (selective call).
+    callSpecific: trpc.protectedProcedure
+      .input(z.object({ entryId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const entry = await prisma.queueEntry.findUnique({
+          where: { id: input.entryId },
+          include: { patient: { select: PATIENT_SELECT } },
+        });
+        if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Запись не найдена' });
+        if (entry.status !== 'ARRIVED') {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Пациент ещё не прибыл' });
+        }
+
+        // Auto-complete current IN_PROGRESS if any
+        const inProgress = await prisma.queueEntry.findFirst({
+          where: { doctorId: entry.doctorId, status: 'IN_PROGRESS' },
+        });
+        if (inProgress) {
+          await prisma.queueEntry.update({
+            where: { id: inProgress.id },
+            data: { status: 'COMPLETED', completedAt: new Date() },
+          });
+          await prisma.queueHistory.create({
+            data: {
+              queueEntryId: inProgress.id,
+              action: 'auto_completed_on_call_specific',
+              oldStatus: 'IN_PROGRESS',
+              newStatus: 'COMPLETED',
+              userId: ctx.user!.id,
+            } as any,
+          });
+        }
+
+        const called = await prisma.queueEntry.update({
+          where: { id: input.entryId },
+          data: { status: 'IN_PROGRESS', calledAt: new Date() },
+          include: { patient: { select: PATIENT_SELECT } },
+        });
+        await prisma.queueHistory.create({
+          data: {
+            queueEntryId: input.entryId,
+            action: 'called_specific',
+            oldStatus: 'ARRIVED',
+            newStatus: 'IN_PROGRESS',
+            userId: ctx.user!.id,
+          } as any,
+        });
+
+        events.emit('queue:called', { doctorId: entry.doctorId, entry: called });
+        events.emit('queue:updated', { doctorId: entry.doctorId, entry: called });
+        return { called };
+      }),
+
     // Complete appointment (doctor presses "Done")
     complete: trpc.protectedProcedure
       .input(z.object({ entryId: z.string(), notes: z.string().optional() }))
