@@ -109,6 +109,8 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
   const { user } = useUser();
   const utils = trpc.useUtils();
 
+  const source = (user as any)?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
+
   const addMutation = trpc.queue.add.useMutation({
     onSuccess: () => {
       toast.success(`${patient.lastName} записан на ${selected}`);
@@ -119,13 +121,22 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
     onError: (e: any) => toast.error(e.message),
   });
 
-  const source = (user as any)?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
+  const walkInMut = trpc.queue.add.useMutation({
+    onSuccess: () => {
+      utils.queue.getScheduledSlots.invalidate();
+      toast.success(`${patient.lastName} добавлен в живую очередь`);
+      onBooked();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const dateLabel = `${date.getDate()} ${MONTH_SHORT[date.getMonth()]}`;
   const takenLocal = takenTimes.map(iso => {
     const d = new Date(iso);
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   });
   const freeCount = availableSlots.filter(t => !takenLocal.includes(t)).length;
+  const anyPending = addMutation.isPending || walkInMut.isPending;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center"
@@ -160,13 +171,30 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
           })}
         </div>
 
+        {/* Walk-in separator */}
+        <div className="border-t border-border mt-1 mb-2" />
+
+        {/* Walk-in button */}
+        <button
+          disabled={anyPending}
+          onClick={() => walkInMut.mutate({
+            doctorId: doctor.id, patientId: patient.id,
+            priority: 'WALK_IN', category: category as any,
+            source: source as any,
+          })}
+          className="w-full text-[9px] font-bold py-1.5 mb-3 disabled:opacity-40 transition-opacity"
+          style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#92400e', borderRadius: '4px 14px 14px 4px' }}
+        >
+          {walkInMut.isPending ? '...' : '+ Живая очередь (без слота)'}
+        </button>
+
         <div className="flex gap-2 justify-end">
           <button onClick={onClose}
             className="text-[9px] px-3 py-1.5 border border-border rounded text-muted-foreground">
             Отмена
           </button>
           <button
-            disabled={!selected || addMutation.isPending}
+            disabled={!selected || anyPending}
             onClick={() => {
               if (!selected) return;
               const [h, m] = selected.split(':').map(Number);
@@ -897,28 +925,6 @@ function CalendarTab() {
     { enabled: !!picker, staleTime: 10_000 },
   );
 
-  const utils = trpc.useUtils();
-  const walkInMut = trpc.queue.add.useMutation({
-    onSuccess: () => {
-      utils.queue.getScheduledSlots.invalidate();
-      toast.success('Пациент добавлен в живую очередь');
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const addWalkIn = (doc: any, date: Date) => {
-    if (!patient) { toast.error('Сначала выберите пациента'); return; }
-    const source = (user as any)?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
-    walkInMut.mutate({
-      doctorId: doc.id,
-      patientId: patient.id,
-      priority: 'WALK_IN',
-      category,
-      scheduledAt: undefined,
-      source,
-    });
-  };
-
   const doctors = useMemo(() => {
     let list = allDoctors as any[];
     if (deptFilter) list = list.filter((d: any) => d.departmentId === deptFilter);
@@ -1088,25 +1094,14 @@ function CalendarTab() {
                             isPast ? 'text-muted-foreground/30' : 'text-slate-300'
                           }`}>—</div>
                         ) : (
-                          <div className="flex flex-col gap-0.5">
-                            <SlotCell
-                              booked={booked}
-                              maxSlots={daySlots.length}
-                              onClick={() => {
-                                if (!patient) { toast.error('Сначала выберите пациента'); return; }
-                                setPicker({ doctor: doc, date: d, slots: daySlots });
-                              }}
-                            />
-                            <button
-                              onClick={() => addWalkIn(doc, d)}
-                              disabled={walkInMut.isPending}
-                              className="w-full text-[7px] font-bold py-0.5 rounded transition-all hover:brightness-95 disabled:opacity-40"
-                              style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#92400e', borderRadius: '2px 6px 6px 2px' }}
-                              title="Добавить в живую очередь"
-                            >
-                              + ЖО
-                            </button>
-                          </div>
+                          <SlotCell
+                            booked={booked}
+                            maxSlots={daySlots.length}
+                            onClick={() => {
+                              if (!patient) { toast.error('Сначала выберите пациента'); return; }
+                              setPicker({ doctor: doc, date: d, slots: daySlots });
+                            }}
+                          />
                         )}
                       </td>
                     );
