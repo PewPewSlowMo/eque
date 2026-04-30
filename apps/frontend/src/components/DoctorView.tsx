@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useUser } from '@/contexts/UserContext';
 import { useQueueSocket } from './registrar/useQueueSocket';
@@ -13,7 +14,15 @@ const PRIORITY_LABEL: Record<string, string> = {
 
 export function DoctorView() {
   const { user } = useUser();
-  const doctorId = user?.id ?? '';
+  const isAdmin = user?.role === 'ADMIN';
+  const [selectedDoctorId, setSelectedDoctorId] = useState('');
+
+  const { data: allDoctors = [] } = trpc.users.getDoctors.useQuery(
+    undefined,
+    { enabled: isAdmin },
+  );
+
+  const doctorId = isAdmin ? selectedDoctorId : (user?.id ?? '');
 
   useQueueSocket();
 
@@ -27,7 +36,7 @@ export function DoctorView() {
     { enabled: !!doctorId },
   );
 
-  if (!doctorId) return null;
+  if (!isAdmin && !doctorId) return null;
 
   const allEntries = entries as any[];
   const currentPatient = allEntries.find((e: any) => e.status === 'IN_PROGRESS') ?? null;
@@ -39,7 +48,37 @@ export function DoctorView() {
   const panelWidth = 'var(--q-panel-width, 240px)';
 
   return (
-    <div className="flex overflow-hidden h-full">
+    <div className="flex flex-col overflow-hidden h-full">
+      {/* ── ADMIN: doctor selector bar ── */}
+      {isAdmin && (
+        <div className="shrink-0 flex items-center gap-3 px-4 py-2 bg-white border-b border-border">
+          <span className="text-[10px] font-semibold text-muted-foreground shrink-0">Врач:</span>
+          <select
+            value={selectedDoctorId}
+            onChange={e => setSelectedDoctorId(e.target.value)}
+            className="flex-1 text-[11px] px-2 py-1 rounded border border-border bg-white outline-none"
+            style={{ borderRadius: '4px 12px 12px 4px' }}
+          >
+            <option value="">— выберите врача —</option>
+            {(allDoctors as any[]).map((d: any) => (
+              <option key={d.id} value={d.id}>
+                {d.lastName} {d.firstName} {d.middleName ?? ''}
+                {d.specialty ? ` (${d.specialty})` : ''}
+                {d.department ? ` · ${d.department.name}` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* ── ADMIN: no doctor selected placeholder ── */}
+      {isAdmin && !selectedDoctorId ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+          <span className="text-3xl opacity-20">⚕</span>
+          <span className="text-sm">Выберите врача для просмотра очереди</span>
+        </div>
+      ) : (
+      <div className="flex flex-1 overflow-hidden">
       {/* ── LEFT: queue list ── */}
       <div
         className="flex flex-col border-r border-border bg-slate-50 shrink-0"
@@ -140,6 +179,8 @@ export function DoctorView() {
           );
         })()}
       </div>
+      </div>
+      )}
     </div>
   );
 }
