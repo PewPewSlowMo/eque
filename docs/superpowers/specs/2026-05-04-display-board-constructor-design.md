@@ -16,9 +16,9 @@ model DisplayBoard {
   name        String
   slug        String   @unique
   columns     Int      @default(3)        // 2 | 3 | 4 — колонки в правой панели очереди
-  audioMode   String   @default("SOUND")  // "SOUND" | "TTS"
+  audioMode   String   @default("SOUND")  // "SOUND" | "SOUND_TTS"
   ttsTemplate String   @default("{lastName} пройдите в кабинет {cabinet}")
-  soundUrl    String?                     // относительный путь после загрузки файла
+  soundUrl    String?                     // обязателен для обоих режимов
   cabinets    DisplayBoardCabinet[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -135,9 +135,9 @@ apps/frontend/src/components/
 | slug | text | URL-идентификатор (латиница, дефис) |
 | cabinetIds | multi-select | Привязанные кабинеты (из `cabinets.getAll`) |
 | columns | select 2/3/4 | Колонки правой панели |
-| audioMode | radio SOUND/TTS | Режим аудио |
-| soundFile | file input | (только SOUND) загрузка `.mp3`/`.wav` |
-| ttsTemplate | textarea | (только TTS) шаблон, переменные `{lastName}`, `{cabinet}` |
+| audioMode | radio | `SOUND` — только файл; `SOUND_TTS` — файл + речь |
+| soundFile | file input | загрузка `.mp3`/`.wav` (обязательно для обоих режимов) |
+| ttsTemplate | textarea | (только `SOUND_TTS`) шаблон, переменные `{lastName}`, `{cabinet}` |
 
 ### BoardView — публичное табло
 
@@ -197,7 +197,7 @@ Socket события `queue:called` сейчас эмитируют `{ doctorId
 
 Аудио при каждом уведомлении:
 - **SOUND**: `audioRef.current.src = board.soundUrl; audioRef.current.play()`
-- **TTS**: `speechSynthesis.speak(new SpeechSynthesisUtterance(text))` где `text` = шаблон с подстановкой.
+- **SOUND_TTS**: то же, плюс после окончания файла (`audio.onended`) — `speechSynthesis.speak(new SpeechSynthesisUtterance(text))` где `text` = шаблон с подстановкой `{lastName}` и `{cabinet}`.
 
 ---
 
