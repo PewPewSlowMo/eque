@@ -13,7 +13,7 @@ interface Props {
 export function ActiveCallsPanel({ calls }: Props) {
   return (
     <div style={{
-      flex: '0 0 67%', display: 'flex', flexDirection: 'column',
+      flex: '0 0 62%', display: 'flex', flexDirection: 'column',
       borderRight: '1px solid rgba(255,255,255,.06)', overflow: 'hidden',
       padding: '24px 32px', gap: 16,
     }}>
@@ -26,12 +26,12 @@ export function ActiveCallsPanel({ calls }: Props) {
           <span style={{ color: 'rgba(255,255,255,.2)', fontSize: 32, fontWeight: 500 }}>Ожидайте вызова</span>
         </div>
       ) : (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden', alignItems: 'stretch' }}>
           {calls.map((call) => (
             <div
               key={`${call.cabinetNumber}-${String(call.calledAt ?? '')}`}
               style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 gap: 20, padding: '12px 24px', borderRadius: 12,
                 background: 'rgba(0,104,91,.15)', border: '1px solid rgba(0,104,91,.3)',
               }}

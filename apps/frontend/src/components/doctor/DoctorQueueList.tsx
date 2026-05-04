@@ -157,18 +157,6 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
                 Неявка
               </button>
             )}
-            <button
-              onClick={() => {
-                if (confirm(`Отменить запись ${entry.patient.lastName}?`)) {
-                  cancel.mutate({ entryId: entry.id });
-                }
-              }}
-              disabled={cancel.isPending}
-              className="text-[9px] text-destructive/60 hover:text-destructive px-1 py-0.5 transition-colors"
-              title="Отменить"
-            >
-              ×
-            </button>
           </div>
         </div>
       </div>

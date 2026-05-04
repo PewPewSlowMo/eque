@@ -39,7 +39,7 @@ export function DoctorView() {
   if (!isAdmin && !doctorId) return null;
 
   const allEntries = entries as any[];
-  const currentPatient = allEntries.find((e: any) => e.status === 'IN_PROGRESS') ?? null;
+  const inProgressPatients = allEntries.filter((e: any) => e.status === 'IN_PROGRESS');
   const calledEntry   = allEntries.find((e: any) => e.status === 'CALLED') ?? null;
   const waitingEntries = allEntries.filter(
     (e: any) => !['IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(e.status),
@@ -135,13 +135,13 @@ export function DoctorView() {
           </div>
         )}
 
-        {/* current patient card */}
-        {currentPatient && (
-          <CurrentPatientCard entry={currentPatient} doctorId={doctorId} />
-        )}
+        {/* current patient cards — one per IN_PROGRESS entry */}
+        {inProgressPatients.map((p: any) => (
+          <CurrentPatientCard key={p.id} entry={p} doctorId={doctorId} />
+        ))}
 
         {/* no activity state */}
-        {!calledEntry && !currentPatient && (
+        {!calledEntry && inProgressPatients.length === 0 && (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground">
             <span className="text-3xl opacity-20">⚕</span>
             <span className="text-sm">
@@ -159,7 +159,7 @@ export function DoctorView() {
         )}
 
         {/* next patient preview */}
-        {(calledEntry || currentPatient) && waitingEntries.length > 0 && (() => {
+        {(calledEntry || inProgressPatients.length > 0) && waitingEntries.length > 0 && (() => {
           const next = waitingEntries.find(
             (e: any) => e.status === 'ARRIVED' && e.id !== calledEntry?.id,
           );

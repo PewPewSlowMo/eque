@@ -8,10 +8,19 @@ const PRIORITY_LABEL: Record<string, string> = {
   WALK_IN:   'Обращение',
 };
 
+const CATEGORY_LABEL: Record<string, string> = {
+  PAID_ONCE:    'Платный (разово)',
+  PAID_CONTRACT:'По договору',
+  OSMS:         'ОМС',
+  CONTINGENT:   'Контингент',
+  EMPLOYEE:     'Сотрудник',
+};
+
 interface QueueEntry {
   id: string;
   queueNumber: number;
   priority: string;
+  category?: string | null;
   patient: { firstName: string; lastName: string; middleName?: string | null };
 }
 
@@ -26,9 +35,16 @@ export function CurrentPatientCard({ entry, doctorId }: { entry: QueueEntry; doc
     onError: (e: any) => toast.error(e.message),
   });
 
+  const callRepeat = trpc.queue.callRepeat.useMutation({
+    onSuccess: () => toast.success('Пациент вызван повторно'),
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const fullName = [entry.patient.lastName, entry.patient.firstName, entry.patient.middleName]
     .filter(Boolean)
     .join(' ');
+
+  const categoryLabel = entry.category ? (CATEGORY_LABEL[entry.category] ?? entry.category) : null;
 
   return (
     <div
@@ -37,7 +53,15 @@ export function CurrentPatientCard({ entry, doctorId }: { entry: QueueEntry; doc
     >
       <div className="text-[8px] font-bold text-white/50 tracking-wide mb-1">ИДЁТ ПРИЁМ</div>
       <div className="text-[15px] font-bold text-white mb-0.5 leading-tight">{fullName}</div>
-      <div className="text-[9px] text-white/55 mb-2.5">{PRIORITY_LABEL[entry.priority] ?? entry.priority}</div>
+      <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
+        <span className="text-[9px] text-white/55">{PRIORITY_LABEL[entry.priority] ?? entry.priority}</span>
+        {categoryLabel && (
+          <>
+            <span className="text-[9px] text-white/30">·</span>
+            <span className="text-[9px] text-white/70 font-medium">{categoryLabel}</span>
+          </>
+        )}
+      </div>
       <div className="flex gap-1.5 flex-wrap">
         <button
           onClick={() => complete.mutate({ entryId: entry.id })}
@@ -63,7 +87,9 @@ export function CurrentPatientCard({ entry, doctorId }: { entry: QueueEntry; doc
           Направление
         </button>
         <button
-          className="text-[9px] font-bold px-2.5 py-1"
+          onClick={() => callRepeat.mutate({ entryId: entry.id })}
+          disabled={callRepeat.isPending}
+          className="text-[9px] font-bold px-2.5 py-1 disabled:opacity-50"
           style={{
             background: 'rgba(179,145,104,.14)',
             border: '1px solid rgba(179,145,104,.4)',
@@ -71,7 +97,7 @@ export function CurrentPatientCard({ entry, doctorId }: { entry: QueueEntry; doc
             borderRadius: '4px 16px 16px 4px',
           }}
         >
-          Повторный
+          Повторный вызов
         </button>
       </div>
     </div>

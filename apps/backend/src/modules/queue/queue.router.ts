@@ -207,31 +207,10 @@ export const createQueueRouter = (
       }),
 
     // Doctor calls next patient.
-    // Automatically completes the current IN_PROGRESS patient.
-    // Picks the highest-priority ARRIVED patient with confirmed payment.
+    // Previous IN_PROGRESS patients remain until explicitly completed.
     callNext: trpc.protectedProcedure
       .input(z.object({ doctorId: z.string() }))
       .mutation(async ({ ctx, input }) => {
-        // Auto-complete current IN_PROGRESS if any
-        const inProgress = await prisma.queueEntry.findFirst({
-          where: { doctorId: input.doctorId, status: 'IN_PROGRESS' },
-        });
-        if (inProgress) {
-          await prisma.queueEntry.update({
-            where: { id: inProgress.id },
-            data: { status: 'COMPLETED', completedAt: new Date() },
-          });
-          await prisma.queueHistory.create({
-            data: {
-              queueEntryId: inProgress.id,
-              action: 'auto_completed_on_call_next',
-              oldStatus: 'IN_PROGRESS',
-              newStatus: 'COMPLETED',
-              userId: ctx.user!.id,
-            } as any,
-          });
-        }
-
         // Get all ARRIVED + payment confirmed
         const candidates = await prisma.queueEntry.findMany({
           where: {
@@ -299,26 +278,6 @@ export const createQueueRouter = (
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Пациент ещё не прибыл' });
         }
 
-        // Auto-complete current IN_PROGRESS if any
-        const inProgress = await prisma.queueEntry.findFirst({
-          where: { doctorId: entry.doctorId, status: 'IN_PROGRESS' },
-        });
-        if (inProgress) {
-          await prisma.queueEntry.update({
-            where: { id: inProgress.id },
-            data: { status: 'COMPLETED', completedAt: new Date() },
-          });
-          await prisma.queueHistory.create({
-            data: {
-              queueEntryId: inProgress.id,
-              action: 'auto_completed_on_call_specific',
-              oldStatus: 'IN_PROGRESS',
-              newStatus: 'COMPLETED',
-              userId: ctx.user!.id,
-            } as any,
-          });
-        }
-
         const called = await prisma.queueEntry.update({
           where: { id: input.entryId },
           data: { status: 'IN_PROGRESS', calledAt: new Date() },
@@ -347,6 +306,30 @@ export const createQueueRouter = (
         });
         events.emit('queue:updated', { doctorId: entry.doctorId, entry: called });
         return { called };
+      }),
+
+    // Re-announce current IN_PROGRESS patient on the display board (no status change)
+    callRepeat: trpc.protectedProcedure
+      .input(z.object({ entryId: z.string() }))
+      .mutation(async ({ _ctx, input }) => {
+        const entry = await prisma.queueEntry.findUnique({
+          where: { id: input.entryId },
+          include: { patient: { select: PATIENT_SELECT } },
+        });
+        if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Запись не найдена' });
+
+        const assignment = await prisma.doctorAssignment.findFirst({
+          where: { doctorId: entry.doctorId, isActive: true },
+          include: { cabinet: { select: { id: true, number: true } } },
+        });
+
+        events.emit('queue:called', {
+          doctorId:      entry.doctorId,
+          cabinetId:     assignment?.cabinetId ?? null,
+          cabinetNumber: assignment?.cabinet.number ?? null,
+          entry,
+        });
+        return { ok: true };
       }),
 
     // Complete appointment (doctor presses "Done")

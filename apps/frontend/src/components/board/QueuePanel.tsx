@@ -47,7 +47,7 @@ export function QueuePanel({ queue }: Props) {
 
   return (
     <div style={{
-      flex: '0 0 33%', display: 'flex', flexDirection: 'column',
+      flex: '0 0 38%', display: 'flex', flexDirection: 'column',
       overflow: 'hidden', padding: '24px 20px', gap: 12,
     }}>
       <div style={{
@@ -100,7 +100,7 @@ export function QueuePanel({ queue }: Props) {
                   padding: '6px 8px', gap: 0, overflow: 'hidden', minWidth: 0,
                 }}>
                   <span style={{
-                    fontSize: 42, fontWeight: 700, color: '#e2e8f0',
+                    fontSize: 36, fontWeight: 700, color: '#e2e8f0',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     flex: 1, minWidth: 0,
                   }}>
