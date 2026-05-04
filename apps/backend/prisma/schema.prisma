@@ -139,6 +139,7 @@ model Cabinet {
   id           String  @id @default(cuid())
   number       String  @unique
   name         String?
+  floor        Int?
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
   isActive     Boolean @default(true)

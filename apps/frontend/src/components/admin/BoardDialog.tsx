@@ -151,26 +151,52 @@ export function BoardDialog({ open, onClose, board }: Props) {
             </div>
           </div>
 
-          {/* Cabinets */}
+          {/* Cabinets grouped by floor */}
           <div className="space-y-1">
-            <Label className="text-xs">Кабинеты *</Label>
-            <div className="border rounded-md p-1.5 max-h-28 overflow-y-auto">
-              {(cabinets as any[]).length === 0 && (
-                <p className="text-xs text-muted-foreground px-1">Нет кабинетов</p>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Кабинеты *</Label>
+              {selectedCabIds.length > 0 && (
+                <span className="text-[10px] text-muted-foreground">выбрано: {selectedCabIds.length}</span>
               )}
-              <div className="grid grid-cols-2 gap-0.5">
-                {(cabinets as any[]).map((c: any) => (
-                  <label key={c.id} className="flex items-center gap-1.5 cursor-pointer px-1 py-0.5 rounded hover:bg-muted/50">
-                    <input
-                      type="checkbox"
-                      checked={selectedCabIds.includes(c.id)}
-                      onChange={() => toggleCabinet(c.id)}
-                      className="w-3.5 h-3.5 shrink-0"
-                    />
-                    <span className="text-xs truncate">{c.number}{c.name ? ` — ${c.name}` : ''}</span>
-                  </label>
-                ))}
-              </div>
+            </div>
+            <div className="border rounded-md max-h-36 overflow-y-auto">
+              {(cabinets as any[]).length === 0 && (
+                <p className="text-xs text-muted-foreground px-2 py-1.5">Нет кабинетов</p>
+              )}
+              {(() => {
+                const list = cabinets as any[];
+                const withFloor = list.filter((c: any) => c.floor != null);
+                const noFloor   = list.filter((c: any) => c.floor == null);
+                const floors = [...new Set(withFloor.map((c: any) => c.floor as number))].sort((a, b) => a - b);
+                const groups: Array<{ label: string; items: any[] }> = [
+                  ...floors.map((f) => ({
+                    label: `${f} этаж`,
+                    items: withFloor.filter((c: any) => c.floor === f),
+                  })),
+                  ...(noFloor.length > 0 ? [{ label: 'Этаж не указан', items: noFloor }] : []),
+                ];
+                if (groups.length === 0) return null;
+                return groups.map((g) => (
+                  <div key={g.label}>
+                    <div className="px-2 py-0.5 text-[10px] font-semibold text-muted-foreground bg-muted/40 sticky top-0">
+                      {g.label}
+                    </div>
+                    <div className="grid grid-cols-2 gap-0.5 p-1">
+                      {g.items.map((c: any) => (
+                        <label key={c.id} className="flex items-center gap-1.5 cursor-pointer px-1 py-0.5 rounded hover:bg-muted/50">
+                          <input
+                            type="checkbox"
+                            checked={selectedCabIds.includes(c.id)}
+                            onChange={() => toggleCabinet(c.id)}
+                            className="w-3.5 h-3.5 shrink-0"
+                          />
+                          <span className="text-xs truncate">{c.number}{c.name ? ` ${c.name}` : ''}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ));
+              })()}
             </div>
           </div>
 
@@ -255,7 +281,9 @@ export function BoardDialog({ open, onClose, board }: Props) {
                 rows={2}
                 placeholder="{lastName} пройдите в кабинет {cabinet}"
               />
-              <p className="text-[10px] text-muted-foreground">Переменные: {'{lastName}'}, {'{cabinet}'}</p>
+              <p className="text-[10px] text-muted-foreground">
+                Переменные: {'{lastName}'} — фамилия, {'{firstName}'} — имя, {'{middleName}'} — отчество, {'{cabinet}'} — кабинет, {'{number}'} — номер очереди
+              </p>
             </div>
           )}
         </div>

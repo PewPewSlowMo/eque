@@ -39,6 +39,7 @@ export function CabinetsTab() {
             <thead className="bg-muted">
               <tr>
                 <th className="text-left px-4 py-2 font-medium">Номер</th>
+                <th className="text-left px-4 py-2 font-medium">Этаж</th>
                 <th className="text-left px-4 py-2 font-medium">Название</th>
                 <th className="text-left px-4 py-2 font-medium">Отделение</th>
                 {isAdmin && <th className="px-4 py-2 font-medium" />}
@@ -48,6 +49,7 @@ export function CabinetsTab() {
               {(cabinets as any[]).map((c: any) => (
                 <tr key={c.id} className="hover:bg-muted/50">
                   <td className="px-4 py-2 font-medium">{c.number}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{c.floor != null ? `${c.floor} эт.` : '—'}</td>
                   <td className="px-4 py-2 text-muted-foreground">{c.name ?? '—'}</td>
                   <td className="px-4 py-2 text-muted-foreground">{c.department?.name ?? '—'}</td>
                   {isAdmin && (

@@ -6,6 +6,8 @@ export interface CallEvent {
   cabinetNumber: string | null;
   patientLastName: string;
   patientFirstName: string;
+  patientMiddleName: string;
+  queueNumber: number | null;
 }
 
 interface BoardAudio {
@@ -41,8 +43,11 @@ export function useCallNotifications({ cabinetIds, board, backendBaseUrl, onCall
     if (board.audioMode === 'SOUND_TTS') {
       audio.onended = () => {
         const text = board.ttsTemplate
-          .replace('{lastName}', event.patientLastName)
-          .replace('{cabinet}', event.cabinetNumber ?? '');
+          .replace('{lastName}',   event.patientLastName)
+          .replace('{firstName}',  event.patientFirstName)
+          .replace('{middleName}', event.patientMiddleName)
+          .replace('{cabinet}',    event.cabinetNumber ?? '')
+          .replace('{number}',     String(event.queueNumber ?? ''));
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'ru-RU';
         window.speechSynthesis.speak(utterance);
@@ -55,8 +60,11 @@ export function useCallNotifications({ cabinetIds, board, backendBaseUrl, onCall
       // Autoplay blocked — fallback to TTS only for SOUND_TTS mode
       if (board.audioMode === 'SOUND_TTS') {
         const text = board.ttsTemplate
-          .replace('{lastName}', event.patientLastName)
-          .replace('{cabinet}', event.cabinetNumber ?? '');
+          .replace('{lastName}',   event.patientLastName)
+          .replace('{firstName}',  event.patientFirstName)
+          .replace('{middleName}', event.patientMiddleName)
+          .replace('{cabinet}',    event.cabinetNumber ?? '')
+          .replace('{number}',     String(event.queueNumber ?? ''));
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'ru-RU';
         window.speechSynthesis.speak(utterance);
@@ -87,10 +95,12 @@ export function useCallNotifications({ cabinetIds, board, backendBaseUrl, onCall
       if (!data.cabinetId || !cabinetIdsRef.current.includes(data.cabinetId)) return;
 
       const event: CallEvent = {
-        cabinetId:        data.cabinetId,
-        cabinetNumber:    data.cabinetNumber,
-        patientLastName:  data.entry?.patient?.lastName ?? '',
-        patientFirstName: data.entry?.patient?.firstName ?? '',
+        cabinetId:          data.cabinetId,
+        cabinetNumber:      data.cabinetNumber,
+        patientLastName:    data.entry?.patient?.lastName ?? '',
+        patientFirstName:   data.entry?.patient?.firstName ?? '',
+        patientMiddleName:  data.entry?.patient?.middleName ?? '',
+        queueNumber:        data.entry?.queueNumber ?? null,
       };
 
       queueRef.current.push(event);

@@ -17,6 +17,7 @@ export const createCabinetsRouter = (trpc: TrpcService, prisma: PrismaService) =
       .input(z.object({
         number: z.string().min(1),
         name: z.string().optional(),
+        floor: z.number().int().optional(),
         departmentId: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -29,6 +30,7 @@ export const createCabinetsRouter = (trpc: TrpcService, prisma: PrismaService) =
         id: z.string(),
         number: z.string().min(1).optional(),
         name: z.string().optional(),
+        floor: z.number().int().optional(),
         departmentId: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {

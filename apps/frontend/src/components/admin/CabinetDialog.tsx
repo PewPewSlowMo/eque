@@ -14,7 +14,7 @@ import {
 interface Props {
   open: boolean;
   onClose: () => void;
-  cabinet?: { id: string; number: string; name?: string | null; department?: { id: string } | null };
+  cabinet?: { id: string; number: string; name?: string | null; floor?: number | null; department?: { id: string } | null };
 }
 
 const NONE_DEPT = '__none__';
@@ -24,12 +24,14 @@ export function CabinetDialog({ open, onClose, cabinet }: Props) {
 
   const [number, setNumber] = useState('');
   const [name, setName] = useState('');
+  const [floor, setFloor] = useState('');
   const [departmentId, setDepartmentId] = useState(NONE_DEPT);
 
   useEffect(() => {
     if (open) {
       setNumber(cabinet?.number ?? '');
       setName(cabinet?.name ?? '');
+      setFloor(cabinet?.floor != null ? String(cabinet.floor) : '');
       setDepartmentId(cabinet?.department?.id ?? NONE_DEPT);
     }
   }, [open, cabinet]);
@@ -51,9 +53,11 @@ export function CabinetDialog({ open, onClose, cabinet }: Props) {
 
   const handleSubmit = () => {
     if (!number.trim()) { toast.error('Номер кабинета обязателен'); return; }
+    const floorNum = floor.trim() ? parseInt(floor.trim(), 10) : undefined;
     const payload = {
       number: number.trim(),
       name: name.trim() || undefined,
+      floor: floorNum,
       departmentId: (departmentId && departmentId !== NONE_DEPT) ? departmentId : undefined,
     };
     if (isEdit) {
@@ -79,6 +83,18 @@ export function CabinetDialog({ open, onClose, cabinet }: Props) {
           <div className="space-y-1">
             <Label>Название</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Кабинет терапевта" />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Этаж</Label>
+            <Input
+              type="number"
+              min={1}
+              max={20}
+              value={floor}
+              onChange={(e) => setFloor(e.target.value)}
+              placeholder="1"
+            />
           </div>
 
           <div className="space-y-1">
