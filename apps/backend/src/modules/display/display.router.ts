@@ -106,6 +106,7 @@ export const createDisplayRouter = (trpc: TrpcService, prisma: PrismaService) =>
           patientLastName:  e.patient.lastName,
           patientFirstName: e.patient.firstName,
           cabinetNumber:    cabinetByDoctorId[e.doctorId]?.number ?? '?',
+          scheduledAt:      e.scheduledAt ?? null,
         }));
 
         return {

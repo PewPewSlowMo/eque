@@ -86,7 +86,7 @@ export function BoardView({ slug }: Props) {
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         <ActiveCallsPanel calls={data.activeCalls as any} />
-        <QueuePanel queue={data.queue as any} columns={data.board.columns} />
+        <QueuePanel queue={data.queue as any} />
       </div>
 
       {overlayQueue.length > 0 && (
