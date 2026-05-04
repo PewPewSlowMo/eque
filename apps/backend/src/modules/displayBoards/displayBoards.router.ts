@@ -36,35 +36,30 @@ export const createDisplayBoardsRouter = (trpc: TrpcService, prisma: PrismaServi
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         }
         const { cabinetIds, ...data } = input;
-        return prisma.displayBoard.create({
-          data: {
-            ...data,
-            cabinets: {
-              create: cabinetIds.map((cabinetId) => ({ cabinetId })),
+        try {
+          return await prisma.displayBoard.create({
+            data: {
+              ...data,
+              cabinets: {
+                create: cabinetIds.map((cabinetId) => ({ cabinetId })),
+              },
+            } as any,
+            include: {
+              cabinets: {
+                include: { cabinet: { select: { id: true, number: true, name: true } } },
+              },
             },
-          } as any,
-          include: {
-            cabinets: {
-              include: { cabinet: { select: { id: true, number: true, name: true } } },
-            },
-          },
-        });
+          });
+        } catch (e: any) {
+          if (e?.code === 'P2002') {
+            throw new TRPCError({ code: 'CONFLICT', message: 'Табло с таким slug уже существует' });
+          }
+          throw e;
+        }
       }),
 
     update: trpc.protectedProcedure
-      .input(
-        z.object({ id: z.string() }).merge(
-          z.object({
-            name: z.string().min(1).optional(),
-            slug: z.string().min(1).regex(/^[a-z0-9-]+$/, 'Только строчные латинские буквы, цифры и дефис').optional(),
-            columns: z.number().int().min(2).max(4).optional(),
-            audioMode: z.enum(['SOUND', 'SOUND_TTS']).optional(),
-            ttsTemplate: z.string().optional(),
-            soundUrl: z.string().optional(),
-            cabinetIds: z.array(z.string()).optional(),
-          })
-        )
-      )
+      .input(z.object({ id: z.string() }).merge(BoardInput.partial()))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'ADMIN') {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
@@ -77,15 +72,22 @@ export const createDisplayBoardsRouter = (trpc: TrpcService, prisma: PrismaServi
               data: cabinetIds.map((cabinetId) => ({ boardId: id, cabinetId })),
             });
           }
-          return tx.displayBoard.update({
-            where: { id },
-            data: data as any,
-            include: {
-              cabinets: {
-                include: { cabinet: { select: { id: true, number: true, name: true } } },
+          try {
+            return await tx.displayBoard.update({
+              where: { id },
+              data: data as any,
+              include: {
+                cabinets: {
+                  include: { cabinet: { select: { id: true, number: true, name: true } } },
+                },
               },
-            },
-          });
+            });
+          } catch (e: any) {
+            if (e?.code === 'P2002') {
+              throw new TRPCError({ code: 'CONFLICT', message: 'Табло с таким slug уже существует' });
+            }
+            throw e;
+          }
         });
       }),
 
