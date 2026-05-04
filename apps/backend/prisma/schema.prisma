@@ -317,8 +317,9 @@ model DisplayBoardCabinet {
   boardId   String
   cabinetId String
   board     DisplayBoard @relation(fields: [boardId],   references: [id], onDelete: Cascade)
-  cabinet   Cabinet      @relation(fields: [cabinetId], references: [id])
+  cabinet   Cabinet      @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
 
   @@id([boardId, cabinetId])
+  @@index([cabinetId])
   @@map("display_board_cabinets")
 }
