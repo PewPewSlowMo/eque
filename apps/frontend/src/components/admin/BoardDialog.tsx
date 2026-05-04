@@ -40,6 +40,7 @@ export function BoardDialog({ open, onClose, board }: Props) {
   const [soundUrl, setSoundUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const autoSelectDoneRef = useRef(false);
 
   const { data: cabinets = [] } = trpc.cabinets.getAll.useQuery();
   const utils = trpc.useUtils();
@@ -53,9 +54,22 @@ export function BoardDialog({ open, onClose, board }: Props) {
       setTtsTemplate(board?.ttsTemplate ?? '{lastName} пройдите в кабинет {cabinet}');
       setSelectedCabIds(board?.cabinets.map((c) => c.cabinetId) ?? []);
       setSelectedFloor(null);
+      autoSelectDoneRef.current = false;
       setSoundUrl(board?.soundUrl ?? null);
     }
   }, [open, board]);
+
+  // В режиме редактирования — авто-раскрыть этаж первого выбранного кабинета
+  useEffect(() => {
+    if (!open || autoSelectDoneRef.current || selectedCabIds.length === 0) return;
+    const list = cabinets as any[];
+    if (list.length === 0) return;
+    const first = list.find((c: any) => selectedCabIds.includes(c.id));
+    if (first) {
+      setSelectedFloor(first.floor ?? 'none');
+      autoSelectDoneRef.current = true;
+    }
+  }, [open, cabinets, selectedCabIds]);
 
   const create = trpc.displayBoards.create.useMutation({
     onSuccess: () => { utils.displayBoards.getAll.invalidate(); toast.success('Табло создано'); onClose(); },
