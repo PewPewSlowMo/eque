@@ -7,9 +7,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 
 const BACKEND_BASE = (import.meta.env.VITE_TRPC_URL || 'http://localhost:3002/trpc').replace('/trpc', '');
 
@@ -35,7 +32,7 @@ export function BoardDialog({ open, onClose, board }: Props) {
 
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
-  const [columns, setColumns] = useState('3');
+  const [columns, setColumns] = useState(3);
   const [audioMode, setAudioMode] = useState<'SOUND' | 'SOUND_TTS'>('SOUND');
   const [ttsTemplate, setTtsTemplate] = useState('{lastName} пройдите в кабинет {cabinet}');
   const [selectedCabIds, setSelectedCabIds] = useState<string[]>([]);
@@ -50,7 +47,7 @@ export function BoardDialog({ open, onClose, board }: Props) {
     if (open) {
       setName(board?.name ?? '');
       setSlug(board?.slug ?? '');
-      setColumns(String(board?.columns ?? 3));
+      setColumns(board?.columns ?? 3);
       setAudioMode((board?.audioMode as 'SOUND' | 'SOUND_TTS') ?? 'SOUND');
       setTtsTemplate(board?.ttsTemplate ?? '{lastName} пройдите в кабинет {cabinet}');
       setSelectedCabIds(board?.cabinets.map((c) => c.cabinetId) ?? []);
@@ -109,7 +106,7 @@ export function BoardDialog({ open, onClose, board }: Props) {
     const payload = {
       name: name.trim(),
       slug: slug.trim(),
-      columns: Number(columns),
+      columns,
       audioMode,
       ttsTemplate,
       soundUrl: soundUrl ?? undefined,
@@ -125,94 +122,113 @@ export function BoardDialog({ open, onClose, board }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'Редактировать табло' : 'Новое табло'}</DialogTitle>
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto" aria-describedby={undefined}>
+        <DialogHeader className="pb-1">
+          <DialogTitle className="text-base">{isEdit ? 'Редактировать табло' : 'Новое табло'}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          {/* Name */}
-          <div className="space-y-1">
-            <Label>Название *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Табло 1 этажа" />
-          </div>
-
-          {/* Slug */}
-          <div className="space-y-1">
-            <Label>Slug (URL) *</Label>
-            <Input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} placeholder="floor-1" />
-            <p className="text-xs text-muted-foreground">Публичный адрес: /board/{slug || 'slug'}</p>
-          </div>
-
-          {/* Cabinets multi-select */}
-          <div className="space-y-1">
-            <Label>Кабинеты *</Label>
-            <div className="border rounded-md p-2 max-h-40 overflow-y-auto space-y-1">
-              {(cabinets as any[]).length === 0 && (
-                <p className="text-sm text-muted-foreground">Нет кабинетов</p>
-              )}
-              {(cabinets as any[]).map((c: any) => (
-                <label key={c.id} className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-muted/50">
-                  <input
-                    type="checkbox"
-                    checked={selectedCabIds.includes(c.id)}
-                    onChange={() => toggleCabinet(c.id)}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">{c.number}{c.name ? ` — ${c.name}` : ''}</span>
-                </label>
-              ))}
+        <div className="space-y-3 py-1">
+          {/* Name + Slug в одну строку */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Название *</Label>
+              <Input
+                className="h-8 text-sm"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Табло 1 этажа"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Slug (URL) *</Label>
+              <Input
+                className="h-8 text-sm"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value.toLowerCase())}
+                placeholder="floor-1"
+              />
+              <p className="text-[10px] text-muted-foreground">/board/{slug || 'slug'}</p>
             </div>
           </div>
 
-          {/* Columns */}
+          {/* Cabinets */}
           <div className="space-y-1">
-            <Label>Колонки очереди</Label>
-            <Select value={columns} onValueChange={setColumns}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2">2 колонки</SelectItem>
-                <SelectItem value="3">3 колонки</SelectItem>
-                <SelectItem value="4">4 колонки</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label className="text-xs">Кабинеты *</Label>
+            <div className="border rounded-md p-1.5 max-h-28 overflow-y-auto">
+              {(cabinets as any[]).length === 0 && (
+                <p className="text-xs text-muted-foreground px-1">Нет кабинетов</p>
+              )}
+              <div className="grid grid-cols-2 gap-0.5">
+                {(cabinets as any[]).map((c: any) => (
+                  <label key={c.id} className="flex items-center gap-1.5 cursor-pointer px-1 py-0.5 rounded hover:bg-muted/50">
+                    <input
+                      type="checkbox"
+                      checked={selectedCabIds.includes(c.id)}
+                      onChange={() => toggleCabinet(c.id)}
+                      className="w-3.5 h-3.5 shrink-0"
+                    />
+                    <span className="text-xs truncate">{c.number}{c.name ? ` — ${c.name}` : ''}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* Audio mode */}
-          <div className="space-y-1">
-            <Label>Режим аудио</Label>
-            <div className="flex gap-4 pt-1">
-              {(['SOUND', 'SOUND_TTS'] as const).map((mode) => (
-                <label key={mode} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={audioMode === mode}
-                    onChange={() => setAudioMode(mode)}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">
-                    {mode === 'SOUND' ? 'Только звук' : 'Звук + речь'}
-                  </span>
-                </label>
-              ))}
+          {/* Columns + Audio mode в одну строку */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label className="text-xs">Колонки очереди</Label>
+              <div className="flex gap-1 pt-0.5">
+                {[2, 3, 4].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setColumns(n)}
+                    className={`flex-1 h-7 text-xs rounded border transition-colors ${
+                      columns === n
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-input hover:bg-muted'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Режим аудио</Label>
+              <div className="flex flex-col gap-1 pt-0.5">
+                {(['SOUND', 'SOUND_TTS'] as const).map((mode) => (
+                  <label key={mode} className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={audioMode === mode}
+                      onChange={() => setAudioMode(mode)}
+                      className="w-3.5 h-3.5"
+                    />
+                    <span className="text-xs">{mode === 'SOUND' ? 'Только звук' : 'Звук + речь'}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Sound file upload */}
           <div className="space-y-1">
-            <Label>Звуковой файл (.mp3 / .wav / .ogg)</Label>
+            <Label className="text-xs">Звуковой файл (.mp3 / .wav / .ogg)</Label>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
+                className="h-7 text-xs"
                 disabled={uploading}
                 onClick={() => fileRef.current?.click()}
               >
-                {uploading ? 'Загрузка...' : soundUrl ? 'Заменить файл' : 'Выбрать файл'}
+                {uploading ? 'Загрузка...' : soundUrl ? 'Заменить' : 'Выбрать файл'}
               </Button>
               {soundUrl && (
-                <span className="text-xs text-muted-foreground truncate max-w-[200px]">{soundUrl}</span>
+                <span className="text-[10px] text-muted-foreground truncate max-w-[160px]">{soundUrl}</span>
               )}
             </div>
             <input
@@ -231,22 +247,22 @@ export function BoardDialog({ open, onClose, board }: Props) {
           {/* TTS template (only SOUND_TTS) */}
           {audioMode === 'SOUND_TTS' && (
             <div className="space-y-1">
-              <Label>Шаблон речи</Label>
+              <Label className="text-xs">Шаблон речи</Label>
               <textarea
                 value={ttsTemplate}
                 onChange={(e) => setTtsTemplate(e.target.value)}
-                className="w-full border rounded-md p-2 text-sm resize-none bg-background"
+                className="w-full border rounded-md p-1.5 text-xs resize-none bg-background"
                 rows={2}
                 placeholder="{lastName} пройдите в кабинет {cabinet}"
               />
-              <p className="text-xs text-muted-foreground">Переменные: {'{lastName}'}, {'{cabinet}'}</p>
+              <p className="text-[10px] text-muted-foreground">Переменные: {'{lastName}'}, {'{cabinet}'}</p>
             </div>
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Отмена</Button>
-          <Button onClick={handleSubmit} disabled={isPending}>
+        <DialogFooter className="pt-1">
+          <Button variant="outline" size="sm" onClick={onClose}>Отмена</Button>
+          <Button size="sm" onClick={handleSubmit} disabled={isPending}>
             {isEdit ? 'Сохранить' : 'Создать'}
           </Button>
         </DialogFooter>
