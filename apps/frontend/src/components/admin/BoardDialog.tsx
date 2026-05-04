@@ -36,6 +36,7 @@ export function BoardDialog({ open, onClose, board }: Props) {
   const [audioMode, setAudioMode] = useState<'SOUND' | 'SOUND_TTS'>('SOUND');
   const [ttsTemplate, setTtsTemplate] = useState('{lastName} пройдите в кабинет {cabinet}');
   const [selectedCabIds, setSelectedCabIds] = useState<string[]>([]);
+  const [selectedFloor, setSelectedFloor] = useState<number | null | 'none'>(null);
   const [soundUrl, setSoundUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -51,6 +52,7 @@ export function BoardDialog({ open, onClose, board }: Props) {
       setAudioMode((board?.audioMode as 'SOUND' | 'SOUND_TTS') ?? 'SOUND');
       setTtsTemplate(board?.ttsTemplate ?? '{lastName} пройдите в кабинет {cabinet}');
       setSelectedCabIds(board?.cabinets.map((c) => c.cabinetId) ?? []);
+      setSelectedFloor(null);
       setSoundUrl(board?.soundUrl ?? null);
     }
   }, [open, board]);
@@ -151,54 +153,80 @@ export function BoardDialog({ open, onClose, board }: Props) {
             </div>
           </div>
 
-          {/* Cabinets grouped by floor */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">Кабинеты *</Label>
-              {selectedCabIds.length > 0 && (
-                <span className="text-[10px] text-muted-foreground">выбрано: {selectedCabIds.length}</span>
-              )}
-            </div>
-            <div className="border rounded-md max-h-36 overflow-y-auto">
-              {(cabinets as any[]).length === 0 && (
-                <p className="text-xs text-muted-foreground px-2 py-1.5">Нет кабинетов</p>
-              )}
-              {(() => {
-                const list = cabinets as any[];
-                const withFloor = list.filter((c: any) => c.floor != null);
-                const noFloor   = list.filter((c: any) => c.floor == null);
-                const floors = [...new Set(withFloor.map((c: any) => c.floor as number))].sort((a, b) => a - b);
-                const groups: Array<{ label: string; items: any[] }> = [
-                  ...floors.map((f) => ({
-                    label: `${f} этаж`,
-                    items: withFloor.filter((c: any) => c.floor === f),
-                  })),
-                  ...(noFloor.length > 0 ? [{ label: 'Этаж не указан', items: noFloor }] : []),
-                ];
-                if (groups.length === 0) return null;
-                return groups.map((g) => (
-                  <div key={g.label}>
-                    <div className="px-2 py-0.5 text-[10px] font-semibold text-muted-foreground bg-muted/40 sticky top-0">
-                      {g.label}
-                    </div>
-                    <div className="grid grid-cols-2 gap-0.5 p-1">
-                      {g.items.map((c: any) => (
-                        <label key={c.id} className="flex items-center gap-1.5 cursor-pointer px-1 py-0.5 rounded hover:bg-muted/50">
-                          <input
-                            type="checkbox"
-                            checked={selectedCabIds.includes(c.id)}
-                            onChange={() => toggleCabinet(c.id)}
-                            className="w-3.5 h-3.5 shrink-0"
-                          />
-                          <span className="text-xs truncate">{c.number}{c.name ? ` ${c.name}` : ''}</span>
-                        </label>
-                      ))}
-                    </div>
+          {/* Cabinets: floor selector → cabinet list */}
+          {(() => {
+            const list = cabinets as any[];
+            const withFloor = list.filter((c: any) => c.floor != null);
+            const noFloor   = list.filter((c: any) => c.floor == null);
+            const floors = [...new Set(withFloor.map((c: any) => c.floor as number))].sort((a, b) => a - b);
+            const floorOptions: Array<{ key: number | 'none'; label: string; items: any[] }> = [
+              ...floors.map((f) => ({ key: f as number | 'none', label: `${f} этаж`, items: withFloor.filter((c: any) => c.floor === f) })),
+              ...(noFloor.length > 0 ? [{ key: 'none' as const, label: 'Без этажа', items: noFloor }] : []),
+            ];
+            const currentItems = selectedFloor !== null
+              ? (floorOptions.find((fo) => fo.key === selectedFloor)?.items ?? [])
+              : [];
+            return (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Кабинеты *</Label>
+                  {selectedCabIds.length > 0 && (
+                    <span className="text-[10px] text-muted-foreground">выбрано: {selectedCabIds.length}</span>
+                  )}
+                </div>
+                {/* Floor buttons */}
+                {floorOptions.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {floorOptions.map((fo) => {
+                      const countSelected = fo.items.filter((c: any) => selectedCabIds.includes(c.id)).length;
+                      return (
+                        <button
+                          key={String(fo.key)}
+                          type="button"
+                          onClick={() => setSelectedFloor(fo.key === selectedFloor ? null : fo.key)}
+                          className={`h-6 px-2 text-[11px] rounded border transition-colors ${
+                            selectedFloor === fo.key
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'border-input hover:bg-muted'
+                          }`}
+                        >
+                          {fo.label}{countSelected > 0 ? ` (${countSelected})` : ''}
+                        </button>
+                      );
+                    })}
                   </div>
-                ));
-              })()}
-            </div>
-          </div>
+                )}
+                {/* Cabinet list for selected floor */}
+                {selectedFloor !== null && (
+                  <div className="border rounded-md max-h-32 overflow-y-auto">
+                    {currentItems.length === 0 ? (
+                      <p className="text-xs text-muted-foreground px-2 py-1.5">Нет кабинетов</p>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-0.5 p-1">
+                        {currentItems.map((c: any) => (
+                          <label key={c.id} className="flex items-center gap-1.5 cursor-pointer px-1 py-0.5 rounded hover:bg-muted/50">
+                            <input
+                              type="checkbox"
+                              checked={selectedCabIds.includes(c.id)}
+                              onChange={() => toggleCabinet(c.id)}
+                              className="w-3.5 h-3.5 shrink-0"
+                            />
+                            <span className="text-xs truncate">{c.number}{c.name ? ` ${c.name}` : ''}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {selectedFloor === null && floorOptions.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground">Выберите этаж для отображения кабинетов</p>
+                )}
+                {list.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Нет кабинетов</p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Columns + Audio mode в одну строку */}
           <div className="grid grid-cols-2 gap-4">
