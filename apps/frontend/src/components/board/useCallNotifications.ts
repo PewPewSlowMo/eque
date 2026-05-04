@@ -34,42 +34,38 @@ export function useCallNotifications({ cabinetIds, board, backendBaseUrl, onCall
   useEffect(() => { cabinetIdsRef.current = cabinetIds; }, [cabinetIds]);
   useEffect(() => { onCallRef.current = onCall; }, [onCall]);
 
+  const SOUND_REPEATS = 3;
+
   const playAudio = useCallback((event: CallEvent) => {
     if (!board.soundUrl) return;
 
     const audio = audioRef.current;
     audio.src = `${backendBaseUrl}${board.soundUrl}`;
 
-    if (board.audioMode === 'SOUND_TTS') {
-      audio.onended = () => {
-        const text = board.ttsTemplate
-          .replace('{lastName}',   event.patientLastName)
-          .replace('{firstName}',  event.patientFirstName)
-          .replace('{middleName}', event.patientMiddleName)
-          .replace('{cabinet}',    event.cabinetNumber ?? '')
-          .replace('{number}',     String(event.queueNumber ?? ''));
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'ru-RU';
-        window.speechSynthesis.speak(utterance);
-      };
-    } else {
-      audio.onended = null;
-    }
+    const speakTTS = () => {
+      if (board.audioMode !== 'SOUND_TTS') return;
+      const text = board.ttsTemplate
+        .replace('{lastName}',   event.patientLastName)
+        .replace('{firstName}',  event.patientFirstName)
+        .replace('{middleName}', event.patientMiddleName)
+        .replace('{cabinet}',    event.cabinetNumber ?? '')
+        .replace('{number}',     String(event.queueNumber ?? ''));
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ru-RU';
+      window.speechSynthesis.speak(utterance);
+    };
 
-    audio.play().catch(() => {
-      // Autoplay blocked — fallback to TTS only for SOUND_TTS mode
-      if (board.audioMode === 'SOUND_TTS') {
-        const text = board.ttsTemplate
-          .replace('{lastName}',   event.patientLastName)
-          .replace('{firstName}',  event.patientFirstName)
-          .replace('{middleName}', event.patientMiddleName)
-          .replace('{cabinet}',    event.cabinetNumber ?? '')
-          .replace('{number}',     String(event.queueNumber ?? ''));
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'ru-RU';
-        window.speechSynthesis.speak(utterance);
+    let played = 0;
+    audio.onended = () => {
+      played++;
+      if (played < SOUND_REPEATS) {
+        audio.play().catch(speakTTS);
+      } else {
+        speakTTS();
       }
-    });
+    };
+
+    audio.play().catch(speakTTS);
   }, [board, backendBaseUrl]);
 
   const processNext = useCallback(() => {
