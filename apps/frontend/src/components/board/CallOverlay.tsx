@@ -14,9 +14,30 @@ const SIZE = {
 
 const CLS_MAP: Record<number, keyof typeof SIZE> = { 1: 'one', 2: 'two', 3: 'three' };
 
+const AUTO_DISMISS_MS = 5_000;
+
+const OVERLAY_STYLES = `
+  @keyframes bg-pulse {
+    0%   { background: rgba(0,0,0,.93); }
+    100% { background: rgba(0,18,14,.97); }
+  }
+  @keyframes strip-border {
+    0%   { border-color: rgba(179,145,104,.08); box-shadow: none; }
+    100% { border-color: rgba(179,145,104,.75); box-shadow: 0 0 28px rgba(179,145,104,.1); }
+  }
+  @keyframes gold-flash {
+    0%   { opacity: .7; text-shadow: none; }
+    100% { opacity: 1;  text-shadow: 0 0 30px rgba(179,145,104,.5); }
+  }
+  @keyframes arrow-move {
+    0%   { color: rgba(255,255,255,.2); transform: translateY(-8%) translateX(-5px); }
+    100% { color: rgba(255,255,255,.75); transform: translateY(-8%) translateX(5px); }
+  }
+`;
+
 export function CallOverlay({ calls, onDismiss }: Props) {
   useEffect(() => {
-    const id = setTimeout(onDismiss, 5_000);
+    const id = setTimeout(onDismiss, AUTO_DISMISS_MS);
     return () => clearTimeout(id);
   }, [calls, onDismiss]);
 
@@ -27,24 +48,7 @@ export function CallOverlay({ calls, onDismiss }: Props) {
 
   return (
     <>
-      <style>{`
-        @keyframes bg-pulse {
-          0%   { background: rgba(0,0,0,.93); }
-          100% { background: rgba(0,18,14,.97); }
-        }
-        @keyframes strip-border {
-          0%   { border-color: rgba(179,145,104,.08); box-shadow: none; }
-          100% { border-color: rgba(179,145,104,.75); box-shadow: 0 0 28px rgba(179,145,104,.1); }
-        }
-        @keyframes gold-flash {
-          0%   { opacity: .7; text-shadow: none; }
-          100% { opacity: 1;  text-shadow: 0 0 30px rgba(179,145,104,.5); }
-        }
-        @keyframes arrow-move {
-          0%   { color: rgba(255,255,255,.2); transform: translateY(-8%) translateX(-5px); }
-          100% { color: rgba(255,255,255,.75); transform: translateY(-8%) translateX(5px); }
-        }
-      `}</style>
+      <style>{OVERLAY_STYLES}</style>
 
       <div
         style={{
@@ -57,7 +61,7 @@ export function CallOverlay({ calls, onDismiss }: Props) {
       >
         {calls.slice(0, 3).map((call, i) => (
           <div
-            key={i}
+            key={`${call.cabinetId ?? 'none'}-${call.patientLastName}`}
             style={{
               flex: 1, display: 'flex', flexDirection: 'row',
               alignItems: 'center', justifyContent: 'center',
