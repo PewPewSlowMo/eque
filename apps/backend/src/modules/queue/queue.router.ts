@@ -271,7 +271,17 @@ export const createQueueRouter = (
           } as any,
         });
 
-        events.emit('queue:called', { doctorId: input.doctorId, entry: called });
+        const callNextAssignment = await prisma.doctorAssignment.findFirst({
+          where: { doctorId: input.doctorId, isActive: true },
+          include: { cabinet: { select: { id: true, number: true } } },
+        });
+
+        events.emit('queue:called', {
+          doctorId:      input.doctorId,
+          cabinetId:     callNextAssignment?.cabinetId ?? null,
+          cabinetNumber: callNextAssignment?.cabinet.number ?? null,
+          entry:         called,
+        });
         events.emit('queue:updated', { doctorId: input.doctorId, entry: called });
         return { called };
       }),
@@ -324,7 +334,17 @@ export const createQueueRouter = (
           } as any,
         });
 
-        events.emit('queue:called', { doctorId: entry.doctorId, entry: called });
+        const callSpecificAssignment = await prisma.doctorAssignment.findFirst({
+          where: { doctorId: entry.doctorId, isActive: true },
+          include: { cabinet: { select: { id: true, number: true } } },
+        });
+
+        events.emit('queue:called', {
+          doctorId:      entry.doctorId,
+          cabinetId:     callSpecificAssignment?.cabinetId ?? null,
+          cabinetNumber: callSpecificAssignment?.cabinet.number ?? null,
+          entry:         called,
+        });
         events.emit('queue:updated', { doctorId: entry.doctorId, entry: called });
         return { called };
       }),
