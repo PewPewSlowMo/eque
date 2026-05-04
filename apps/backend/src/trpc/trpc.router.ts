@@ -13,6 +13,7 @@ import { createSettingsRouter } from '../modules/settings/settings.router';
 import { createAssignmentsRouter } from '../modules/assignments/assignments.router';
 import { createQueueRouter } from '../modules/queue/queue.router';
 import { createDisplayRouter } from '../modules/display/display.router';
+import { createDisplayBoardsRouter } from '../modules/displayBoards/displayBoards.router';
 import { createSchedulesRouter } from '../modules/schedules/schedules.router';
 
 @Injectable()
@@ -38,6 +39,7 @@ export class TrpcRouter {
     assignments: createAssignmentsRouter(this.trpc, this.prisma, this.eventsGateway),
     queue: createQueueRouter(this.trpc, this.prisma, this.eventsGateway),
     display: createDisplayRouter(this.trpc, this.prisma),
+    displayBoards: createDisplayBoardsRouter(this.trpc, this.prisma),
     schedules: createSchedulesRouter(this.trpc, this.prisma),
   });
 
