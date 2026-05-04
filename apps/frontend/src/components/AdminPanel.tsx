@@ -6,6 +6,7 @@ import { CategoriesTab } from './admin/CategoriesTab';
 import { StatsTab } from './admin/StatsTab';
 import { ScheduleTab } from './admin/ScheduleTab';
 import { DepartmentsTab } from './admin/DepartmentsTab';
+import { BoardsTab } from './admin/BoardsTab';
 
 export function AdminPanel() {
   const { user } = useUser();
@@ -21,6 +22,7 @@ export function AdminPanel() {
           <TabsTrigger value="cabinets">Кабинеты</TabsTrigger>
           <TabsTrigger value="categories">Категории</TabsTrigger>
           <TabsTrigger value="stats">Статистика</TabsTrigger>
+          {isAdmin && <TabsTrigger value="boards">Табло</TabsTrigger>}
         </TabsList>
 
         {isAdmin && (
@@ -50,6 +52,12 @@ export function AdminPanel() {
         <TabsContent value="stats" className="pt-4">
           <StatsTab />
         </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="boards" className="pt-4">
+            <BoardsTab />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
