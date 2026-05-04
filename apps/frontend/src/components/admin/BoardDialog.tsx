@@ -86,7 +86,10 @@ export function BoardDialog({ open, onClose, board }: Props) {
         headers: { authorization: `Bearer ${token}` },
         body: fd,
       });
-      if (!res.ok) throw new Error('Ошибка загрузки');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as any).message ?? 'Ошибка загрузки');
+      }
       const json = await res.json();
       setSoundUrl(json.soundUrl);
       toast.success('Файл загружен');
@@ -197,7 +200,7 @@ export function BoardDialog({ open, onClose, board }: Props) {
 
           {/* Sound file upload */}
           <div className="space-y-1">
-            <Label>Звуковой файл (.mp3 / .wav)</Label>
+            <Label>Звуковой файл (.mp3 / .wav / .ogg)</Label>
             <div className="flex items-center gap-2">
               <Button
                 type="button"

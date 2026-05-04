@@ -29,7 +29,7 @@ export function ActiveCallsPanel({ calls }: Props) {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden' }}>
           {calls.map((call) => (
             <div
-              key={call.cabinetNumber}
+              key={`${call.cabinetNumber}-${String(call.calledAt ?? '')}`}
               style={{
                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 gap: 20, padding: '12px 24px', borderRadius: 12,

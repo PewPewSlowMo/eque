@@ -42,7 +42,7 @@ export function QueuePanel({ queue, columns }: Props) {
 
   const displayList = useMemo(
     () => shouldScroll ? [...queue, ...queue] : queue,
-    [queue],
+    [queue, shouldScroll],
   );
 
   const rows = useMemo(() => chunkArray(displayList, columns), [displayList, columns]);
@@ -71,8 +71,8 @@ export function QueuePanel({ queue, columns }: Props) {
             } : {}),
           }}
         >
-          {rows.map((row, rowIndex) => (
-            <div key={rowIndex} style={{ display: 'flex', gap: 6 }}>
+          {rows.map((row) => (
+            <div key={row[0]?.queueNumber ?? -1} style={{ display: 'flex', gap: 6 }}>
               {row.map((entry) => (
                 <div
                   key={entry.queueNumber}
