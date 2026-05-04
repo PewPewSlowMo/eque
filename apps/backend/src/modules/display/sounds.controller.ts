@@ -35,7 +35,7 @@ export class SoundsController {
       limits: { fileSize: 10 * 1024 * 1024 },
     }),
   )
-  uploadSound(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
+  uploadSound(@Req() req: any, @UploadedFile() file: any) {
     const auth = req.headers.authorization as string | undefined;
     if (!auth?.startsWith('Bearer ')) throw new UnauthorizedException();
     const user = TrpcService.verifyToken(auth.substring(7));
