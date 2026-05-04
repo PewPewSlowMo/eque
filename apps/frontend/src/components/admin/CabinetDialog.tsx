@@ -66,7 +66,7 @@ export function CabinetDialog({ open, onClose, cabinet }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Редактировать кабинет' : 'Новый кабинет'}</DialogTitle>
         </DialogHeader>
