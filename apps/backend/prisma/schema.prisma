@@ -144,6 +144,7 @@ model Cabinet {
   isActive     Boolean @default(true)
 
   assignments DoctorAssignment[]
+  boards      DisplayBoardCabinet[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -291,4 +292,33 @@ model CategorySettings {
   updatedAt DateTime @updatedAt
 
   @@map("category_settings")
+}
+
+// ============================================================================
+// DISPLAY BOARDS
+// ============================================================================
+
+model DisplayBoard {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  columns     Int      @default(3)
+  audioMode   String   @default("SOUND")
+  ttsTemplate String   @default("{lastName} пройдите в кабинет {cabinet}")
+  soundUrl    String?
+  cabinets    DisplayBoardCabinet[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("display_boards")
+}
+
+model DisplayBoardCabinet {
+  boardId   String
+  cabinetId String
+  board     DisplayBoard @relation(fields: [boardId],   references: [id], onDelete: Cascade)
+  cabinet   Cabinet      @relation(fields: [cabinetId], references: [id])
+
+  @@id([boardId, cabinetId])
+  @@map("display_board_cabinets")
 }
