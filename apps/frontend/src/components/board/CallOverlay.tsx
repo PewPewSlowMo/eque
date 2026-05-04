@@ -7,9 +7,9 @@ interface Props {
 }
 
 const SIZE = {
-  one:   { patient: 116, arrow: 249, cabNum: 177, cabLabel: 50, gap: 19, padding: '0 48px' },
-  two:   { patient: 103, arrow: 190, cabNum: 134, cabLabel: 37, gap: 16, padding: '0 38px' },
-  three: { patient: 76,  arrow: 146, cabNum:  99, cabLabel: 27, gap: 13, padding: '0 32px' },
+  one:   { patient: 93, arrow: 199, cabNum: 142, cabLabel: 40, gap: 15, padding: '0 38px' },
+  two:   { patient: 82, arrow: 152, cabNum: 107, cabLabel: 30, gap: 13, padding: '0 30px' },
+  three: { patient: 61, arrow: 117, cabNum:  79, cabLabel: 22, gap: 10, padding: '0 26px' },
 } as const;
 
 const CLS_MAP: Record<number, keyof typeof SIZE> = { 1: 'one', 2: 'two', 3: 'three' };

@@ -41,9 +41,11 @@ export function DoctorView() {
   const allEntries = entries as any[];
   const inProgressPatients = allEntries.filter((e: any) => e.status === 'IN_PROGRESS');
   const calledEntry   = allEntries.find((e: any) => e.status === 'CALLED') ?? null;
+  // All entries go to the list (finished ones filtered/displayed inside DoctorQueueList)
   const waitingEntries = allEntries.filter(
     (e: any) => !['IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(e.status),
   );
+  const queueListEntries = allEntries; // pass everything; DoctorQueueList handles grouping
 
   const panelWidth = 'var(--q-panel-width, 240px)';
 
@@ -100,7 +102,7 @@ export function DoctorView() {
           </div>
         ) : (
           <DoctorQueueList
-            entries={waitingEntries}
+            entries={queueListEntries}
             doctorId={doctorId}
             calledEntryId={calledEntry?.id}
           />

@@ -9,10 +9,16 @@ const PRIORITY_PILL: Record<string, { label: string; cls: string }> = {
 };
 
 const STATUS_PILL: Record<string, { label: string; cls: string }> = {
-  WAITING_ARRIVAL: { label: 'Не прибыл', cls: 'bg-slate-100 text-slate-500' },
-  ARRIVED:         { label: 'Прибыл',    cls: 'bg-emerald-50 text-emerald-700' },
-  CALLED:          { label: 'Вызван',    cls: 'bg-amber-100 text-amber-700' },
+  WAITING_ARRIVAL: { label: 'Не прибыл',  cls: 'bg-slate-100 text-slate-500' },
+  ARRIVED:         { label: 'Прибыл',     cls: 'bg-emerald-50 text-emerald-700' },
+  CALLED:          { label: 'Вызван',     cls: 'bg-amber-100 text-amber-700' },
+  IN_PROGRESS:     { label: 'На приёме',  cls: 'bg-teal-50 text-teal-700' },
+  COMPLETED:       { label: 'Завершён',   cls: 'bg-slate-100 text-slate-400' },
+  NO_SHOW:         { label: 'Неявка',     cls: 'bg-red-50 text-red-400' },
+  CANCELLED:       { label: 'Отменён',    cls: 'bg-slate-100 text-slate-400' },
 };
+
+const FINISHED = new Set(['COMPLETED', 'CANCELLED', 'NO_SHOW']);
 
 interface QueueEntry {
   id: string;
@@ -70,9 +76,11 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
   const canCallNext = entries.some(e => e.status === 'ARRIVED' && e.paymentConfirmed);
   const anyPending  = callNext.isPending || callSpecific.isPending;
 
-  // Walk-in = no scheduled slot (scheduledAt is null/undefined), regardless of priority label
-  const scheduled = entries.filter(e => e.scheduledAt != null);
-  const walkIn    = entries.filter(e => e.scheduledAt == null);
+  // Walk-in = no scheduled slot, regardless of priority label
+  const activeEntries   = entries.filter(e => !FINISHED.has(e.status));
+  const finishedEntries = entries.filter(e =>  FINISHED.has(e.status));
+  const scheduled = activeEntries.filter(e => e.scheduledAt != null);
+  const walkIn    = activeEntries.filter(e => e.scheduledAt == null);
 
   if (entries.length === 0) {
     return (
@@ -83,6 +91,7 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
   }
 
   const renderEntry = (entry: QueueEntry, isWalkIn = false) => {
+    const isFinished = FINISHED.has(entry.status);
     const prio       = PRIORITY_PILL[entry.priority] ?? PRIORITY_PILL.WALK_IN;
     const stat       = STATUS_PILL[entry.status] ?? { label: entry.status, cls: 'bg-slate-100 text-slate-500' };
     const isCalling  = entry.id === calledEntryId || entry.status === 'CALLED';
@@ -93,7 +102,9 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
       <div
         key={entry.id}
         className={`flex items-start gap-2 px-2.5 py-2 border-b border-border/60 transition-colors ${
-          isCalling
+          isFinished
+            ? 'opacity-50'
+            : isCalling
             ? 'bg-amber-50 border-l-2 border-l-amber-400'
             : isWalkIn
             ? 'bg-orange-50/40 hover:bg-orange-50'
@@ -107,8 +118,9 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
         <span
           className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5"
           style={{
-            background: entry.status === 'ARRIVED' ? '#00685B'
-              : entry.status === 'CALLED' ? '#B39168'
+            background: entry.status === 'ARRIVED'     ? '#00685B'
+              : entry.status === 'CALLED'              ? '#B39168'
+              : entry.status === 'IN_PROGRESS'         ? '#0d9488'
               : '#cbd5e1',
           }}
         />
@@ -201,6 +213,18 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
             </span>
           </div>
           {walkIn.map(e => renderEntry(e, true))}
+        </>
+      )}
+
+      {/* Finished entries for today */}
+      {finishedEntries.length > 0 && (
+        <>
+          <div className="px-2.5 py-1 bg-slate-50 border-b border-t border-border">
+            <span className="text-[8px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+              Завершено сегодня · {finishedEntries.length}
+            </span>
+          </div>
+          {finishedEntries.map(e => renderEntry(e, false))}
         </>
       )}
     </div>

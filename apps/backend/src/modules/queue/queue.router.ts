@@ -42,16 +42,30 @@ export const createQueueRouter = (
     getByDoctor: trpc.protectedProcedure
       .input(z.object({ doctorId: z.string() }))
       .query(async ({ input }) => {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+
         const entries = await prisma.queueEntry.findMany({
           where: {
             doctorId: input.doctorId,
-            status: { in: ['WAITING_ARRIVAL', 'ARRIVED', 'CALLED', 'IN_PROGRESS'] },
+            OR: [
+              { status: { in: ['WAITING_ARRIVAL', 'ARRIVED', 'CALLED', 'IN_PROGRESS'] } },
+              {
+                status: { in: ['COMPLETED', 'CANCELLED', 'NO_SHOW'] },
+                createdAt: { gte: todayStart, lte: todayEnd },
+              },
+            ],
           },
           include: { patient: { select: PATIENT_SELECT } },
         });
 
-        // Sort: priority ASC → arrivedAt ASC (FIFO within priority)
-        return entries.sort((a, b) => {
+        // Active statuses first (by priority/arrived), then finished sorted by completedAt desc
+        const active   = entries.filter(e => !['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(e.status));
+        const finished = entries.filter(e =>  ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(e.status));
+
+        active.sort((a, b) => {
           const pa = PRIORITY_ORDER[a.priority] ?? 99;
           const pb = PRIORITY_ORDER[b.priority] ?? 99;
           if (pa !== pb) return pa - pb;
@@ -59,6 +73,13 @@ export const createQueueRouter = (
           const tb = b.arrivedAt?.getTime() ?? b.createdAt.getTime();
           return ta - tb;
         });
+
+        finished.sort((a, b) =>
+          (b.completedAt?.getTime() ?? b.updatedAt.getTime()) -
+          (a.completedAt?.getTime() ?? a.updatedAt.getTime()),
+        );
+
+        return [...active, ...finished];
       }),
 
     // Add patient to queue (REGISTRAR or CALL_CENTER)
@@ -311,7 +332,7 @@ export const createQueueRouter = (
     // Re-announce current IN_PROGRESS patient on the display board (no status change)
     callRepeat: trpc.protectedProcedure
       .input(z.object({ entryId: z.string() }))
-      .mutation(async ({ _ctx, input }) => {
+      .mutation(async ({ input }) => {
         const entry = await prisma.queueEntry.findUnique({
           where: { id: input.entryId },
           include: { patient: { select: PATIENT_SELECT } },
