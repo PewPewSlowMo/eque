@@ -29,13 +29,23 @@ const SCROLL_STYLES = `
   }
 `;
 
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    result.push(arr.slice(i, i + size));
+  }
+  return result;
+}
+
 export function QueuePanel({ queue, columns }: Props) {
   const shouldScroll = queue.length > SCROLL_THRESHOLD;
 
   const displayList = useMemo(
     () => shouldScroll ? [...queue, ...queue] : queue,
-    [queue, shouldScroll],
+    [queue],
   );
+
+  const rows = useMemo(() => chunkArray(displayList, columns), [displayList, columns]);
 
   const scrollDuration = queue.length * 3;
 
@@ -53,33 +63,38 @@ export function QueuePanel({ queue, columns }: Props) {
 
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${columns}, 1fr)`,
+            display: 'flex',
+            flexDirection: 'column',
             gap: 6,
             ...(shouldScroll ? {
               animation: `scroll-up ${scrollDuration}s linear infinite`,
             } : {}),
           }}
         >
-          {displayList.map((entry, i) => (
-            <div
-              key={i}
-              style={{
-                display: 'flex', flexDirection: 'column',
-                padding: '8px 10px', borderRadius: 8,
-                background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-                <span style={{ color: 'rgba(255,255,255,.45)', fontSize: 13 }}>#{entry.queueNumber}</span>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: PRIORITY_COLOR[entry.priority] ?? '#6b7280', flexShrink: 0 }} />
-              </div>
-              <span style={{ color: '#ffffff', fontWeight: 600, fontSize: 16, marginTop: 2, lineHeight: 1.2 }}>
-                {entry.patientLastName} {entry.patientFirstName.charAt(0)}.
-              </span>
-              <span style={{ color: 'rgba(255,255,255,.4)', fontSize: 13, marginTop: 2 }}>
-                каб. {entry.cabinetNumber}
-              </span>
+          {rows.map((row, rowIndex) => (
+            <div key={rowIndex} style={{ display: 'flex', gap: 6 }}>
+              {row.map((entry) => (
+                <div
+                  key={entry.queueNumber}
+                  style={{
+                    flex: 1,
+                    display: 'flex', flexDirection: 'column',
+                    padding: '8px 10px', borderRadius: 8,
+                    background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+                    <span style={{ color: 'rgba(255,255,255,.45)', fontSize: 13 }}>#{entry.queueNumber}</span>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: PRIORITY_COLOR[entry.priority] ?? '#6b7280', flexShrink: 0 }} />
+                  </div>
+                  <span style={{ color: '#ffffff', fontWeight: 600, fontSize: 16, marginTop: 2, lineHeight: 1.2 }}>
+                    {entry.patientLastName} {entry.patientFirstName ? entry.patientFirstName.charAt(0) + '.' : ''}
+                  </span>
+                  <span style={{ color: 'rgba(255,255,255,.4)', fontSize: 13, marginTop: 2 }}>
+                    каб. {entry.cabinetNumber}
+                  </span>
+                </div>
+              ))}
             </div>
           ))}
         </div>

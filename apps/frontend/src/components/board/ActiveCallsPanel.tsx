@@ -27,17 +27,17 @@ export function ActiveCallsPanel({ calls }: Props) {
         </div>
       ) : (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden' }}>
-          {calls.map((call, i) => (
+          {calls.map((call) => (
             <div
-              key={i}
+              key={call.cabinetNumber}
               style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 gap: 20, padding: '12px 24px', borderRadius: 12,
                 background: 'rgba(0,104,91,.15)', border: '1px solid rgba(0,104,91,.3)',
               }}
             >
               <span style={{ color: '#B39168', fontWeight: 800, fontSize: 48, lineHeight: 1, flexShrink: 0 }}>
-                {call.patientLastName} {call.patientFirstName.charAt(0)}.
+                {call.patientLastName} {call.patientFirstName ? call.patientFirstName.charAt(0) + '.' : ''}
               </span>
               <span style={{ color: 'rgba(255,255,255,.3)', fontSize: 72, lineHeight: 0.6, overflow: 'hidden', flexShrink: 0 }}>
                 →
