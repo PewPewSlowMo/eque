@@ -8,14 +8,13 @@ import { RegistrarView } from '@/components/RegistrarView';
 import { DoctorView } from '@/components/DoctorView';
 import { DepartmentHeadView } from '@/components/DepartmentHeadView';
 import { DisplayBoard } from '@/components/DisplayBoard';
+import { BoardView } from '@/components/board/BoardView';
 import { AdminPanel } from '@/components/AdminPanel';
 import { Toaster } from 'sonner';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
-
-const PUBLIC_ROUTES = ['/board'];
 
 type AdminViewKey = 'admin' | 'registrar' | 'doctor' | 'head' | 'board';
 
@@ -68,7 +67,10 @@ function AppContent() {
     }
   }, [path]);
 
-  if (PUBLIC_ROUTES.includes(path)) return <DisplayBoard />;
+  if (path.startsWith('/board/')) {
+    const slug = path.replace('/board/', '').split('/')[0];
+    return <BoardView slug={slug} />;
+  }
 
   if (isLoading) {
     return (
