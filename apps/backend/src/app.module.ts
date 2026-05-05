@@ -3,8 +3,9 @@ import { PrismaModule } from './database/prisma.module';
 import { TrpcModule } from './trpc/trpc.module';
 import { EventsModule } from './events/events.module';
 import { SoundsModule } from './modules/display/sounds.module';
+import { UsersImportModule } from './modules/users/users-import.module';
 
 @Module({
-  imports: [PrismaModule, TrpcModule, EventsModule, SoundsModule],
+  imports: [PrismaModule, TrpcModule, EventsModule, SoundsModule, UsersImportModule],
 })
 export class AppModule {}
