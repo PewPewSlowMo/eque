@@ -110,10 +110,22 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
           : [];
         const deptMap = new Map(departments.map(d => [d.name, d.id]));
 
-        let created = 0;
-        const errors: string[] = [];
+        // Detect duplicate usernames within the submitted batch
+        const seenUsernames = new Set<string>();
+        const batchErrors: string[] = [];
+        const uniqueUsers = input.users.filter(u => {
+          if (seenUsernames.has(u.username)) {
+            batchErrors.push(`${u.username}: дублирующийся логин в запросе`);
+            return false;
+          }
+          seenUsernames.add(u.username);
+          return true;
+        });
 
-        for (const u of input.users) {
+        let created = 0;
+        const errors: string[] = [...batchErrors];
+
+        for (const u of uniqueUsers) {
           try {
             const hashed = await bcrypt.hash(u.password, 10);
             await prisma.user.create({
