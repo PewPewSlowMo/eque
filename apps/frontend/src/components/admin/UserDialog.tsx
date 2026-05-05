@@ -78,6 +78,36 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
   const { data: departments = [] } = trpc.departments.getAll.useQuery();
   const utils = trpc.useUtils();
 
+  const { data: allServices = [] } = trpc.services.getAll.useQuery(
+    undefined,
+    { enabled: open && (role === 'DOCTOR' || editUser?.role === 'DOCTOR') },
+  );
+
+  const { data: doctorServices = [], refetch: refetchDoctorServices } =
+    trpc.services.getForDoctor.useQuery(
+      { doctorId: editUser?.id ?? '' },
+      { enabled: open && !!editUser?.id && editUser?.role === 'DOCTOR' },
+    );
+
+  const [addServiceId, setAddServiceId] = useState('');
+
+  const assignService = trpc.services.assignToDoctor.useMutation({
+    onSuccess: () => {
+      refetchDoctorServices();
+      setAddServiceId('');
+      toast.success('Услуга добавлена врачу');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const removeService = trpc.services.removeFromDoctor.useMutation({
+    onSuccess: () => {
+      refetchDoctorServices();
+      toast.success('Услуга удалена у врача');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const create = trpc.users.create.useMutation({
     onSuccess: () => { utils.users.getAll.invalidate(); toast.success('Пользователь создан'); onClose(); },
     onError: (e: any) => toast.error(e.message),
@@ -236,6 +266,54 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
                     {opt.label}
                   </label>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {editUser?.role === 'DOCTOR' && editUser?.id && (
+            <div className="space-y-2">
+              <Label>Услуги врача</Label>
+              {(doctorServices as any[]).length === 0 && (
+                <p className="text-xs text-muted-foreground">Нет привязанных услуг</p>
+              )}
+              <div className="space-y-1">
+                {(doctorServices as any[]).map((s: any) => (
+                  <div key={s.id} className="flex items-center justify-between text-sm px-2 py-1 rounded bg-muted/50">
+                    <span>{s.name} <span className="text-xs text-muted-foreground">· {s.durationMinutes} мин</span></span>
+                    <button
+                      type="button"
+                      className="text-xs text-destructive hover:underline"
+                      onClick={() => removeService.mutate({ doctorId: editUser!.id, serviceId: s.id })}
+                    >
+                      Удалить
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <select
+                  value={addServiceId}
+                  onChange={(e) => setAddServiceId(e.target.value)}
+                  className="flex-1 text-sm px-2 py-1.5 rounded border border-border bg-white outline-none"
+                >
+                  <option value="">— добавить услугу —</option>
+                  {(allServices as any[])
+                    .filter((s: any) => !(doctorServices as any[]).some((ds: any) => ds.id === s.id))
+                    .map((s: any) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                </select>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={!addServiceId || assignService.isPending}
+                  onClick={() => {
+                    if (addServiceId) assignService.mutate({ doctorId: editUser!.id, serviceId: addServiceId });
+                  }}
+                >
+                  Добавить
+                </Button>
               </div>
             </div>
           )}
