@@ -275,7 +275,7 @@ export function ScheduleImportDialog({
               </div>
 
               {/* Table — scrollable, fixed height */}
-              <div className="overflow-y-auto border rounded-lg" style={{ maxHeight: '340px' }}>
+              <div className="overflow-y-auto border rounded-lg" style={{ maxHeight: '170px' }}>
                 <table className="w-full text-xs">
                   <thead className="bg-muted sticky top-0 z-10">
                     <tr>
