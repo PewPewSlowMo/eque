@@ -176,14 +176,14 @@ export function ScheduleImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl flex flex-col" style={{ height: '85vh', maxHeight: '85vh' }}>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Экспорт / Импорт графиков</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="flex flex-col flex-1 min-h-0 gap-4 py-2">
           {/* Department + period selectors */}
-          <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex flex-wrap gap-3 items-end flex-shrink-0">
             {!isDeptHead && (
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">Отделение</label>
@@ -235,7 +235,7 @@ export function ScheduleImportDialog({
           </div>
 
           {/* Import file picker */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <Button
               variant="outline"
               size="sm"
@@ -256,12 +256,13 @@ export function ScheduleImportDialog({
             />
           </div>
 
-          {loading && <p className="text-sm text-muted-foreground">Обработка файла...</p>}
+          {loading && <p className="text-sm text-muted-foreground flex-shrink-0">Обработка файла...</p>}
 
           {/* Preview */}
           {step === 'preview' && preview && (
-            <div className="space-y-3">
-              <div className="flex gap-4 text-sm flex-wrap">
+            <div className="flex flex-col flex-1 min-h-0 gap-2">
+              {/* Stats — fixed */}
+              <div className="flex gap-4 text-sm flex-wrap flex-shrink-0">
                 <span className="text-green-600 font-medium">Корректных: {preview.validCount}</span>
                 {hasConflicts && (
                   <span className="text-yellow-600 font-medium">
@@ -273,9 +274,10 @@ export function ScheduleImportDialog({
                 )}
               </div>
 
-              <div className="border rounded-lg overflow-hidden">
+              {/* Table — scrollable */}
+              <div className="flex-1 min-h-0 overflow-y-auto border rounded-lg">
                 <table className="w-full text-xs">
-                  <thead className="bg-muted">
+                  <thead className="bg-muted sticky top-0 z-10">
                     <tr>
                       <th className="text-left px-3 py-2 font-medium">Врач</th>
                       <th className="text-left px-3 py-2 font-medium">Дата</th>
@@ -318,7 +320,7 @@ export function ScheduleImportDialog({
               </div>
 
               {!hasValid && (
-                <p className="text-sm text-destructive">
+                <p className="text-sm text-destructive flex-shrink-0">
                   Нет корректных записей для импорта. Исправьте ошибки в файле.
                 </p>
               )}
@@ -326,13 +328,13 @@ export function ScheduleImportDialog({
           )}
 
           {step === 'done' && (
-            <p className="text-sm text-green-600 font-medium">
+            <p className="text-sm text-green-600 font-medium flex-shrink-0">
               Импорт завершён. Можно закрыть окно или загрузить следующий файл.
             </p>
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={handleClose}>Закрыть</Button>
           {step === 'preview' && hasValid && (
             <Button onClick={handleConfirm} disabled={loading}>
