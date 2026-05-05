@@ -15,6 +15,7 @@ import { createQueueRouter } from '../modules/queue/queue.router';
 import { createDisplayRouter } from '../modules/display/display.router';
 import { createDisplayBoardsRouter } from '../modules/displayBoards/displayBoards.router';
 import { createSchedulesRouter } from '../modules/schedules/schedules.router';
+import { createServicesRouter } from '../modules/services/services.router';
 
 @Injectable()
 export class TrpcRouter {
@@ -41,6 +42,7 @@ export class TrpcRouter {
     display: createDisplayRouter(this.trpc, this.prisma),
     displayBoards: createDisplayBoardsRouter(this.trpc, this.prisma),
     schedules: createSchedulesRouter(this.trpc, this.prisma),
+    services:  createServicesRouter(this.trpc, this.prisma),
   });
 
   async applyMiddleware(app: INestApplication) {
