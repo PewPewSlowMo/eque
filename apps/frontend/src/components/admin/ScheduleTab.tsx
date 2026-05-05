@@ -2,6 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import { useUser } from '@/contexts/UserContext';
+import { Button } from '@/components/ui/button';
+import { ScheduleImportDialog } from './ScheduleImportDialog';
 
 /* ─── helpers ────────────────────────────────────── */
 const DAY_SHORT = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
@@ -142,11 +145,20 @@ export function ScheduleTab() {
   const [year,  setYear]  = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [deptId, setDeptId] = useState('');
+  const { user } = useUser();
+  const isDeptHead = user?.role === 'DEPARTMENT_HEAD';
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<{
     doctorId: string; doctorName: string; date: string;
     existing: { startTime: string; endTime: string; breaks: BreakItem[] } | null;
     anchorEl: HTMLElement;
   } | null>(null);
+
+  useEffect(() => {
+    if (isDeptHead && user?.departmentId && !deptId) {
+      setDeptId(user.departmentId);
+    }
+  }, [isDeptHead, user?.departmentId]);
 
   const { data: departments = [] } = trpc.departments.getAll.useQuery();
   const utils = trpc.useUtils();
@@ -224,6 +236,17 @@ export function ScheduleTab() {
           <button onClick={nextMonth} className="p-1 hover:bg-slate-100 rounded transition-colors">
             <ChevronRight size={14} />
           </button>
+        </div>
+
+        <div className="flex gap-2 ml-auto">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!deptId}
+            onClick={() => setImportOpen(true)}
+          >
+            Импорт / Экспорт
+          </Button>
         </div>
       </div>
 
@@ -363,6 +386,14 @@ export function ScheduleTab() {
           onDelete={() => deleteDay.mutate({ doctorId: editing.doctorId, date: editing.date })}
         />
       )}
+
+      <ScheduleImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        defaultDeptId={deptId || undefined}
+        defaultYear={year}
+        defaultMonth={month}
+      />
     </div>
   );
 }
