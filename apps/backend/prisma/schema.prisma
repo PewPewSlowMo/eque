@@ -77,6 +77,7 @@ model User {
   doctorQueueEntries  QueueEntry[]          @relation("DoctorQueue")
   assignments         DoctorAssignment[]    @relation("AssignedDoctor")
   doctorDaySchedules  DoctorDaySchedule[]
+  doctorServices      DoctorService[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -252,8 +253,12 @@ model QueueEntry {
   cancelReason     String?
 
   arrivedAt   DateTime?
+  startedAt   DateTime?
   calledAt    DateTime?
   completedAt DateTime?
+
+  serviceId   String?
+  service     Service?  @relation(fields: [serviceId], references: [id])
 
   history QueueHistory[]
 
@@ -323,4 +328,35 @@ model DisplayBoardCabinet {
   @@id([boardId, cabinetId])
   @@index([cabinetId])
   @@map("display_board_cabinets")
+}
+
+// ============================================================================
+// SERVICES
+// ============================================================================
+
+model Service {
+  id              String          @id @default(cuid())
+  name            String
+  description     String?
+  durationMinutes Int
+  paymentCategory PatientCategory
+  isActive        Boolean         @default(true)
+
+  doctors      DoctorService[]
+  queueEntries QueueEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("services")
+}
+
+model DoctorService {
+  doctorId  String
+  serviceId String
+  doctor    User    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([doctorId, serviceId])
+  @@map("doctor_services")
 }
