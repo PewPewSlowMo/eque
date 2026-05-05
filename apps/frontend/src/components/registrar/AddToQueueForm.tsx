@@ -33,10 +33,16 @@ export function AddToQueueForm() {
   const [doctorId, setDoctorId] = useState('');
   const [priority, setPriority] = useState('WALK_IN');
   const [category, setCategory] = useState('');
+  const [serviceId, setServiceId] = useState('');
   const [scheduledAt, setScheduledAt] = useState('');
   const [notes, setNotes] = useState('');
 
   const { data: assignments = [] } = trpc.assignments.getActive.useQuery();
+
+  const { data: availableServices = [] } = trpc.services.getForDoctor.useQuery(
+    { doctorId, paymentCategory: category as any },
+    { enabled: !!(doctorId && category) },
+  );
 
   const addMutation = trpc.queue.add.useMutation({
     onSuccess: () => {
@@ -45,6 +51,7 @@ export function AddToQueueForm() {
       setDoctorId('');
       setPriority('WALK_IN');
       setCategory('');
+      setServiceId('');
       setScheduledAt('');
       setNotes('');
     },
@@ -59,7 +66,7 @@ export function AddToQueueForm() {
 
   const source = user?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
 
-  const canSubmit = patient && doctorId && priority && category && !addMutation.isPending;
+  const canSubmit = patient && doctorId && priority && category && serviceId && !addMutation.isPending;
 
   return (
     <div className="space-y-5 max-w-lg">
@@ -70,7 +77,7 @@ export function AddToQueueForm() {
 
       <div className="space-y-1">
         <Label>Врач *</Label>
-        <Select value={doctorId} onValueChange={setDoctorId}>
+        <Select value={doctorId} onValueChange={(v) => { setDoctorId(v); setServiceId(''); }}>
           <SelectTrigger>
             <SelectValue placeholder="Выберите врача..." />
           </SelectTrigger>
@@ -104,7 +111,7 @@ export function AddToQueueForm() {
 
         <div className="space-y-1">
           <Label>Категория *</Label>
-          <Select value={category} onValueChange={setCategory}>
+          <Select value={category} onValueChange={(v) => { setCategory(v); setServiceId(''); }}>
             <SelectTrigger>
               <SelectValue placeholder="Выберите..." />
             </SelectTrigger>
@@ -116,6 +123,32 @@ export function AddToQueueForm() {
           </Select>
         </div>
       </div>
+
+      {doctorId && category && (
+        <div className="space-y-1">
+          <Label>Услуга *</Label>
+          <Select
+            value={serviceId}
+            onValueChange={setServiceId}
+            disabled={(availableServices as any[]).length === 0}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={
+                (availableServices as any[]).length === 0
+                  ? 'Нет услуг для данной категории'
+                  : 'Выберите услугу...'
+              } />
+            </SelectTrigger>
+            <SelectContent>
+              {(availableServices as any[]).map((s: any) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name} · {s.durationMinutes} мин
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {priority === 'SCHEDULED' && (
         <div className="space-y-1">
@@ -144,9 +177,10 @@ export function AddToQueueForm() {
           addMutation.mutate({
             doctorId,
             patientId: patient!.id,
-            priority: priority as any,
-            category: category as any,
-            source: source as any,
+            priority:  priority as any,
+            category:  category as any,
+            serviceId,
+            source:    source as any,
             scheduledAt: priority === 'SCHEDULED' && scheduledAt
               ? new Date(scheduledAt).toISOString()
               : undefined,
