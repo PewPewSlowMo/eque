@@ -79,5 +79,64 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
           orderBy: { lastName: 'asc' },
         });
       }),
+
+    importBatch: trpc.protectedProcedure
+      .input(z.object({
+        users: z.array(z.object({
+          username:           z.string().min(1),
+          password:           z.string().min(6),
+          firstName:          z.string().min(1),
+          lastName:           z.string().min(1),
+          middleName:         z.string().optional(),
+          role:               z.nativeEnum(UserRole),
+          specialty:          z.string().optional(),
+          departmentName:     z.string().optional(),
+          allowedCategories:  z.array(z.nativeEnum(PatientCategory)).optional(),
+          acceptedCategories: z.array(z.nativeEnum(PatientCategory)).optional(),
+        })),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
+
+        // Resolve department names → IDs once
+        const deptNames = [...new Set(
+          input.users.map(u => u.departmentName).filter(Boolean) as string[]
+        )];
+        const departments = deptNames.length > 0
+          ? await prisma.department.findMany({
+              where: { name: { in: deptNames } },
+              select: { id: true, name: true },
+            })
+          : [];
+        const deptMap = new Map(departments.map(d => [d.name, d.id]));
+
+        let created = 0;
+        const errors: string[] = [];
+
+        for (const u of input.users) {
+          try {
+            const hashed = await bcrypt.hash(u.password, 10);
+            await prisma.user.create({
+              data: {
+                username:          u.username,
+                password:          hashed,
+                firstName:         u.firstName,
+                lastName:          u.lastName,
+                middleName:        u.middleName || undefined,
+                role:              u.role,
+                specialty:         u.specialty || undefined,
+                departmentId:      u.departmentName ? deptMap.get(u.departmentName) ?? undefined : undefined,
+                allowedCategories:  u.allowedCategories  ?? [],
+                acceptedCategories: u.acceptedCategories ?? [],
+              } as any,
+            });
+            created++;
+          } catch (e: any) {
+            errors.push(`${u.username}: ${e.message}`);
+          }
+        }
+
+        return { created, errors };
+      }),
   });
 };
