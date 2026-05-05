@@ -7,6 +7,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import * as ExcelJS from 'exceljs';
+import * as bcrypt from 'bcrypt';
 import { UserRole, PatientCategory } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { TrpcService } from '../../trpc/trpc.service';
@@ -239,7 +240,7 @@ export class UsersImportController {
 
     for (const row of rows) {
       if (row.username && existingSet.has(row.username)) {
-        row._errors.push(`Логин уже существует в системе: ${row.username}`);
+        row._errors = [...row._errors, `Логин уже существует в системе: ${row.username}`];
       }
     }
 
@@ -287,17 +288,13 @@ export class UsersImportController {
 
     for (const row of rows) {
       if (row.username && existingSet.has(row.username)) {
-        row._errors.push(`Логин уже существует в системе: ${row.username}`);
+        row._errors = [...row._errors, `Логин уже существует в системе: ${row.username}`];
       }
     }
 
     const validRows = rows.filter(r => r._errors.length === 0);
     let created = 0;
     const errors: string[] = [];
-
-    // Import bcrypt here to hash passwords
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const bcrypt = require('bcrypt');
 
     for (const row of validRows) {
       try {
