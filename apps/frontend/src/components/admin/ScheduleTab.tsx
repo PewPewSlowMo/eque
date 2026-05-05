@@ -323,7 +323,7 @@ export function ScheduleTab() {
                               anchorEl: e.currentTarget,
                             });
                           }}
-                          className={`w-full h-[34px] rounded text-center transition-all leading-tight ${
+                          className={`w-full min-h-[34px] rounded text-center transition-all leading-tight py-0.5 ${
                             isPast ? 'opacity-40 cursor-default' : 'hover:brightness-95 cursor-pointer'
                           }`}
                           style={sched ? {
@@ -336,9 +336,12 @@ export function ScheduleTab() {
                             <>
                               <div className="text-[8px] font-bold text-green-700 leading-none">{sched.startTime}</div>
                               <div className="text-[7px] text-green-600 leading-none">{sched.endTime}</div>
-                              {sched.breaks.length > 0 && (
-                                <div className="text-[6px] text-green-500">{sched.breaks.length}п.</div>
-                              )}
+                              {sched.breaks.map((b: any, i: number) => (
+                                <div key={i} className="text-[6px] font-semibold leading-none mt-0.5 tabular-nums"
+                                  style={{ color: '#92400e', background: '#fef9c3', borderRadius: 2, padding: '0 2px' }}>
+                                  {b.startTime}–{b.endTime}
+                                </div>
+                              ))}
                             </>
                           ) : (
                             <span className="text-[10px] text-muted-foreground/25">+</span>
