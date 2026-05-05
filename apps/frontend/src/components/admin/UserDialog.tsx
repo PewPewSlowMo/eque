@@ -170,22 +170,33 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
         <div className="flex gap-6">
           {/* Left column: identity fields */}
           <div className="flex-1 space-y-3 min-w-0">
-            {!isEdit && (
+            {!isEdit ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label>Логин *</Label>
+                  <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="ivanov" />
+                </div>
+                <div className="space-y-1">
+                  <Label>Пароль *</Label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Мин. 6 символов"
+                  />
+                </div>
+              </div>
+            ) : (
               <div className="space-y-1">
-                <Label>Логин *</Label>
-                <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="ivanov" />
+                <Label>Новый пароль</Label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Не менять"
+                />
               </div>
             )}
-
-            <div className="space-y-1">
-              <Label>{isEdit ? 'Новый пароль' : 'Пароль *'}</Label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={isEdit ? 'Не менять' : 'Минимум 6 символов'}
-              />
-            </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
@@ -203,24 +214,12 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
               <Input value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Иванович" />
             </div>
 
-            {!isEdit && (
+            {isEdit && (
               <div className="space-y-1">
-                <Label>Роль *</Label>
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ROLES.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Специальность</Label>
+                <Input value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder="Терапевт" />
               </div>
             )}
-
-            <div className="space-y-1">
-              <Label>Специальность</Label>
-              <Input value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder="Терапевт" />
-            </div>
 
             <div className="space-y-1">
               <Label>Отделение</Label>
@@ -236,8 +235,28 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
             </div>
           </div>
 
-          {/* Right column: categories + doctor services */}
+          {/* Right column: role (create only), specialty (create only), categories, doctor services */}
           <div className="w-[220px] flex-shrink-0 space-y-3">
+            {!isEdit && (
+              <>
+                <div className="space-y-1">
+                  <Label>Роль *</Label>
+                  <Select value={role} onValueChange={setRole}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {ROLES.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>Специальность</Label>
+                  <Input value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder="Терапевт" />
+                </div>
+              </>
+            )}
+
             <div className="space-y-1.5">
               <Label className="text-xs">
                 {showDoctorCategories
