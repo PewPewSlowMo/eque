@@ -77,18 +77,20 @@ function CellEditor({
             <div className="space-y-1">
               <span className="text-[9px] text-muted-foreground">Перерывы</span>
               {breaks.map((b, i) => (
-                <div key={i} className="flex items-center gap-1">
-                  <input type="time" value={b.startTime} onChange={e => updateBreak(i, 'startTime', e.target.value)}
-                    className="w-[68px] text-[9px] px-1.5 py-0.5 border border-border rounded focus:outline-none" />
-                  <span className="text-[9px] text-muted-foreground">–</span>
-                  <input type="time" value={b.endTime} onChange={e => updateBreak(i, 'endTime', e.target.value)}
-                    className="w-[68px] text-[9px] px-1.5 py-0.5 border border-border rounded focus:outline-none" />
+                <div key={i} className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <input type="time" value={b.startTime} onChange={e => updateBreak(i, 'startTime', e.target.value)}
+                      className="w-[68px] text-[9px] px-1.5 py-0.5 border border-border rounded focus:outline-none" />
+                    <span className="text-[9px] text-muted-foreground">–</span>
+                    <input type="time" value={b.endTime} onChange={e => updateBreak(i, 'endTime', e.target.value)}
+                      className="w-[68px] text-[9px] px-1.5 py-0.5 border border-border rounded focus:outline-none" />
+                    <button onClick={() => removeBreak(i)} className="ml-auto text-muted-foreground hover:text-destructive transition-colors">
+                      <X size={10} />
+                    </button>
+                  </div>
                   <input value={b.label} onChange={e => updateBreak(i, 'label', e.target.value)}
-                    placeholder="Обед"
-                    className="flex-1 text-[9px] px-1.5 py-0.5 border border-border rounded focus:outline-none" />
-                  <button onClick={() => removeBreak(i)} className="text-muted-foreground hover:text-destructive transition-colors">
-                    <X size={10} />
-                  </button>
+                    placeholder="Комментарий (необязательно)"
+                    className="w-full text-[9px] px-1.5 py-0.5 border border-border rounded focus:outline-none" />
                 </div>
               ))}
             </div>
