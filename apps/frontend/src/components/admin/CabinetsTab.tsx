@@ -9,11 +9,19 @@ export function CabinetsTab() {
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
 
-  const { data: cabinets = [] } = trpc.cabinets.getAll.useQuery();
+  const [showInactive, setShowInactive] = useState(false);
+  const { data: cabinets = [] } = trpc.cabinets.getAll.useQuery(
+    { includeInactive: showInactive },
+  );
   const utils = trpc.useUtils();
 
   const deactivate = trpc.cabinets.deactivate.useMutation({
     onSuccess: () => { utils.cabinets.getAll.invalidate(); toast.success('Кабинет деактивирован'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const activate = trpc.cabinets.activate.useMutation({
+    onSuccess: () => { utils.cabinets.getAll.invalidate(); toast.success('Кабинет активирован'); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -25,14 +33,23 @@ export function CabinetsTab() {
 
   return (
     <div className="space-y-4">
-      {isAdmin && (
-        <div className="flex justify-end">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={e => setShowInactive(e.target.checked)}
+            className="h-4 w-4 accent-primary"
+          />
+          Показать деактивированные
+        </label>
+        {isAdmin && (
           <Button onClick={openCreate}>Создать кабинет</Button>
-        </div>
-      )}
+        )}
+      </div>
 
       {(cabinets as any[]).length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-8">Нет активных кабинетов</p>
+        <p className="text-sm text-muted-foreground text-center py-8">Нет кабинетов</p>
       ) : (
         <div className="border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
@@ -46,36 +63,57 @@ export function CabinetsTab() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {(cabinets as any[]).map((c: any) => (
-                <tr key={c.id} className="hover:bg-muted/50">
-                  <td className="px-4 py-2 font-medium">{c.number}</td>
-                  <td className="px-4 py-2 text-muted-foreground">{c.floor != null ? `${c.floor} эт.` : '—'}</td>
-                  <td className="px-4 py-2 text-muted-foreground">{c.name ?? '—'}</td>
-                  <td className="px-4 py-2 text-muted-foreground">{c.department?.name ?? '—'}</td>
-                  {isAdmin && (
-                    <td className="px-4 py-2">
-                      <div className="flex items-center gap-2 justify-end">
-                        <Button size="sm" variant="outline" onClick={() => openEdit(c)}>
-                          Изменить
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-destructive hover:text-destructive"
-                          disabled={deactivate.isPending}
-                          onClick={() => {
-                            if (confirm(`Деактивировать кабинет ${c.number}?`)) {
-                              deactivate.mutate({ id: c.id });
-                            }
-                          }}
-                        >
-                          Деактивировать
-                        </Button>
-                      </div>
+              {(cabinets as any[]).map((c: any) => {
+                const isInactive = c.isActive === false;
+                return (
+                  <tr key={c.id} className={isInactive ? 'opacity-50' : 'hover:bg-muted/50'}>
+                    <td className="px-4 py-2 font-medium">
+                      {c.number}
+                      {isInactive && <span className="ml-1 text-xs text-muted-foreground">(деактивирован)</span>}
                     </td>
-                  )}
-                </tr>
-              ))}
+                    <td className="px-4 py-2 text-muted-foreground">{c.floor != null ? `${c.floor} эт.` : '—'}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{c.name ?? '—'}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{c.department?.name ?? '—'}</td>
+                    {isAdmin && (
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-2 justify-end">
+                          {!isInactive && (
+                            <>
+                              <Button size="sm" variant="outline" onClick={() => openEdit(c)}>
+                                Изменить
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-destructive hover:text-destructive"
+                                disabled={deactivate.isPending}
+                                onClick={() => {
+                                  if (confirm(`Деактивировать кабинет ${c.number}?`)) {
+                                    deactivate.mutate({ id: c.id });
+                                  }
+                                }}
+                              >
+                                Деактивировать
+                              </Button>
+                            </>
+                          )}
+                          {isInactive && showInactive && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-green-600 hover:text-green-600"
+                              disabled={activate.isPending}
+                              onClick={() => activate.mutate({ id: c.id })}
+                            >
+                              Активировать
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

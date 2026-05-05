@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Индикация вызова v3</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#0a0f14; font-family:'Segoe UI',system-ui,sans-serif; color:#fff; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+
+.board-bg {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:12px; opacity:.2;
+}
+.board-bg p { font-size:18px; color:#475569; }
+
+/* ── OVERLAY: вертикальный стек горизонтальных строк ── */
+.overlay {
+  position:fixed; inset:0; z-index:100;
+  display:flex; flex-direction:column;
+  animation: bg-pulse 0.5s ease-in-out infinite alternate;
+}
+@keyframes bg-pulse {
+  0%   { background:rgba(0,0,0,.93); }
+  100% { background:rgba(0,18,14,.97); }
+}
+
+/* ── Одна горизонтальная строка вызова ── */
+.strip {
+  flex:1;
+  display:flex; flex-direction:row;
+  align-items:center;
+  padding:0 64px; gap:40px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  position:relative;
+  animation: strip-glow 0.5s ease-in-out infinite alternate;
+}
+.strip:last-child { border-bottom:none; }
+
+@keyframes strip-glow {
+  0%   { background:rgba(0,104,91,.0); }
+  100% { background:rgba(0,104,91,.1); }
+}
+
+.strip::after {
+  content:'';
+  position:absolute; inset:8px 16px;
+  border-radius:14px; pointer-events:none;
+  animation: strip-border 0.5s ease-in-out infinite alternate;
+}
+@keyframes strip-border {
+  0%   { border:2px solid rgba(179,145,104,.08); box-shadow:none; }
+  100% { border:2px solid rgba(179,145,104,.75); box-shadow:0 0 28px rgba(179,145,104,.1); }
+}
+
+/* Пациент — ЗОЛОТО, всё на одной строке */
+.strip-patient {
+  flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  font-weight:900; color:#B39168; line-height:1;
+  animation: gold-flash 0.5s ease-in-out infinite alternate;
+}
+@keyframes gold-flash {
+  0%   { opacity:.7; text-shadow:none; }
+  100% { opacity:1;  text-shadow:0 0 30px rgba(179,145,104,.5); }
+}
+
+/* Стрелка */
+.strip-arrow {
+  flex-shrink:0; font-weight:300;
+  animation: arrow-move 0.5s ease-in-out infinite alternate;
+  color:rgba(255,255,255,.3);
+}
+@keyframes arrow-move {
+  0%   { color:rgba(255,255,255,.2); transform:translateX(-6px); }
+  100% { color:rgba(255,255,255,.7); transform:translateX(6px); }
+}
+
+/* Кабинет — БЕЛЫЙ */
+.strip-cab {
+  flex-shrink:0; display:flex; align-items:baseline; gap:12px;
+  color:#ffffff; line-height:1;
+}
+.strip-cab-label { font-weight:500; color:rgba(255,255,255,.6); }
+.strip-cab-num   { font-weight:900; color:#ffffff; }
+
+/* ── Размеры для 1 вызова ── */
+.overlay.one .strip-patient  { font-size:100px; }
+.overlay.one .strip-arrow    { font-size:72px; }
+.overlay.one .strip-cab-label{ font-size:36px; }
+.overlay.one .strip-cab-num  { font-size:100px; }
+.overlay.one .strip          { padding:0 80px; gap:48px; }
+
+/* ── 2 вызова ── */
+.overlay.two .strip-patient  { font-size:76px; }
+.overlay.two .strip-arrow    { font-size:56px; }
+.overlay.two .strip-cab-label{ font-size:28px; }
+.overlay.two .strip-cab-num  { font-size:76px; }
+.overlay.two .strip          { padding:0 64px; gap:36px; }
+
+/* ── 3 вызова ── */
+.overlay.three .strip-patient  { font-size:56px; }
+.overlay.three .strip-arrow    { font-size:42px; }
+.overlay.three .strip-cab-label{ font-size:22px; }
+.overlay.three .strip-cab-num  { font-size:60px; }
+.overlay.three .strip          { padding:0 52px; gap:28px; }
+
+/* ── Кнопки ── */
+.demo {
+  position:fixed; bottom:12px; left:50%; transform:translateX(-50%);
+  display:flex; gap:8px; z-index:200;
+}
+.btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:12px; font-weight:700; }
+.btn-1 { background:#00685B; color:#fff; }
+.btn-2 { background:#7a5020; color:#fff; }
+.btn-3 { background:#1d4ed8; color:#fff; }
+.btn-x { background:#374151; color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="board-bg">
+  <p>[ Фоновое табло ]</p>
+  <p style="font-size:13px;">Нажми кнопки для симуляции</p>
+</div>
+
+<div class="overlay" id="ov" style="display:none;"></div>
+
+<div class="demo">
+  <button class="btn btn-1" onclick="show(1)">▶ 1 вызов</button>
+  <button class="btn btn-2" onclick="show(2)">▶▶ 2 вызова</button>
+  <button class="btn btn-3" onclick="show(3)">▶▶▶ 3 вызова</button>
+  <button class="btn btn-x" onclick="hide()">✕ Скрыть</button>
+</div>
+
+<script>
+const calls = [
+  { name:'Мария Ив.',   cab:'1' },
+  { name:'Алексей Пе.', cab:'7' },
+  { name:'Анна Ко.',    cab:'3' },
+];
+const cls = ['','one','two','three'];
+let t = null;
+
+function stripHTML(c) {
+  return `
+    <div class="strip">
+      <div class="strip-patient">${c.name}</div>
+      <div class="strip-arrow">→</div>
+      <div class="strip-cab">
+        <span class="strip-cab-label">Кабинет</span>
+        <span class="strip-cab-num">${c.cab}</span>
+      </div>
+    </div>`;
+}
+
+function show(n) {
+  clearTimeout(t);
+  const ov = document.getElementById('ov');
+  ov.className = 'overlay ' + cls[n];
+  ov.innerHTML = calls.slice(0,n).map(stripHTML).join('');
+  ov.style.display = 'flex';
+  t = setTimeout(hide, 5000);
+}
+function hide() { clearTimeout(t); document.getElementById('ov').style.display='none'; }
+</script>
+</body>
+</html>

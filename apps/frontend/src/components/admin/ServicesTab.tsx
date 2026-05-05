@@ -15,6 +15,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 export function ServicesTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing]       = useState<any>(null);
+  const [showInactive, setShowInactive] = useState(false);
 
   const { data: services = [], isLoading } = trpc.services.getAll.useQuery(
     { includeInactive: true },
@@ -42,13 +43,24 @@ export function ServicesTab() {
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Загрузка...</p>;
 
+  const visibleServices = (services as any[]).filter((s: any) => showInactive || s.isActive !== false);
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={e => setShowInactive(e.target.checked)}
+            className="h-4 w-4 accent-primary"
+          />
+          Показать деактивированные
+        </label>
         <Button onClick={openCreate}>Добавить услугу</Button>
       </div>
 
-      {(services as any[]).length === 0 ? (
+      {visibleServices.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">Нет услуг</p>
       ) : (
         <div className="border rounded-lg overflow-hidden">
@@ -63,7 +75,7 @@ export function ServicesTab() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {(services as any[]).map((s: any) => (
+              {visibleServices.map((s: any) => (
                 <tr
                   key={s.id}
                   className={`hover:bg-muted/50 ${!s.isActive ? 'opacity-50' : ''}`}

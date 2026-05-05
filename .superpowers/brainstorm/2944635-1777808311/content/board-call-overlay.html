@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Индикация вызова</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#0a0f14; font-family:'Segoe UI',system-ui,sans-serif; color:#fff; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+
+/* ── фоновая заглушка (табло) ── */
+.board-bg {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:12px; opacity:.3;
+}
+.board-bg p { font-size:18px; color:#475569; }
+
+/* ── OVERLAY ── */
+.overlay {
+  position:fixed; inset:0; z-index:100;
+  display:flex;
+  animation: flash-bg 0.6s ease-in-out infinite alternate;
+}
+@keyframes flash-bg {
+  0%   { background: rgba(0,0,0,.92); }
+  100% { background: rgba(0,30,25,.97); }
+}
+
+/* ── Панель вызова (одна секция) ── */
+.call-panel {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:32px 24px; position:relative;
+  border-right:1px solid rgba(179,145,104,.15);
+  animation: panel-pulse 0.6s ease-in-out infinite alternate;
+}
+.call-panel:last-child { border-right:none; }
+
+@keyframes panel-pulse {
+  0%   { background: rgba(0,104,91,.0); }
+  100% { background: rgba(0,104,91,.18); }
+}
+
+/* Мигающая рамка */
+.call-panel::before {
+  content:'';
+  position:absolute; inset:12px;
+  border-radius:16px;
+  animation: border-flash 0.6s ease-in-out infinite alternate;
+  pointer-events:none;
+}
+@keyframes border-flash {
+  0%   { border:3px solid rgba(179,145,104,.2); box-shadow: inset 0 0 0px rgba(179,145,104,0); }
+  100% { border:3px solid rgba(179,145,104,.9); box-shadow: inset 0 0 40px rgba(179,145,104,.08), 0 0 40px rgba(179,145,104,.15); }
+}
+
+/* Кабинет — маленькая метка */
+.panel-cab-label {
+  font-size:22px; color:rgba(179,145,104,.6); text-transform:uppercase;
+  letter-spacing:2px; margin-bottom:8px; font-weight:600;
+}
+
+/* Номер кабинета — крупно */
+.panel-cab-num {
+  font-size:140px; font-weight:900; line-height:1;
+  color:#B39168;
+  animation: num-glow 0.6s ease-in-out infinite alternate;
+}
+@keyframes num-glow {
+  0%   { text-shadow: 0 0 0px rgba(179,145,104,0); }
+  100% { text-shadow: 0 0 40px rgba(179,145,104,.6), 0 0 80px rgba(179,145,104,.3); }
+}
+
+.panel-divider {
+  width:80px; height:3px; border-radius:2px; margin:20px 0;
+  animation: div-flash 0.6s ease-in-out infinite alternate;
+}
+@keyframes div-flash {
+  0%   { background: rgba(179,145,104,.3); }
+  100% { background: rgba(179,145,104,1); }
+}
+
+/* Основной текст вызова */
+.panel-text {
+  font-size:58px; font-weight:800; color:#fff;
+  text-align:center; line-height:1.15;
+  animation: text-flash 0.6s ease-in-out infinite alternate;
+}
+@keyframes text-flash {
+  0%   { color: rgba(255,255,255,.7); }
+  100% { color: rgba(255,255,255,1); }
+}
+.panel-text span { color:#B39168; }
+
+/* Для 2 панелей — меньше шрифт */
+.overlay.two .panel-text  { font-size:44px; }
+.overlay.two .panel-cab-num { font-size:110px; }
+
+/* Для 3 панелей — ещё меньше */
+.overlay.three .panel-text  { font-size:34px; }
+.overlay.three .panel-cab-num { font-size:86px; }
+.overlay.three .panel-divider { width:50px; }
+
+/* ── Кнопки демо ── */
+.demo {
+  position:fixed; bottom:12px; left:50%; transform:translateX(-50%);
+  display:flex; gap:8px; z-index:200;
+}
+.btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:12px; font-weight:700; }
+.btn-1 { background:#00685B; color:#fff; }
+.btn-2 { background:#7a5020; color:#fff; }
+.btn-3 { background:#1d4ed8; color:#fff; }
+.btn-x { background:#374151; color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="board-bg">
+  <p>[ Фоновое табло очереди ]</p>
+  <p style="font-size:13px;">Нажми кнопки ниже для симуляции вызовов</p>
+</div>
+
+<!-- OVERLAY — управляется JS -->
+<div class="overlay" id="overlay" style="display:none;"></div>
+
+<div class="demo">
+  <button class="btn btn-1" onclick="show1()">▶ 1 вызов</button>
+  <button class="btn btn-2" onclick="show2()">▶▶ 2 вызова</button>
+  <button class="btn btn-3" onclick="show3()">▶▶▶ 3 вызова</button>
+  <button class="btn btn-x" onclick="hide()">✕ Скрыть</button>
+</div>
+
+<script>
+const calls = [
+  { name:'Мария', surname:'Ив.', cab:'1' },
+  { name:'Алексей', surname:'Пе.', cab:'7' },
+  { name:'Анна', surname:'Ко.', cab:'3' },
+];
+
+function panelHTML(c) {
+  return `
+    <div class="call-panel">
+      <div class="panel-cab-label">Кабинет</div>
+      <div class="panel-cab-num">${c.cab}</div>
+      <div class="panel-divider"></div>
+      <div class="panel-text">${c.name} <span>${c.surname}</span><br>пройдите в <span>${c.cab}</span> каб.</div>
+    </div>`;
+}
+
+let timer = null;
+function showCalls(items, cls, duration) {
+  clearTimeout(timer);
+  const ov = document.getElementById('overlay');
+  ov.className = 'overlay ' + cls;
+  ov.innerHTML = items.map(panelHTML).join('');
+  ov.style.display = 'flex';
+  timer = setTimeout(hide, duration);
+}
+
+function show1() { showCalls([calls[0]], 'one', 5000); }
+function show2() { showCalls([calls[0], calls[1]], 'two', 5000); }
+function show3() { showCalls([calls[0], calls[1], calls[2]], 'three', 5000); }
+function hide()  { clearTimeout(timer); document.getElementById('overlay').style.display = 'none'; }
+</script>
+</body>
+</html>

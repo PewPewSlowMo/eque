@@ -5,13 +5,15 @@ import { PrismaService } from '../../database/prisma.service';
 
 export const createDepartmentsRouter = (trpc: TrpcService, prisma: PrismaService) => {
   return trpc.router({
-    getAll: trpc.protectedProcedure.query(async () => {
-      return prisma.department.findMany({
-        where: { isActive: true },
-        include: { _count: { select: { users: true, cabinets: true } } },
-        orderBy: { name: 'asc' },
-      });
-    }),
+    getAll: trpc.protectedProcedure
+      .input(z.object({ includeInactive: z.boolean().optional() }).optional())
+      .query(async ({ input }) => {
+        return prisma.department.findMany({
+          where: input?.includeInactive ? undefined : { isActive: true },
+          include: { _count: { select: { users: true, cabinets: true } } },
+          orderBy: { name: 'asc' },
+        });
+      }),
 
     create: trpc.protectedProcedure
       .input(z.object({ name: z.string().min(1) }))
@@ -32,6 +34,13 @@ export const createDepartmentsRouter = (trpc: TrpcService, prisma: PrismaService
       .mutation(async ({ input, ctx }) => {
         if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         return prisma.department.update({ where: { id: input.id }, data: { isActive: false } });
+      }),
+
+    activate: trpc.protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
+        return prisma.department.update({ where: { id: input.id }, data: { isActive: true } });
       }),
   });
 };

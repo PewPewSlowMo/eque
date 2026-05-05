@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Индикация вызова v2 — горизонталь</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#0a0f14; font-family:'Segoe UI',system-ui,sans-serif; color:#fff; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+
+.board-bg {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:12px; opacity:.25;
+}
+.board-bg p { font-size:18px; color:#475569; }
+
+/* ── OVERLAY — вертикальный стек горизонтальных полос ── */
+.overlay {
+  position:fixed; inset:0; z-index:100;
+  display:flex; flex-direction:column;
+  background:rgba(0,0,0,.92);
+  animation: bg-pulse 0.55s ease-in-out infinite alternate;
+}
+@keyframes bg-pulse {
+  0%   { background: rgba(0,0,0,.92); }
+  100% { background: rgba(0,15,12,.96); }
+}
+
+/* ── Горизонтальная полоса вызова ── */
+.call-strip {
+  flex:1;
+  display:flex; align-items:center;
+  padding:0 60px;
+  border-bottom:1px solid rgba(179,145,104,.12);
+  position:relative;
+  animation: strip-bg 0.55s ease-in-out infinite alternate;
+}
+.call-strip:last-child { border-bottom:none; }
+
+@keyframes strip-bg {
+  0%   { background: rgba(0,104,91,.0); }
+  100% { background: rgba(0,104,91,.12); }
+}
+
+/* Мигающая рамка внутри полосы */
+.call-strip::before {
+  content:'';
+  position:absolute; inset:10px 20px;
+  border-radius:12px;
+  pointer-events:none;
+  animation: strip-border 0.55s ease-in-out infinite alternate;
+}
+@keyframes strip-border {
+  0%   { border:2px solid rgba(179,145,104,.1); box-shadow:none; }
+  100% { border:2px solid rgba(179,145,104,.8); box-shadow:0 0 32px rgba(179,145,104,.12); }
+}
+
+/* Имя пациента — ГЛАВНЫЙ акцент */
+.strip-name {
+  flex:1;
+  font-weight:900; line-height:1.05;
+  animation: name-flash 0.55s ease-in-out infinite alternate;
+}
+/* Имя */
+.strip-firstname { font-size:90px; color:#ffffff; display:block; }
+/* Фамилия сокращённая — золото */
+.strip-surname   { font-size:90px; color:#B39168; display:block; }
+
+@keyframes name-flash {
+  0%   { opacity:.75; }
+  100% { opacity:1; }
+}
+
+/* Стрелка */
+.strip-arrow {
+  font-size:64px; color:rgba(179,145,104,.4); margin:0 40px;
+  flex-shrink:0;
+  animation: arrow-flash 0.55s ease-in-out infinite alternate;
+}
+@keyframes arrow-flash {
+  0%   { color:rgba(179,145,104,.2); transform:translateX(-4px); }
+  100% { color:rgba(179,145,104,.9); transform:translateX(4px); }
+}
+
+/* Кабинет — вторичный */
+.strip-cab {
+  flex-shrink:0; text-align:center;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:rgba(0,104,91,.2); border-radius:12px;
+  padding:12px 28px;
+  border:1px solid rgba(0,104,91,.4);
+}
+.strip-cab-label { font-size:20px; color:rgba(255,255,255,.45); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px; }
+.strip-cab-num   { font-size:80px; font-weight:900; color:#4ade80; line-height:1; }
+
+/* ── Адаптация для 2 и 3 полос ── */
+.overlay.two   .strip-firstname,
+.overlay.two   .strip-surname   { font-size:72px; }
+.overlay.two   .strip-arrow     { font-size:50px; margin:0 28px; }
+.overlay.two   .strip-cab-num   { font-size:64px; }
+.overlay.two   .strip-cab-label { font-size:16px; }
+.overlay.two   .call-strip      { padding:0 48px; }
+
+.overlay.three .strip-firstname,
+.overlay.three .strip-surname   { font-size:52px; }
+.overlay.three .strip-arrow     { font-size:38px; margin:0 20px; }
+.overlay.three .strip-cab-num   { font-size:50px; }
+.overlay.three .strip-cab-label { font-size:13px; }
+.overlay.three .strip-cab       { padding:8px 20px; }
+.overlay.three .call-strip      { padding:0 36px; }
+
+/* ── Кнопки ── */
+.demo {
+  position:fixed; bottom:12px; left:50%; transform:translateX(-50%);
+  display:flex; gap:8px; z-index:200;
+}
+.btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:12px; font-weight:700; }
+.btn-1 { background:#00685B; color:#fff; }
+.btn-2 { background:#7a5020; color:#fff; }
+.btn-3 { background:#1d4ed8; color:#fff; }
+.btn-x { background:#374151; color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="board-bg">
+  <p>[ Фоновое табло очереди ]</p>
+  <p style="font-size:13px;">Нажми кнопки для симуляции</p>
+</div>
+
+<div class="overlay" id="overlay" style="display:none;"></div>
+
+<div class="demo">
+  <button class="btn btn-1" onclick="show1()">▶ 1 вызов</button>
+  <button class="btn btn-2" onclick="show2()">▶▶ 2 вызова</button>
+  <button class="btn btn-3" onclick="show3()">▶▶▶ 3 вызова</button>
+  <button class="btn btn-x" onclick="hide()">✕ Скрыть</button>
+</div>
+
+<script>
+const calls = [
+  { firstname:'Мария',   surname:'Ив.', cab:'1' },
+  { firstname:'Алексей', surname:'Пе.', cab:'7' },
+  { firstname:'Анна',    surname:'Ко.', cab:'3' },
+];
+
+function stripHTML(c) {
+  return `
+    <div class="call-strip">
+      <div class="strip-name">
+        <span class="strip-firstname">${c.firstname}</span>
+        <span class="strip-surname">${c.surname}</span>
+      </div>
+      <div class="strip-arrow">→</div>
+      <div class="strip-cab">
+        <div class="strip-cab-label">Кабинет</div>
+        <div class="strip-cab-num">${c.cab}</div>
+      </div>
+    </div>`;
+}
+
+const cls = ['', 'one', 'two', 'three'];
+let timer = null;
+function showCalls(items, n) {
+  clearTimeout(timer);
+  const ov = document.getElementById('overlay');
+  ov.className = 'overlay ' + cls[n];
+  ov.innerHTML = items.map(stripHTML).join('');
+  ov.style.display = 'flex';
+  timer = setTimeout(hide, 5000);
+}
+
+function show1() { showCalls([calls[0]], 1); }
+function show2() { showCalls([calls[0], calls[1]], 2); }
+function show3() { showCalls([calls[0], calls[1], calls[2]], 3); }
+function hide()  { clearTimeout(timer); document.getElementById('overlay').style.display = 'none'; }
+</script>
+</body>
+</html>

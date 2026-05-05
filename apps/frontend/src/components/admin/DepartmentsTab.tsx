@@ -3,30 +3,52 @@ import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 import { Plus, Pencil, X } from 'lucide-react';
 
-function DeptRow({ dept, onEdit }: { dept: any; onEdit: () => void }) {
+function DeptRow({ dept, showInactive, onEdit }: { dept: any; showInactive: boolean; onEdit: () => void }) {
   const utils = trpc.useUtils();
   const deactivate = trpc.departments.deactivate.useMutation({
-    onSuccess: () => { utils.departments.getAll.invalidate(); toast.info('Отделение деактивировано'); },
+    onSuccess: () => { utils.departments.getAll.invalidate({ includeInactive: true }); toast.info('Отделение деактивировано'); },
     onError: (e: any) => toast.error(e.message),
   });
+  const activate = trpc.departments.activate.useMutation({
+    onSuccess: () => { utils.departments.getAll.invalidate({ includeInactive: true }); toast.success('Отделение активировано'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const isInactive = dept.isActive === false;
+
   return (
-    <tr className="border-b border-border/60 hover:bg-primary/5 transition-colors">
-      <td className="px-4 py-2.5 font-medium text-foreground text-[11px]">{dept.name}</td>
+    <tr className={`border-b border-border/60 transition-colors ${isInactive ? 'opacity-50' : 'hover:bg-primary/5'}`}>
+      <td className="px-4 py-2.5 font-medium text-foreground text-[11px]">
+        {dept.name}
+        {isInactive && <span className="ml-1 text-xs text-muted-foreground">(деактивировано)</span>}
+      </td>
       <td className="px-4 py-2.5 text-[10px] text-muted-foreground">
         {dept._count?.users ?? 0} сотр. · {dept._count?.cabinets ?? 0} каб.
       </td>
       <td className="px-3 py-2.5 text-right">
         <div className="flex items-center justify-end gap-2">
-          <button onClick={onEdit}
-            className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/70 transition-colors">
-            <Pencil size={11} /> Изменить
-          </button>
-          <button
-            onClick={() => { if (confirm(`Деактивировать «${dept.name}»?`)) deactivate.mutate({ id: dept.id }); }}
-            disabled={deactivate.isPending}
-            className="inline-flex items-center gap-1 text-[10px] text-destructive/60 hover:text-destructive transition-colors disabled:opacity-40">
-            <X size={11} /> Убрать
-          </button>
+          {!isInactive && (
+            <button onClick={onEdit}
+              className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/70 transition-colors">
+              <Pencil size={11} /> Изменить
+            </button>
+          )}
+          {!isInactive && (
+            <button
+              onClick={() => { if (confirm(`Деактивировать «${dept.name}»?`)) deactivate.mutate({ id: dept.id }); }}
+              disabled={deactivate.isPending}
+              className="inline-flex items-center gap-1 text-[10px] text-destructive/60 hover:text-destructive transition-colors disabled:opacity-40">
+              <X size={11} /> Убрать
+            </button>
+          )}
+          {isInactive && showInactive && (
+            <button
+              onClick={() => activate.mutate({ id: dept.id })}
+              disabled={activate.isPending}
+              className="inline-flex items-center gap-1 text-[10px] text-green-600 hover:text-green-700 transition-colors disabled:opacity-40">
+              Активировать
+            </button>
+          )}
         </div>
       </td>
     </tr>
@@ -85,15 +107,27 @@ function DeptFormRow({ dept, onDone }: { dept?: any; onDone: () => void }) {
 
 export function DepartmentsTab() {
   const [creating, setCreating] = useState(false);
-  const [editing, setEditing]  = useState<any | null>(null);
+  const [editing, setEditing]   = useState<any | null>(null);
+  const [showInactive, setShowInactive] = useState(false);
 
-  const { data: departments = [], isLoading } = trpc.departments.getAll.useQuery();
+  const { data: departments = [], isLoading } = trpc.departments.getAll.useQuery(
+    { includeInactive: showInactive },
+  );
 
   if (isLoading) return <div className="p-6 text-[11px] text-muted-foreground">Загрузка...</div>;
 
   return (
     <div>
-      <div className="flex justify-end mb-3">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={e => setShowInactive(e.target.checked)}
+            className="h-4 w-4 accent-primary"
+          />
+          Показать деактивированные
+        </label>
         <button
           onClick={() => { setCreating(true); setEditing(null); }}
           className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white px-4 py-1.5"
@@ -119,7 +153,7 @@ export function DepartmentsTab() {
             {(departments as any[]).map((dept: any) => (
               editing?.id === dept.id
                 ? <DeptFormRow key={dept.id} dept={dept} onDone={() => setEditing(null)} />
-                : <DeptRow key={dept.id} dept={dept} onEdit={() => { setEditing(dept); setCreating(false); }} />
+                : <DeptRow key={dept.id} dept={dept} showInactive={showInactive} onEdit={() => { setEditing(dept); setCreating(false); }} />
             ))}
           </tbody>
         </table>

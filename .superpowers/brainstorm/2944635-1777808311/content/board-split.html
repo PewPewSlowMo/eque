@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Табло — Split Layout</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#0a0f14; font-family:'Segoe UI',system-ui,sans-serif; color:#fff; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+
+/* ── Header ── */
+.hdr {
+  background:#00685B; display:flex; align-items:center;
+  justify-content:space-between; padding:0 16px; height:42px; flex-shrink:0;
+}
+.hdr-left { display:flex; align-items:center; gap:10px; }
+.hdr-badge { font-size:9px; font-weight:700; border:1px solid rgba(179,145,104,.5); color:#B39168; padding:2px 7px; border-radius:3px; }
+.hdr-floor { font-size:12px; color:rgba(255,255,255,.6); }
+.clock { font-size:18px; font-weight:700; color:#B39168; font-variant-numeric:tabular-nums; }
+
+/* ── Body ── */
+.body { flex:1; display:flex; min-height:0; }
+
+/* ═══ LEFT — Active calls ═══ */
+.left {
+  width:42%; border-right:1px solid #1e2530;
+  display:flex; flex-direction:column; padding:12px 10px; gap:8px; overflow:hidden;
+}
+.section-label {
+  font-size:9px; font-weight:700; color:#B39168; letter-spacing:1.2px;
+  text-transform:uppercase; padding:0 4px; flex-shrink:0;
+}
+
+.call-row {
+  display:flex; align-items:stretch; border-radius:7px; overflow:hidden;
+  border:1px solid #1e2530; flex-shrink:0;
+  transition: border-color .3s;
+}
+.call-row.calling { border-color:rgba(179,145,104,.5); }
+
+.call-cab {
+  width:54px; flex-shrink:0; background:#00685B;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:8px 0;
+}
+.call-cab.warm { background:#7a5020; }
+.call-cab-num { font-size:26px; font-weight:900; line-height:1; }
+.call-cab-lbl { font-size:8px; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.4px; margin-top:1px; }
+
+.call-info { flex:1; padding:10px 12px; background:#161b22; display:flex; align-items:center; justify-content:space-between; }
+.call-name { font-size:20px; font-weight:800; color:#f1f5f9; }
+.call-name span { color:#B39168; }
+.call-status { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; padding:2px 7px; border-radius:10px; }
+.status-calling { background:rgba(179,145,104,.15); color:#B39168; border:1px solid rgba(179,145,104,.3); }
+.status-progress { background:rgba(74,222,128,.1); color:#4ade80; border:1px solid rgba(74,222,128,.2); }
+
+.no-active { flex:1; display:flex; align-items:center; justify-content:center; }
+.no-active p { font-size:13px; color:#2d3748; }
+
+/* ═══ RIGHT — Queue per cabinet ═══ */
+.right {
+  flex:1; padding:12px 10px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;
+}
+/* custom scrollbar */
+.right::-webkit-scrollbar { width:3px; }
+.right::-webkit-scrollbar-track { background:transparent; }
+.right::-webkit-scrollbar-thumb { background:#1e2530; border-radius:2px; }
+
+.cab-block { background:#161b22; border:1px solid #1e2530; border-radius:7px; overflow:hidden; flex-shrink:0; }
+.cab-block-hdr {
+  background:#00685B; padding:6px 12px;
+  display:flex; align-items:baseline; justify-content:space-between;
+}
+.cab-block-num { font-size:15px; font-weight:800; }
+.cab-block-meta { font-size:10px; color:rgba(255,255,255,.55); }
+
+.queue-list { display:flex; flex-direction:column; }
+.queue-item {
+  display:flex; align-items:center; gap:10px;
+  padding:7px 12px; border-bottom:1px solid #1a2030;
+}
+.queue-item:last-child { border-bottom:none; }
+.q-pos { width:18px; height:18px; border-radius:50%; background:#0d1117; border:1px solid #1e2530; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#475569; flex-shrink:0; }
+.q-pos.next { background:rgba(0,104,91,.25); border-color:#00685B; color:#4ade80; }
+.q-name { font-size:13px; color:#cbd5e1; flex:1; }
+.q-name span { color:#94a3b8; }
+.q-time { font-size:10px; color:#374151; }
+
+.cab-empty { padding:10px 12px; font-size:11px; color:#2d3748; }
+
+/* Overlay */
+.overlay {
+  position:fixed; inset:0; z-index:100;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.88);
+  animation:ov-in .2s ease;
+}
+@keyframes ov-in { from{opacity:0} to{opacity:1} }
+.ov-card { text-align:center; animation:ov-sc .28s cubic-bezier(.34,1.56,.64,1); }
+@keyframes ov-sc { from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
+.ov-lbl { font-size:13px; color:rgba(179,145,104,.7); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px; }
+.ov-cab { font-size:110px; font-weight:900; line-height:1; color:#B39168; }
+.ov-div { width:50px; height:2px; background:rgba(179,145,104,.4); margin:12px auto; border-radius:2px; }
+.ov-name { font-size:48px; font-weight:800; color:#fff; }
+.ov-name span { color:#B39168; }
+
+/* demo btn */
+.demo { position:fixed; bottom:10px; left:50%; transform:translateX(-50%); display:flex; gap:8px; z-index:50; }
+.btn { padding:6px 14px; border-radius:6px; border:none; cursor:pointer; font-size:11px; font-weight:700; }
+.btn-g { background:#00685B; color:#fff; }
+.btn-x { background:#374151; color:#fff; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-badge">УЛТ. ГОСПИТАЛЬ</div>
+    <div class="hdr-floor">1 этаж — Терапия</div>
+  </div>
+  <div class="clock">09:42</div>
+</div>
+
+<div class="body">
+
+  <!-- LEFT: Active calls -->
+  <div class="left">
+    <div class="section-label">Активные вызовы</div>
+
+    <div class="call-row calling">
+      <div class="call-cab warm"><div class="call-cab-num">1</div><div class="call-cab-lbl">Каб.</div></div>
+      <div class="call-info">
+        <div class="call-name">Мария <span>Ив.</span></div>
+        <div class="call-status status-calling">Вызван</div>
+      </div>
+    </div>
+
+    <div class="call-row">
+      <div class="call-cab"><div class="call-cab-num">2</div><div class="call-cab-lbl">Каб.</div></div>
+      <div class="call-info">
+        <div class="call-name">Алексей <span>Пе.</span></div>
+        <div class="call-status status-progress">На приёме</div>
+      </div>
+    </div>
+
+    <div class="call-row">
+      <div class="call-cab"><div class="call-cab-num">5</div><div class="call-cab-lbl">Каб.</div></div>
+      <div class="call-info">
+        <div class="call-name">Дмитрий <span>Со.</span></div>
+        <div class="call-status status-progress">На приёме</div>
+      </div>
+    </div>
+
+    <div class="call-row calling">
+      <div class="call-cab warm"><div class="call-cab-num">7</div><div class="call-cab-lbl">Каб.</div></div>
+      <div class="call-info">
+        <div class="call-name">Анна <span>Ко.</span></div>
+        <div class="call-status status-calling">Вызван</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Queue per cabinet -->
+  <div class="right">
+    <div class="section-label" style="padding:0 4px;flex-shrink:0;">Ближайшая очередь</div>
+
+    <!-- Cab 1 -->
+    <div class="cab-block">
+      <div class="cab-block-hdr">
+        <span class="cab-block-num">Кабинет 1</span>
+        <span class="cab-block-meta">5 ожидает</span>
+      </div>
+      <div class="queue-list">
+        <div class="queue-item"><div class="q-pos next">1</div><div class="q-name">Сергей <span>Но.</span></div><div class="q-time">09:45</div></div>
+        <div class="queue-item"><div class="q-pos">2</div><div class="q-name">Олег <span>Ма.</span></div><div class="q-time">10:00</div></div>
+        <div class="queue-item"><div class="q-pos">3</div><div class="q-name">Наталья <span>Гр.</span></div><div class="q-time">10:15</div></div>
+      </div>
+    </div>
+
+    <!-- Cab 2 -->
+    <div class="cab-block">
+      <div class="cab-block-hdr">
+        <span class="cab-block-num">Кабинет 2</span>
+        <span class="cab-block-meta">3 ожидает</span>
+      </div>
+      <div class="queue-list">
+        <div class="queue-item"><div class="q-pos next">1</div><div class="q-name">Ирина <span>Во.</span></div><div class="q-time">09:50</div></div>
+        <div class="queue-item"><div class="q-pos">2</div><div class="q-name">Виктор <span>Си.</span></div><div class="q-time">10:05</div></div>
+        <div class="queue-item"><div class="q-pos">3</div><div class="q-name">Людмила <span>Фе.</span></div><div class="q-time">10:20</div></div>
+      </div>
+    </div>
+
+    <!-- Cab 3 — empty -->
+    <div class="cab-block">
+      <div class="cab-block-hdr">
+        <span class="cab-block-num">Кабинет 3</span>
+        <span class="cab-block-meta">нет очереди</span>
+      </div>
+      <div class="cab-empty">Очередь пуста</div>
+    </div>
+
+    <!-- Cab 5 -->
+    <div class="cab-block">
+      <div class="cab-block-hdr">
+        <span class="cab-block-num">Кабинет 5</span>
+        <span class="cab-block-meta">4 ожидает</span>
+      </div>
+      <div class="queue-list">
+        <div class="queue-item"><div class="q-pos next">1</div><div class="q-name">Елена <span>Бо.</span></div><div class="q-time">09:48</div></div>
+        <div class="queue-item"><div class="q-pos">2</div><div class="q-name">Андрей <span>Ку.</span></div><div class="q-time">10:03</div></div>
+        <div class="queue-item"><div class="q-pos">3</div><div class="q-name">Татьяна <span>Як.</span></div><div class="q-time">10:18</div></div>
+      </div>
+    </div>
+
+    <!-- Cab 7 -->
+    <div class="cab-block">
+      <div class="cab-block-hdr">
+        <span class="cab-block-num">Кабинет 7</span>
+        <span class="cab-block-meta">2 ожидает</span>
+      </div>
+      <div class="queue-list">
+        <div class="queue-item"><div class="q-pos next">1</div><div class="q-name">Максим <span>Зи.</span></div><div class="q-time">09:55</div></div>
+        <div class="queue-item"><div class="q-pos">2</div><div class="q-name">Светлана <span>Ор.</span></div><div class="q-time">10:10</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="ov" style="display:none;">
+  <div class="ov-card">
+    <div class="ov-lbl">Кабинет</div>
+    <div class="ov-cab">1</div>
+    <div class="ov-div"></div>
+    <div class="ov-name">Мария <span>Ив.</span></div>
+  </div>
+</div>
+
+<div class="demo">
+  <button class="btn btn-g" onclick="show()">▶ Симулировать вызов</button>
+  <button class="btn btn-x" onclick="hide()">✕ Скрыть</button>
+</div>
+
+<script>
+let t=null;
+function show(){clearTimeout(t);document.getElementById('ov').style.display='flex';t=setTimeout(hide,3000);}
+function hide(){clearTimeout(t);document.getElementById('ov').style.display='none';}
+</script>
+</body>
+</html>

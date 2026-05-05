@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Табло — минимализм</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0f14; font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; height: 100vh; display: flex; flex-direction: column; }
+
+  /* ── Header ── */
+  .header {
+    background: #00685B;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; height: 44px; flex-shrink: 0;
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-badge { font-size: 10px; font-weight: 700; border: 1px solid rgba(179,145,104,.5); color: #B39168; padding: 2px 7px; border-radius: 3px; }
+  .header-floor { font-size: 12px; color: rgba(255,255,255,.65); }
+  .clock { font-size: 19px; font-weight: 700; color: #B39168; font-variant-numeric: tabular-nums; }
+
+  /* ── Grid ── */
+  .grid { flex: 1; display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 12px; min-height: 0; }
+
+  /* ── Cabinet card ── */
+  .card {
+    background: #161b22;
+    border: 1px solid #1e2530;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: border-color .3s, box-shadow .3s;
+  }
+  .card.calling {
+    border-color: #B39168;
+    box-shadow: 0 0 0 2px rgba(179,145,104,.3), 0 0 20px rgba(179,145,104,.15);
+    animation: pulse-card 1.2s ease-in-out 3;
+  }
+  @keyframes pulse-card {
+    0%,100% { box-shadow: 0 0 0 2px rgba(179,145,104,.3), 0 0 20px rgba(179,145,104,.15); }
+    50%      { box-shadow: 0 0 0 4px rgba(179,145,104,.55), 0 0 36px rgba(179,145,104,.35); }
+  }
+
+  /* Cabinet number bar */
+  .card-top {
+    background: #00685B; padding: 10px 16px;
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .card-top.calling { background: #7a5020; }
+  .cab-num { font-size: 28px; font-weight: 900; line-height: 1; }
+  .cab-label { font-size: 11px; color: rgba(255,255,255,.6); font-weight: 500; }
+
+  /* Patient section — takes remaining space, centered */
+  .card-body {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 14px 16px; text-align: center;
+  }
+  .patient-name {
+    font-size: 22px; font-weight: 800; color: #f1f5f9;
+    line-height: 1.15; letter-spacing: -.3px;
+  }
+  .patient-name span { color: #B39168; } /* first 2 letters of surname */
+  .called-label {
+    font-size: 10px; color: rgba(179,145,104,.8); margin-top: 6px;
+    text-transform: uppercase; letter-spacing: .8px; font-weight: 600;
+  }
+  .no-call { font-size: 13px; color: #2d3748; }
+
+  /* ── OVERLAY ── */
+  .overlay {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.88);
+    animation: ov-in .2s ease;
+  }
+  @keyframes ov-in { from{opacity:0} to{opacity:1} }
+
+  .overlay-card {
+    text-align: center;
+    animation: ov-scale .28s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes ov-scale { from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
+
+  .ov-cabinet {
+    font-size: 18px; font-weight: 600;
+    color: rgba(255,255,255,.45); letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .ov-cabinet-num {
+    font-size: 120px; font-weight: 900; line-height: 1;
+    color: #B39168; margin-bottom: 16px;
+  }
+  .ov-divider { width: 56px; height: 2px; background: rgba(179,145,104,.4); margin: 0 auto 20px; border-radius: 2px; }
+  .ov-name {
+    font-size: 52px; font-weight: 800; line-height: 1.1;
+    color: #fff;
+  }
+  .ov-name span { color: #B39168; }
+
+  /* controls */
+  .controls { text-align: center; padding: 8px 0; flex-shrink: 0; }
+  .btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; margin: 0 4px; }
+  .btn-show { background: #00685B; color: #fff; }
+  .btn-hide { background: #374151; color: #fff; }
+  .hint { font-size: 10px; color: #374151; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-badge">УЛТ. ГОСПИТАЛЬ</div>
+    <div class="header-floor">1 этаж — Терапия</div>
+  </div>
+  <div class="clock">09:42</div>
+</div>
+
+<div class="grid">
+
+  <!-- Calling -->
+  <div class="card calling">
+    <div class="card-top calling">
+      <span class="cab-num">1</span>
+      <span class="cab-label">Кабинет</span>
+    </div>
+    <div class="card-body">
+      <div>
+        <div class="patient-name">Мария <span>Ив.</span></div>
+        <div class="called-label">Вызван</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- In progress -->
+  <div class="card">
+    <div class="card-top">
+      <span class="cab-num">3</span>
+      <span class="cab-label">Кабинет</span>
+    </div>
+    <div class="card-body">
+      <div>
+        <div class="patient-name">Алексей <span>Пе.</span></div>
+        <div class="called-label" style="color:rgba(100,200,150,.7);">На приёме</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty -->
+  <div class="card">
+    <div class="card-top">
+      <span class="cab-num">5</span>
+      <span class="cab-label">Кабинет</span>
+    </div>
+    <div class="card-body">
+      <p class="no-call">—</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="controls">
+  <button class="btn btn-show" onclick="showOverlay()">▶ Симулировать вызов</button>
+  <button class="btn btn-hide" onclick="hideOverlay()">✕ Скрыть</button>
+  <div class="hint">Оверлей 3 сек → исчезает, карточка остаётся подсвечена</div>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" style="display:none;">
+  <div class="overlay-card">
+    <div class="ov-cabinet">Кабинет</div>
+    <div class="ov-cabinet-num">1</div>
+    <div class="ov-divider"></div>
+    <div class="ov-name">Мария <span>Ив.</span></div>
+  </div>
+</div>
+
+<script>
+let t = null;
+function showOverlay() {
+  clearTimeout(t);
+  document.getElementById('overlay').style.display = 'flex';
+  t = setTimeout(() => { document.getElementById('overlay').style.display = 'none'; }, 3000);
+}
+function hideOverlay() {
+  clearTimeout(t);
+  document.getElementById('overlay').style.display = 'none';
+}
+</script>
+</body>
+</html>

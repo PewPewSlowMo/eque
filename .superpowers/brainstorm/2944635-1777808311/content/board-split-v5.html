@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Табло v5</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#0a0f14; font-family:'Segoe UI',system-ui,sans-serif; color:#fff; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+
+.hdr {
+  background:#00685B; display:flex; align-items:center;
+  justify-content:space-between; padding:0 14px; height:40px; flex-shrink:0;
+}
+.hdr-left { display:flex; align-items:center; gap:10px; }
+.hdr-badge { font-size:9px; font-weight:700; border:1px solid rgba(179,145,104,.5); color:#B39168; padding:2px 7px; border-radius:3px; }
+.hdr-floor { font-size:12px; color:rgba(255,255,255,.6); }
+.clock { font-size:18px; font-weight:700; color:#B39168; font-variant-numeric:tabular-nums; }
+
+.body { flex:1; display:flex; min-height:0; }
+
+/* ═══ LEFT 70% ═══ */
+.left {
+  width:70%; border-right:1px solid #1e2530;
+  display:flex; flex-direction:column; padding:5px; gap:4px; overflow:hidden;
+}
+.section-label {
+  font-size:9px; font-weight:700; color:#B39168; letter-spacing:1px;
+  text-transform:uppercase; padding:0 2px; flex-shrink:0;
+}
+
+.call-row {
+  display:flex; align-items:stretch; border-radius:6px; overflow:hidden;
+  border:1px solid #1e2530; flex-shrink:0;
+}
+.call-row.calling { border-color:rgba(179,145,104,.5); }
+
+.call-cab {
+  width:170px; flex-shrink:0; background:#00685B;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:6px 0; gap:2px;
+}
+.call-cab.warm { background:#7a5020; }
+/* 64 × 2 = 128px */
+.call-cab-num { font-size:128px; font-weight:900; line-height:1; }
+/* 18 × 2 = 36px */
+.call-cab-lbl { font-size:36px; color:rgba(255,255,255,.65); font-weight:600; }
+
+.call-info {
+  flex:1; padding:8px 16px; background:#161b22;
+  display:flex; align-items:center; gap:16px;
+}
+/* 48 × 2 = 96px */
+.call-name { font-size:96px; font-weight:800; color:#f1f5f9; line-height:1; }
+.call-name span { color:#B39168; }
+/* 20 × 2 = 40px */
+.call-status {
+  font-size:40px; font-weight:700; text-transform:uppercase; letter-spacing:.3px;
+  padding:6px 16px; border-radius:8px; flex-shrink:0; align-self:flex-end; margin-bottom:6px;
+}
+.status-calling  { background:rgba(179,145,104,.15); color:#B39168; border:1px solid rgba(179,145,104,.3); }
+.status-progress { background:rgba(74,222,128,.1);   color:#4ade80; border:1px solid rgba(74,222,128,.2); }
+
+/* ═══ RIGHT 30% ═══ */
+.right {
+  width:30%; display:flex; flex-direction:column; padding:5px; gap:4px; overflow:hidden;
+}
+
+.queue-scroll-wrap {
+  flex:1; overflow:hidden; position:relative;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 4%, black 96%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 4%, black 96%, transparent 100%);
+}
+
+.queue-track {
+  display:flex; flex-direction:column; gap:4px; padding:4px 0;
+  animation: scroll-up 22s linear infinite;
+}
+.queue-track:hover { animation-play-state: paused; }
+
+@keyframes scroll-up {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+.q-row {
+  display:flex; align-items:center;
+  background:#161b22; border:1px solid #1e2530; border-radius:5px;
+  overflow:hidden; flex-shrink:0;
+}
+.q-row.next-up { border-color:rgba(0,104,91,.45); background:#0d1f1d; }
+
+.q-cab-tag {
+  /* 42 × 2 = 84px */
+  width:80px; flex-shrink:0; background:#00685B;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:8px 0; align-self:stretch;
+}
+.q-cab-tag.warm { background:#7a5020; }
+/* 22 × 2 = 44px */
+.q-cab-num { font-size:44px; font-weight:900; line-height:1; }
+/* 9 × 2 = 18px */
+.q-cab-lbl { font-size:18px; color:rgba(255,255,255,.45); text-transform:uppercase; letter-spacing:.3px; margin-top:2px; }
+
+.q-content {
+  flex:1; display:flex; align-items:center; padding:8px 10px; gap:0; overflow:hidden; min-width:0;
+}
+/* 28 × 2 = 56px */
+.q-name {
+  font-size:56px; font-weight:700; color:#e2e8f0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;
+}
+.q-name span { color:#94a3b8; font-weight:500; }
+/* 24 × 2 = 48px */
+.q-sep { font-size:48px; color:#2d3748; margin:0 6px; flex-shrink:0; }
+.q-time { font-size:48px; color:#475569; font-variant-numeric:tabular-nums; flex-shrink:0; }
+
+/* ── OVERLAY ── */
+.overlay {
+  position:fixed; inset:0; z-index:100;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.88); animation:ov-in .2s ease;
+}
+@keyframes ov-in { from{opacity:0} to{opacity:1} }
+.ov-card { text-align:center; animation:ov-sc .28s cubic-bezier(.34,1.56,.64,1); }
+@keyframes ov-sc { from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
+.ov-lbl { font-size:16px; color:rgba(179,145,104,.7); text-transform:uppercase; letter-spacing:2px; margin-bottom:4px; }
+.ov-cab { font-size:160px; font-weight:900; line-height:1; color:#B39168; }
+.ov-div { width:60px; height:3px; background:rgba(179,145,104,.4); margin:14px auto; border-radius:2px; }
+.ov-name { font-size:72px; font-weight:800; color:#fff; }
+.ov-name span { color:#B39168; }
+
+.demo { position:fixed; bottom:8px; left:50%; transform:translateX(-50%); display:flex; gap:8px; z-index:50; }
+.btn { padding:5px 13px; border-radius:6px; border:none; cursor:pointer; font-size:11px; font-weight:700; }
+.btn-g { background:#00685B; color:#fff; }
+.btn-x { background:#374151; color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-badge">УЛТ. ГОСПИТАЛЬ</div>
+    <div class="hdr-floor">1 этаж — Терапия</div>
+  </div>
+  <div class="clock">09:42</div>
+</div>
+
+<div class="body">
+
+  <!-- LEFT 70% -->
+  <div class="left">
+    <div class="section-label">Активные вызовы</div>
+
+    <div class="call-row calling">
+      <div class="call-cab warm"><div class="call-cab-num">1</div><div class="call-cab-lbl">Каб.</div></div>
+      <div class="call-info">
+        <div class="call-name">Мария <span>Ив.</span></div>
+        <div class="call-status status-calling">Вызван</div>
+      </div>
+    </div>
+
+    <div class="call-row">
+      <div class="call-cab"><div class="call-cab-num">2</div><div class="call-cab-lbl">Каб.</div></div>
+      <div class="call-info">
+        <div class="call-name">Алексей <span>Пе.</span></div>
+        <div class="call-status status-progress">На приёме</div>
+      </div>
+    </div>
+
+    <div class="call-row">
+      <div class="call-cab"><div class="call-cab-num">5</div><div class="call-cab-lbl">Каб.</div></div>
+      <div class="call-info">
+        <div class="call-name">Дмитрий <span>Со.</span></div>
+        <div class="call-status status-progress">На приёме</div>
+      </div>
+    </div>
+
+    <div class="call-row calling">
+      <div class="call-cab warm"><div class="call-cab-num">7</div><div class="call-cab-lbl">Каб.</div></div>
+      <div class="call-info">
+        <div class="call-name">Анна <span>Ко.</span></div>
+        <div class="call-status status-calling">Вызван</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT 30% -->
+  <div class="right">
+    <div class="section-label">Очередь</div>
+    <div class="queue-scroll-wrap">
+      <div class="queue-track">
+        <!-- copy 1 -->
+        <div class="q-row next-up"><div class="q-cab-tag"><div class="q-cab-num">1</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Сергей <span>Но.</span></span><span class="q-sep">—</span><span class="q-time">09:45</span></div></div>
+        <div class="q-row next-up"><div class="q-cab-tag warm"><div class="q-cab-num">7</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Максим <span>Зи.</span></span><span class="q-sep">—</span><span class="q-time">09:48</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">2</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Ирина <span>Во.</span></span><span class="q-sep">—</span><span class="q-time">09:50</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">5</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Елена <span>Бо.</span></span><span class="q-sep">—</span><span class="q-time">09:52</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">1</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Олег <span>Ма.</span></span><span class="q-sep">—</span><span class="q-time">10:00</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">2</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Виктор <span>Си.</span></span><span class="q-sep">—</span><span class="q-time">10:05</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">7</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Светлана <span>Ор.</span></span><span class="q-sep">—</span><span class="q-time">10:10</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">5</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Андрей <span>Ку.</span></span><span class="q-sep">—</span><span class="q-time">10:15</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">3</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Николай <span>Кр.</span></span><span class="q-sep">—</span><span class="q-time">10:30</span></div></div>
+        <!-- copy 2 seamless -->
+        <div class="q-row next-up"><div class="q-cab-tag"><div class="q-cab-num">1</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Сергей <span>Но.</span></span><span class="q-sep">—</span><span class="q-time">09:45</span></div></div>
+        <div class="q-row next-up"><div class="q-cab-tag warm"><div class="q-cab-num">7</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Максим <span>Зи.</span></span><span class="q-sep">—</span><span class="q-time">09:48</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">2</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Ирина <span>Во.</span></span><span class="q-sep">—</span><span class="q-time">09:50</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">5</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Елена <span>Бо.</span></span><span class="q-sep">—</span><span class="q-time">09:52</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">1</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Олег <span>Ма.</span></span><span class="q-sep">—</span><span class="q-time">10:00</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">2</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Виктор <span>Си.</span></span><span class="q-sep">—</span><span class="q-time">10:05</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">7</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Светлана <span>Ор.</span></span><span class="q-sep">—</span><span class="q-time">10:10</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">5</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Андрей <span>Ку.</span></span><span class="q-sep">—</span><span class="q-time">10:15</span></div></div>
+        <div class="q-row"><div class="q-cab-tag"><div class="q-cab-num">3</div><div class="q-cab-lbl">Каб.</div></div><div class="q-content"><span class="q-name">Николай <span>Кр.</span></span><span class="q-sep">—</span><span class="q-time">10:30</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="ov" style="display:none;">
+  <div class="ov-card">
+    <div class="ov-lbl">Кабинет</div>
+    <div class="ov-cab">1</div>
+    <div class="ov-div"></div>
+    <div class="ov-name">Мария <span>Ив.</span></div>
+  </div>
+</div>
+
+<div class="demo">
+  <button class="btn btn-g" onclick="show()">▶ Симулировать вызов</button>
+  <button class="btn btn-x" onclick="hide()">✕ Скрыть</button>
+</div>
+
+<script>
+let t=null;
+function show(){clearTimeout(t);document.getElementById('ov').style.display='flex';t=setTimeout(hide,3000);}
+function hide(){clearTimeout(t);document.getElementById('ov').style.display='none';}
+</script>
+</body>
+</html>

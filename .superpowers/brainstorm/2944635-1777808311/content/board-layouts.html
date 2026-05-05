@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Табло — варианты раскладки</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#111827; font-family:'Segoe UI',system-ui,sans-serif; color:#fff; padding:16px; }
+
+h2 { font-size:16px; color:#fff; margin-bottom:4px; }
+.sub { font-size:12px; color:#6b7280; margin-bottom:20px; }
+
+.option-label {
+  font-size:11px; font-weight:700; color:#B39168; letter-spacing:1px;
+  text-transform:uppercase; margin-bottom:8px;
+  display:flex; align-items:center; gap:8px;
+}
+.option-label::after { content:''; flex:1; height:1px; background:rgba(179,145,104,.2); }
+
+.screen {
+  background:#0a0f14; border-radius:8px; overflow:hidden;
+  border:1px solid #1e2530; margin-bottom:24px;
+}
+
+/* shared header */
+.hdr {
+  background:#00685B; display:flex; align-items:center;
+  justify-content:space-between; padding:0 14px; height:38px; flex-shrink:0;
+}
+.hdr-left { display:flex; align-items:center; gap:8px; }
+.hdr-badge { font-size:9px; font-weight:700; border:1px solid rgba(179,145,104,.5); color:#B39168; padding:1px 6px; border-radius:3px; }
+.hdr-title { font-size:11px; color:rgba(255,255,255,.65); }
+.clock { font-size:16px; font-weight:700; color:#B39168; }
+
+/* ─── OPTION A: Card grid — many cabinets (problem demo) ─── */
+.grid-body { padding:10px; display:grid; gap:8px; }
+.grid-3 { grid-template-columns: repeat(3,1fr); }
+.grid-4 { grid-template-columns: repeat(4,1fr); }
+.mini-card {
+  background:#161b22; border:1px solid #1e2530; border-radius:6px; overflow:hidden;
+}
+.mini-card.active { border-color:#B39168; }
+.mc-top { background:#00685B; padding:5px 10px; font-size:13px; font-weight:700; }
+.mc-top.warm { background:#7a5020; }
+.mc-body { padding:8px 10px; }
+.mc-name { font-size:13px; font-weight:700; color:#f1f5f9; }
+.mc-name span { color:#B39168; }
+.mc-status { font-size:9px; color:#B39168; margin-top:2px; text-transform:uppercase; letter-spacing:.5px; }
+.mc-empty { font-size:11px; color:#2d3748; padding:8px 10px; }
+
+/* ─── OPTION B: Active-only list ─── */
+.list-body { padding:10px 14px; display:flex; flex-direction:column; gap:6px; }
+.list-row {
+  display:flex; align-items:center; gap:0;
+  background:#161b22; border-radius:6px; overflow:hidden;
+  border:1px solid #1e2530;
+}
+.list-row.active { border-color:rgba(179,145,104,.4); }
+.list-cab {
+  background:#00685B; width:56px; flex-shrink:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:10px 0;
+}
+.list-cab.calling { background:#7a5020; }
+.list-cab-num { font-size:22px; font-weight:900; line-height:1; }
+.list-cab-lbl { font-size:8px; color:rgba(255,255,255,.55); text-transform:uppercase; letter-spacing:.5px; margin-top:1px; }
+.list-info { flex:1; padding:10px 14px; }
+.list-name { font-size:18px; font-weight:800; color:#f1f5f9; }
+.list-name span { color:#B39168; }
+.list-status { font-size:10px; color:#B39168; margin-top:2px; text-transform:uppercase; letter-spacing:.6px; font-weight:600; }
+.list-time { font-size:10px; color:#374151; margin-top:1px; }
+
+/* ─── OPTION C: Split — last call big + history ─── */
+.split-body { display:flex; height:220px; }
+.split-main {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border-right:1px solid #1e2530; padding:16px;
+}
+.sm-badge { font-size:10px; color:rgba(179,145,104,.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+.sm-cab { font-size:56px; font-weight:900; color:#B39168; line-height:1; }
+.sm-divider { width:32px; height:2px; background:rgba(179,145,104,.35); margin:8px auto; border-radius:2px; }
+.sm-name { font-size:26px; font-weight:800; color:#fff; text-align:center; }
+.sm-name span { color:#B39168; }
+.split-history { width:200px; flex-shrink:0; padding:10px; overflow:hidden; }
+.hist-label { font-size:9px; color:#374151; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+.hist-row {
+  display:flex; align-items:center; gap:8px;
+  padding:5px 8px; border-radius:5px; margin-bottom:4px;
+  background:#161b22; border:1px solid #1e2530;
+}
+.hist-row.latest { border-color:rgba(179,145,104,.3); background:#1a1f26; }
+.hist-cab { font-size:14px; font-weight:800; color:#B39168; width:20px; flex-shrink:0; }
+.hist-name { font-size:12px; color:#94a3b8; flex:1; }
+.hist-name span { color:#e2e8f0; }
+.hist-time { font-size:9px; color:#374151; }
+</style>
+</head>
+<body>
+
+<h2>Варианты раскладки при большом числе кабинетов</h2>
+<p class="sub">8 кабинетов. Из них 4 активных (вызов/приём), 4 пустых.</p>
+
+<!-- OPTION A -->
+<div class="option-label">A — Сетка всех кабинетов (текущий подход)</div>
+<div class="screen">
+  <div class="hdr"><div class="hdr-left"><div class="hdr-badge">УЛТ.</div><div class="hdr-title">1 этаж — Терапия</div></div><div class="clock">09:42</div></div>
+  <div class="grid-body grid-4">
+    <div class="mini-card active"><div class="mc-top warm">Каб. 1</div><div class="mc-body"><div class="mc-name">Мария <span>Ив.</span></div><div class="mc-status">Вызван</div></div></div>
+    <div class="mini-card"><div class="mc-top">Каб. 2</div><div class="mc-body"><div class="mc-name">Алексей <span>Пе.</span></div><div class="mc-status" style="color:#4ade80">На приёме</div></div></div>
+    <div class="mini-card"><div class="mc-top">Каб. 3</div><div class="mc-empty">—</div></div>
+    <div class="mini-card"><div class="mc-top">Каб. 4</div><div class="mc-empty">—</div></div>
+    <div class="mini-card"><div class="mc-top">Каб. 5</div><div class="mc-body"><div class="mc-name">Дмитрий <span>Со.</span></div><div class="mc-status" style="color:#4ade80">На приёме</div></div></div>
+    <div class="mini-card"><div class="mc-top">Каб. 6</div><div class="mc-empty">—</div></div>
+    <div class="mini-card active"><div class="mc-top warm">Каб. 7</div><div class="mc-body"><div class="mc-name">Анна <span>Ко.</span></div><div class="mc-status">Вызван</div></div></div>
+    <div class="mini-card"><div class="mc-top">Каб. 8</div><div class="mc-empty">—</div></div>
+  </div>
+</div>
+
+<!-- OPTION B -->
+<div class="option-label">B — Только активные кабинеты (список)</div>
+<div class="screen">
+  <div class="hdr"><div class="hdr-left"><div class="hdr-badge">УЛТ.</div><div class="hdr-title">1 этаж — Терапия</div></div><div class="clock">09:42</div></div>
+  <div class="list-body">
+    <div class="list-row active">
+      <div class="list-cab calling"><div class="list-cab-num">1</div><div class="list-cab-lbl">Кабинет</div></div>
+      <div class="list-info"><div class="list-name">Мария <span>Ив.</span></div><div class="list-status">Вызван</div></div>
+    </div>
+    <div class="list-row">
+      <div class="list-cab"><div class="list-cab-num">2</div><div class="list-cab-lbl">Кабинет</div></div>
+      <div class="list-info"><div class="list-name">Алексей <span>Пе.</span></div><div class="list-status" style="color:#4ade80">На приёме</div></div>
+    </div>
+    <div class="list-row">
+      <div class="list-cab"><div class="list-cab-num">5</div><div class="list-cab-lbl">Кабинет</div></div>
+      <div class="list-info"><div class="list-name">Дмитрий <span>Со.</span></div><div class="list-status" style="color:#4ade80">На приёме</div></div>
+    </div>
+    <div class="list-row active">
+      <div class="list-cab calling"><div class="list-cab-num">7</div><div class="list-cab-lbl">Кабинет</div></div>
+      <div class="list-info"><div class="list-name">Анна <span>Ко.</span></div><div class="list-status">Вызван</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- OPTION C -->
+<div class="option-label">C — Последний вызов крупно + история справа</div>
+<div class="screen">
+  <div class="hdr"><div class="hdr-left"><div class="hdr-badge">УЛТ.</div><div class="hdr-title">1 этаж — Терапия</div></div><div class="clock">09:42</div></div>
+  <div class="split-body">
+    <div class="split-main">
+      <div class="sm-badge">Кабинет</div>
+      <div class="sm-cab">7</div>
+      <div class="sm-divider"></div>
+      <div class="sm-name">Анна <span>Ко.</span></div>
+    </div>
+    <div class="split-history">
+      <div class="hist-label">Последние вызовы</div>
+      <div class="hist-row latest"><div class="hist-cab">7</div><div class="hist-name">Анна <span>Ко.</span></div><div class="hist-time">09:42</div></div>
+      <div class="hist-row"><div class="hist-cab">1</div><div class="hist-name">Мария <span>Ив.</span></div><div class="hist-time">09:38</div></div>
+      <div class="hist-row"><div class="hist-cab">5</div><div class="hist-name">Дмитрий <span>Со.</span></div><div class="hist-time">09:31</div></div>
+      <div class="hist-row"><div class="hist-cab">2</div><div class="hist-name">Алексей <span>Пе.</span></div><div class="hist-time">09:24</div></div>
+      <div class="hist-row"><div class="hist-cab">3</div><div class="hist-name">Елена <span>Бо.</span></div><div class="hist-time">09:18</div></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

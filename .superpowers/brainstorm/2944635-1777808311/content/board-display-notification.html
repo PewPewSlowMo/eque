@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Табло — визуальное оповещение</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0f14; font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; }
+
+  /* ── Header ── */
+  .header {
+    background: #00685B;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    height: 48px;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: .5px;
+    border: 1px solid rgba(179,145,104,.5); color: #B39168;
+    padding: 2px 8px; border-radius: 3px;
+  }
+  .header-title { font-size: 13px; font-weight: 600; color: #fff; }
+  .header-floor { font-size: 12px; color: rgba(255,255,255,.6); }
+  .clock { font-size: 20px; font-weight: 700; color: #B39168; font-variant-numeric: tabular-nums; }
+
+  /* ── Grid ── */
+  .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; padding: 16px; }
+
+  /* ── Cabinet card ── */
+  .card {
+    background: #161b22;
+    border: 1px solid #1e2530;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color .3s, box-shadow .3s;
+  }
+  .card.calling {
+    border-color: #B39168;
+    box-shadow: 0 0 0 2px rgba(179,145,104,.35), 0 0 18px rgba(179,145,104,.2);
+    animation: pulse-card 1s ease-in-out 3;
+  }
+  @keyframes pulse-card {
+    0%,100% { box-shadow: 0 0 0 2px rgba(179,145,104,.35), 0 0 18px rgba(179,145,104,.2); }
+    50%      { box-shadow: 0 0 0 4px rgba(179,145,104,.6),  0 0 32px rgba(179,145,104,.4); }
+  }
+  .card-header {
+    background: #00685B; padding: 8px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-header.calling { background: #9a6830; }
+  .card-num { font-size: 17px; font-weight: 700; }
+  .card-waiting { font-size: 11px; padding: 1px 8px; border-radius: 20px; background: rgba(255,255,255,.15); }
+  .card-doctor { padding: 8px 14px 6px; border-bottom: 1px solid #1e2530; }
+  .card-doctor-name { font-size: 12px; font-weight: 600; color: #e2e8f0; }
+  .card-doctor-spec { font-size: 10px; color: #64748b; margin-top: 1px; }
+  .card-patient { padding: 12px 14px; min-height: 68px; display: flex; align-items: center; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; margin-bottom: 6px; background: #22c55e; }
+  .dot.calling { background: #f59e0b; }
+  .patient-name { font-size: 15px; font-weight: 700; color: #f1f5f9; line-height: 1.2; }
+  .patient-first { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .patient-status { font-size: 10px; color: #B39168; margin-top: 3px; font-weight: 500; }
+  .no-call { font-size: 12px; color: #374151; }
+
+  /* ── OVERLAY (fullscreen flash) ── */
+  .overlay {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.82);
+    animation: overlay-in .25s ease;
+  }
+  @keyframes overlay-in { from { opacity:0 } to { opacity:1 } }
+  .overlay-card {
+    background: #00685B;
+    border: 2px solid #B39168;
+    border-radius: 16px;
+    padding: 40px 56px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(0,104,91,.6), 0 0 0 1px rgba(179,145,104,.3);
+    animation: overlay-scale .3s cubic-bezier(.34,1.56,.64,1);
+    max-width: 520px;
+    width: 90%;
+  }
+  @keyframes overlay-scale { from { transform: scale(.85); opacity:0 } to { transform: scale(1); opacity:1 } }
+  .overlay-label { font-size: 13px; color: rgba(255,255,255,.6); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+  .overlay-name { font-size: 42px; font-weight: 800; color: #fff; line-height: 1.1; margin-bottom: 8px; }
+  .overlay-firstname { font-size: 22px; color: rgba(255,255,255,.7); margin-bottom: 24px; }
+  .overlay-divider { width: 48px; height: 2px; background: #B39168; margin: 0 auto 20px; border-radius: 2px; }
+  .overlay-cabinet-label { font-size: 13px; color: rgba(255,255,255,.55); margin-bottom: 6px; }
+  .overlay-cabinet-num { font-size: 56px; font-weight: 900; color: #B39168; line-height: 1; }
+
+  /* legend */
+  .legend {
+    position: absolute; bottom: 10px; right: 14px;
+    font-size: 10px; color: #374151;
+    display: flex; gap: 14px;
+  }
+  .btn {
+    margin: 8px 4px 0;
+    padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 600;
+  }
+  .btn-show { background: #00685B; color: #fff; }
+  .btn-hide { background: #374151; color: #fff; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-badge">УЛТ. ГОСПИТАЛЬ</div>
+    <div class="header-title">Электронная очередь</div>
+    <div class="header-floor" style="margin-left:4px;">· 1 этаж — Терапия</div>
+  </div>
+  <div class="clock">09:42</div>
+</div>
+
+<!-- CABINET GRID -->
+<div class="grid">
+
+  <!-- Card 1 — CALLING (highlighted) -->
+  <div class="card calling" id="card1">
+    <div class="card-header calling">
+      <span class="card-num">Каб. 1</span>
+      <span class="card-waiting">3 ожид.</span>
+    </div>
+    <div class="card-doctor">
+      <div class="card-doctor-name">Сейткали А.М.</div>
+      <div class="card-doctor-spec">Терапевт</div>
+    </div>
+    <div class="card-patient">
+      <div>
+        <div class="dot calling"></div>
+        <div class="patient-name">Иванова</div>
+        <div class="patient-first">Мария Петровна</div>
+        <div class="patient-status">Вызван ↑</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2 — normal -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-num">Каб. 3</span>
+      <span class="card-waiting">1 ожид.</span>
+    </div>
+    <div class="card-doctor">
+      <div class="card-doctor-name">Мухамеджанов Б.К.</div>
+      <div class="card-doctor-spec">Кардиолог</div>
+    </div>
+    <div class="card-patient">
+      <div>
+        <div class="dot"></div>
+        <div class="patient-name">Петров</div>
+        <div class="patient-first">Алексей</div>
+        <div class="patient-status">На приёме</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3 — empty -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-num">Каб. 5</span>
+    </div>
+    <div class="card-doctor">
+      <div class="card-doctor-name">Нурланова Г.С.</div>
+      <div class="card-doctor-spec">Невролог</div>
+    </div>
+    <div class="card-patient">
+      <p class="no-call">Нет вызова</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Demo controls -->
+<div style="text-align:center;padding:0 0 12px;">
+  <button class="btn btn-show" onclick="showOverlay()">▶ Показать вызов (оверлей)</button>
+  <button class="btn btn-hide" onclick="hideOverlay()">✕ Скрыть</button>
+  <div style="font-size:10px;color:#374151;margin-top:6px;">Симуляция события queue:called — оверлей 3 сек → исчезает, карточка остаётся подсвечена ещё 3 сек</div>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" style="display:none;">
+  <div class="overlay-card">
+    <div class="overlay-label">Вызов пациента</div>
+    <div class="overlay-name">Иванова</div>
+    <div class="overlay-firstname">Мария Петровна</div>
+    <div class="overlay-divider"></div>
+    <div class="overlay-cabinet-label">Кабинет</div>
+    <div class="overlay-cabinet-num">1</div>
+  </div>
+</div>
+
+<div class="legend">
+  <span>● Вызван / На приёме</span>
+  <span>○ Нет вызова</span>
+</div>
+
+<script>
+let overlayTimer = null;
+let cardTimer = null;
+
+function showOverlay() {
+  clearTimeout(overlayTimer);
+  clearTimeout(cardTimer);
+  document.getElementById('overlay').style.display = 'flex';
+  overlayTimer = setTimeout(() => {
+    document.getElementById('overlay').style.display = 'none';
+  }, 3000);
+}
+
+function hideOverlay() {
+  clearTimeout(overlayTimer);
+  clearTimeout(cardTimer);
+  document.getElementById('overlay').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
