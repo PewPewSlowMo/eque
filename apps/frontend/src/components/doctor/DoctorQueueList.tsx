@@ -1,5 +1,20 @@
+import { useEffect, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
+
+function useElapsedMinutes(startedAt: string | null | undefined): number {
+  const [elapsed, setElapsed] = useState(() =>
+    startedAt ? Math.floor((Date.now() - new Date(startedAt).getTime()) / 60_000) : 0,
+  );
+  useEffect(() => {
+    if (!startedAt) return;
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - new Date(startedAt).getTime()) / 60_000));
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [startedAt]);
+  return elapsed;
+}
 
 const PRIORITY_PILL: Record<string, { label: string; cls: string }> = {
   EMERGENCY: { label: 'Экстренный',   cls: 'bg-red-100 text-red-700' },
@@ -28,6 +43,8 @@ interface QueueEntry {
   paymentConfirmed: boolean;
   scheduledAt?: string | null;
   waitMinutes?: number;
+  startedAt?: string | null;
+  service?: { id: string; name: string; durationMinutes: number } | null;
   patient: { firstName: string; lastName: string; middleName?: string | null };
 }
 
@@ -90,6 +107,17 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
     );
   }
 
+  function EntryTimer({ startedAt, duration }: { startedAt: string | null | undefined; duration: number }) {
+    const elapsed = useElapsedMinutes(startedAt);
+    const pct     = duration > 0 ? elapsed / duration : 0;
+    const color   = pct < 0.8 ? 'text-emerald-600' : pct <= 1.0 ? 'text-yellow-600' : 'text-red-600';
+    return (
+      <span className={`text-[8px] font-bold tabular-nums ${color}`}>
+        {elapsed}/{duration}м
+      </span>
+    );
+  }
+
   const renderEntry = (entry: QueueEntry, isWalkIn = false) => {
     const isFinished = FINISHED.has(entry.status);
     const prio       = PRIORITY_PILL[entry.priority] ?? PRIORITY_PILL.WALK_IN;
@@ -148,6 +176,9 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
             <span className={`text-[8px] font-bold tabular-nums ${entry.waitMinutes > 20 ? 'text-red-600' : 'text-muted-foreground'}`}>
               {entry.waitMinutes} мин
             </span>
+          )}
+          {entry.status === 'IN_PROGRESS' && entry.service && (
+            <EntryTimer startedAt={entry.startedAt} duration={entry.service.durationMinutes} />
           )}
           <div className="flex items-center gap-1">
             {canCall && (
