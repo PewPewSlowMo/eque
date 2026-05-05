@@ -43,6 +43,7 @@ interface Props {
     specialty?: string | null;
     departmentId?: string | null;
     allowedCategories: string[];
+    isActive?: boolean;
   };
 }
 
@@ -161,12 +162,12 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-lg flex flex-col" style={{ maxHeight: '85vh' }}>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{isEdit ? 'Редактировать пользователя' : 'Новый пользователь'}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="flex-1 overflow-y-auto space-y-4 py-2 pr-1">
           {!isEdit && (
             <div className="space-y-1">
               <Label>Логин *</Label>
@@ -319,7 +320,17 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 flex-wrap gap-2">
+          {isEdit && (
+            <Button
+              variant="outline"
+              className={editUser!.isActive !== false ? 'text-destructive hover:text-destructive mr-auto' : 'text-green-600 hover:text-green-600 mr-auto'}
+              disabled={isPending}
+              onClick={() => update.mutate({ id: editUser!.id, isActive: editUser!.isActive !== false ? false : true })}
+            >
+              {editUser!.isActive !== false ? 'Деактивировать' : 'Активировать'}
+            </Button>
+          )}
           <Button variant="outline" onClick={onClose}>Отмена</Button>
           <Button onClick={handleSubmit} disabled={isPending}>
             {isEdit ? 'Сохранить' : 'Создать'}

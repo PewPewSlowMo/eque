@@ -24,7 +24,7 @@ const STATUS_LABELS: Record<string, string> = {
 const CATEGORY_SHORT: Record<string, string> = {
   PAID_ONCE:     'Платный',
   PAID_CONTRACT: 'Договор',
-  OSMS:          'ОМС',
+  OSMS:          'ОСМС',
   CONTINGENT:    'Контингент',
   EMPLOYEE:      'Сотрудник',
 };

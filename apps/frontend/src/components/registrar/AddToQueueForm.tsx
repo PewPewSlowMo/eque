@@ -20,7 +20,7 @@ const PRIORITY_OPTIONS = [
 const CATEGORY_LABELS: Record<string, string> = {
   PAID_ONCE:     'Платный (разовый)',
   PAID_CONTRACT: 'Платный (договор)',
-  OSMS:          'ОМС',
+  OSMS:          'ОСМС',
   CONTINGENT:    'Контингент',
   EMPLOYEE:      'Сотрудник',
 };

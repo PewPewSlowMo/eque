@@ -23,24 +23,38 @@ export function UsersTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
 
   const openCreate = () => { setEditing(null); setDialogOpen(true); };
   const openEdit = (u: any) => { setEditing(u); setDialogOpen(true); };
+
+  const visibleUsers = (users as any[]).filter((u: any) => showInactive || u.isActive !== false);
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Загрузка...</p>;
 
   return (
     <div className="space-y-4">
-      {isAdmin && (
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setImportOpen(true)}>
-            Импорт из Excel
-          </Button>
-          <Button onClick={openCreate}>Создать пользователя</Button>
-        </div>
-      )}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={e => setShowInactive(e.target.checked)}
+            className="h-4 w-4 accent-primary"
+          />
+          Показать деактивированных
+        </label>
+        {isAdmin && (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              Импорт из Excel
+            </Button>
+            <Button onClick={openCreate}>Создать пользователя</Button>
+          </div>
+        )}
+      </div>
 
-      {(users as any[]).length === 0 ? (
+      {visibleUsers.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">Нет пользователей</p>
       ) : (
         <div className="border rounded-lg overflow-hidden">
@@ -55,13 +69,13 @@ export function UsersTab() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {(users as any[]).map((u: any) => (
-                <tr key={u.id} className="hover:bg-muted/50">
+              {visibleUsers.map((u: any) => (
+                <tr key={u.id} className={u.isActive === false ? 'opacity-50' : 'hover:bg-muted/50'}>
                   <td className="px-4 py-2">
                     {u.lastName} {u.firstName}
                     {u.middleName ? ` ${u.middleName}` : ''}
-                    {!u.isActive && (
-                      <span className="ml-1 text-xs text-muted-foreground">(неактивен)</span>
+                    {u.isActive === false && (
+                      <span className="ml-1 text-xs text-muted-foreground">(деактивирован)</span>
                     )}
                   </td>
                   <td className="px-4 py-2 text-muted-foreground">{u.username}</td>

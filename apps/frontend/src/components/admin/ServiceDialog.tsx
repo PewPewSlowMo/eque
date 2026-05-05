@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 const CATEGORY_OPTIONS = [
   { value: 'PAID_ONCE',     label: 'Платный (разово)' },
   { value: 'PAID_CONTRACT', label: 'По договору' },
-  { value: 'OSMS',          label: 'ОМС' },
+  { value: 'OSMS',          label: 'ОСМС' },
   { value: 'CONTINGENT',    label: 'Контингент' },
   { value: 'EMPLOYEE',      label: 'Сотрудник' },
 ];
