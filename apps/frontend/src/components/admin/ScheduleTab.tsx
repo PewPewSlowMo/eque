@@ -36,22 +36,7 @@ function CellEditor({
   const [startTime, setStartTime] = useState(existing?.startTime ?? '08:00');
   const [endTime,   setEndTime]   = useState(existing?.endTime   ?? '14:00');
   const [breaks,    setBreaks]    = useState<BreakItem[]>(existing?.breaks ?? []);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
   const popRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!popRef.current) return;
-    const ar = anchorEl.getBoundingClientRect();
-    const pr = popRef.current.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    let top  = ar.bottom + 4;
-    let left = ar.left;
-    if (top  + pr.height > vh - 8) top  = ar.top - pr.height - 4;
-    if (left + pr.width  > vw - 8) left = vw - pr.width - 8;
-    if (left < 8) left = 8;
-    setPos({ top, left });
-  }, [anchorEl]);
 
   const addBreak = () => setBreaks(prev => [...prev, { startTime: '12:00', endTime: '13:00', label: '' }]);
   const removeBreak = (i: number) => setBreaks(prev => prev.filter((_, idx) => idx !== i));
@@ -68,7 +53,7 @@ function CellEditor({
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div ref={popRef}
         className="fixed z-50 bg-white shadow-2xl w-[256px]"
-        style={{ top: pos.top, left: pos.left, borderRadius: '6px 20px 20px 6px', border: '1.5px solid #a8d4cd' }}>
+        style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', borderRadius: '6px 20px 20px 6px', border: '1.5px solid #a8d4cd' }}>
         <div className="flex items-center justify-between px-3 py-2 border-b border-border">
           <div className="text-[10px] font-bold text-foreground truncate">
             {doctorName} · {label}
