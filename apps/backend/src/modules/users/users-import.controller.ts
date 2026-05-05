@@ -7,11 +7,12 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import * as ExcelJS from 'exceljs';
+import { UserRole, PatientCategory } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { TrpcService } from '../../trpc/trpc.service';
 
-const ROLES = ['ADMIN', 'REGISTRAR', 'CALL_CENTER', 'DOCTOR', 'DEPARTMENT_HEAD', 'DIRECTOR'];
-const CATEGORIES = ['PAID_ONCE', 'PAID_CONTRACT', 'OSMS', 'CONTINGENT', 'EMPLOYEE'];
+const ROLES = Object.values(UserRole);
+const CATEGORIES = Object.values(PatientCategory);
 
 function extractUser(req: any) {
   const auth = req.headers.authorization as string | undefined;
@@ -38,7 +39,7 @@ export interface PreviewRow {
 
 function parseCategories(raw: string): string[] {
   if (!raw) return [];
-  return raw.split(',').map(s => s.trim()).filter(s => CATEGORIES.includes(s));
+  return raw.split(',').map(s => s.trim()).filter(s => CATEGORIES.includes(s as PatientCategory));
 }
 
 async function parseWorkbook(buffer: Buffer, departments: { id: string; name: string }[]): Promise<PreviewRow[]> {
@@ -76,8 +77,9 @@ async function parseWorkbook(buffer: Buffer, departments: { id: string; name: st
     if (!firstName) errors.push('Имя обязательно');
     if (!username)  errors.push('Логин обязателен');
     if (!password)  errors.push('Пароль обязателен');
+    else if (password.length < 6) errors.push('Пароль: минимум 6 символов');
     if (!role)      errors.push('Роль обязательна');
-    if (role && !ROLES.includes(role)) errors.push(`Неверная роль: ${role}`);
+    if (role && !ROLES.includes(role as UserRole)) errors.push(`Неверная роль: ${role}`);
 
     if (username) {
       if (usernamesInFile.has(username)) {
@@ -209,7 +211,8 @@ export class UsersImportController {
     FileInterceptor('file', {
       storage: memoryStorage(),
       fileFilter: (_req, file, cb) => {
-        if (/\.xlsx$/i.test(file.originalname)) {
+        const validMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        if (/\.xlsx$/i.test(file.originalname) && file.mimetype === validMime) {
           cb(null, true);
         } else {
           cb(new BadRequestException('Только .xlsx файлы'), false);
