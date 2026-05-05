@@ -58,7 +58,10 @@ export const createQueueRouter = (
               },
             ],
           },
-          include: { patient: { select: PATIENT_SELECT } },
+          include: {
+            patient: { select: PATIENT_SELECT },
+            service: { select: { id: true, name: true, durationMinutes: true } },
+          },
         });
 
         // Active statuses first (by priority/arrived), then finished sorted by completedAt desc
@@ -90,6 +93,7 @@ export const createQueueRouter = (
           patientId: z.string(),
           priority: QueuePriorityEnum,
           category: PatientCategoryEnum,
+          serviceId: z.string(),
           scheduledAt: z.string().datetime().optional(),
           source: z.enum(['REGISTRAR', 'CALL_CENTER']),
           notes: z.string().optional(),
@@ -112,6 +116,16 @@ export const createQueueRouter = (
         const requiresPayment = catSettings?.requiresPaymentConfirmation ?? false;
         const paymentConfirmed = !requiresPayment;
 
+        const doctorService = await prisma.doctorService.findUnique({
+          where: { doctorId_serviceId: { doctorId: input.doctorId, serviceId: input.serviceId } },
+        });
+        if (!doctorService) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Выбранная услуга не назначена этому врачу',
+          });
+        }
+
         // Atomic: compute queue number and create entry in one transaction to avoid race conditions
         const entry = await prisma.$transaction(async (tx) => {
           const todayStart = new Date();
@@ -132,6 +146,7 @@ export const createQueueRouter = (
               patientId: input.patientId,
               priority: input.priority,
               category: input.category,
+              serviceId: input.serviceId,
               queueNumber,
               status: initialStatus,
               source: input.source,
@@ -257,7 +272,7 @@ export const createQueueRouter = (
         const next = candidates[0];
         const called = await prisma.queueEntry.update({
           where: { id: next.id },
-          data: { status: 'IN_PROGRESS', calledAt: new Date() },
+          data: { status: 'IN_PROGRESS', calledAt: new Date(), startedAt: new Date() },
           include: { patient: { select: PATIENT_SELECT } },
         });
 
@@ -301,7 +316,7 @@ export const createQueueRouter = (
 
         const called = await prisma.queueEntry.update({
           where: { id: input.entryId },
-          data: { status: 'IN_PROGRESS', calledAt: new Date() },
+          data: { status: 'IN_PROGRESS', calledAt: new Date(), startedAt: new Date() },
           include: { patient: { select: PATIENT_SELECT } },
         });
         await prisma.queueHistory.create({
