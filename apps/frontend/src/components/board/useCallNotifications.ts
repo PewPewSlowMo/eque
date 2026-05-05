@@ -50,9 +50,13 @@ export function useCallNotifications({ cabinetIds, board, backendBaseUrl, onCall
         .replace('{middleName}', event.patientMiddleName)
         .replace('{cabinet}',    event.cabinetNumber ?? '')
         .replace('{number}',     String(event.queueNumber ?? ''));
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'ru-RU';
-      window.speechSynthesis.speak(utterance);
+      // Cancel any stalled speech, small delay so browser audio engine settles
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ru-RU';
+        window.speechSynthesis.speak(utterance);
+      }, 150);
     };
 
     let played = 0;
