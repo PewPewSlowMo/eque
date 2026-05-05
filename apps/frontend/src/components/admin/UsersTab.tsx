@@ -3,6 +3,7 @@ import { trpc } from '@/lib/trpc';
 import { useUser } from '@/contexts/UserContext';
 import { Button } from '@/components/ui/button';
 import { UserDialog } from './UserDialog';
+import { UserImportDialog } from './UserImportDialog';
 
 const ROLE_LABEL: Record<string, string> = {
   ADMIN: 'Администратор',
@@ -21,6 +22,7 @@ export function UsersTab() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const openCreate = () => { setEditing(null); setDialogOpen(true); };
   const openEdit = (u: any) => { setEditing(u); setDialogOpen(true); };
@@ -30,7 +32,10 @@ export function UsersTab() {
   return (
     <div className="space-y-4">
       {isAdmin && (
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            Импорт из Excel
+          </Button>
           <Button onClick={openCreate}>Создать пользователя</Button>
         </div>
       )}
@@ -77,6 +82,7 @@ export function UsersTab() {
       )}
 
       <UserDialog open={dialogOpen} onClose={() => setDialogOpen(false)} user={editing} />
+      <UserImportDialog open={importOpen} onClose={() => setImportOpen(false)} />
     </div>
   );
 }

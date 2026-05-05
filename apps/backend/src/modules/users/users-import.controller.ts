@@ -246,6 +246,82 @@ export class UsersImportController {
     const validCount = rows.filter(r => r._errors.length === 0).length;
     const errorCount = rows.filter(r => r._errors.length > 0).length;
 
-    return { rows, validCount, errorCount };
+    // Strip passwords before returning (security: passwords stay server-side)
+    const safeRows = rows.map(({ password: _pw, ...rest }) => rest);
+    return { rows: safeRows, validCount, errorCount };
+  }
+
+  @Post('import/commit')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      fileFilter: (_req, file, cb) => {
+        const validMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        if (/\.xlsx$/i.test(file.originalname) && file.mimetype === validMime) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('Только .xlsx файлы'), false);
+        }
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async commitImport(@Req() req: any, @UploadedFile() file: any) {
+    extractUser(req);
+    if (!file) throw new BadRequestException('Файл не загружен');
+
+    const departments = await this.prisma.department.findMany({
+      select: { id: true, name: true },
+    });
+    const deptMap = new Map(departments.map(d => [d.name, d.id]));
+
+    const rows = await parseWorkbook(file.buffer, departments);
+
+    // Check existing usernames
+    const usernames = rows.map(r => r.username).filter(Boolean);
+    const existing = await this.prisma.user.findMany({
+      where: { username: { in: usernames } },
+      select: { username: true },
+    });
+    const existingSet = new Set(existing.map(u => u.username));
+
+    for (const row of rows) {
+      if (row.username && existingSet.has(row.username)) {
+        row._errors.push(`Логин уже существует в системе: ${row.username}`);
+      }
+    }
+
+    const validRows = rows.filter(r => r._errors.length === 0);
+    let created = 0;
+    const errors: string[] = [];
+
+    // Import bcrypt here to hash passwords
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const bcrypt = require('bcrypt');
+
+    for (const row of validRows) {
+      try {
+        const hashed = await bcrypt.hash(row.password, 10);
+        await this.prisma.user.create({
+          data: {
+            username:          row.username,
+            password:          hashed,
+            firstName:         row.firstName,
+            lastName:          row.lastName,
+            middleName:        row.middleName || undefined,
+            role:              row.role as UserRole,
+            specialty:         row.specialty || undefined,
+            departmentId:      row.departmentName ? deptMap.get(row.departmentName) ?? undefined : undefined,
+            allowedCategories:  row.allowedCategories  as any,
+            acceptedCategories: row.acceptedCategories as any,
+          } as any,
+        });
+        created++;
+      } catch (e: any) {
+        errors.push(`${row.username}: ${e.message}`);
+      }
+    }
+
+    return { created, errors };
   }
 }
