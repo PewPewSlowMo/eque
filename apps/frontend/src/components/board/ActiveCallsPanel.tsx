@@ -15,14 +15,14 @@ export function ActiveCallsPanel({ calls }: Props) {
     <div style={{
       flex: '0 0 62%', display: 'flex', flexDirection: 'column',
       borderRight: '1px solid rgba(255,255,255,.06)', overflow: 'hidden',
-      padding: '24px 32px', gap: 16,
+      padding: '24px 32px', gap: 16, position: 'relative',
     }}>
       <div style={{ color: 'rgba(255,255,255,.4)', fontSize: 22, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>
         Активные вызовы
       </div>
 
       {calls.length === 0 ? (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ color: 'rgba(255,255,255,.2)', fontSize: 32, fontWeight: 500 }}>Ожидайте вызова</span>
         </div>
       ) : (
