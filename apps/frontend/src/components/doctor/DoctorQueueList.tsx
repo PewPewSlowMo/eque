@@ -150,7 +150,7 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
     return (
       <div
         key={entry.id}
-        className={`flex items-start gap-2 px-2.5 py-2 border-b border-border/60 transition-colors ${
+        className={`px-2.5 py-2 border-b border-border/60 transition-colors ${
           isFinished
             ? 'opacity-50'
             : isCalling
@@ -160,60 +160,51 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
             : 'hover:bg-primary/5'
         }`}
       >
-        <span className="text-[10px] font-bold text-muted-foreground/60 w-5 text-right shrink-0 mt-0.5 tabular-nums">
-          {entry.queueNumber}
-        </span>
-
-        <span
-          className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5"
-          style={{
-            background: entry.status === 'ARRIVED'     ? '#00685B'
-              : entry.status === 'CALLED'              ? '#B39168'
-              : entry.status === 'IN_PROGRESS'         ? '#0d9488'
-              : '#cbd5e1',
-          }}
-        />
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-semibold text-foreground truncate">
-              {entry.patient.lastName} {entry.patient.firstName}
-              {entry.patient.middleName ? ` ${entry.patient.middleName[0]}.` : ''}
+        {/* Row 1: number · dot · name · time */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[9px] font-bold text-muted-foreground/50 tabular-nums shrink-0 w-4 text-right">
+            {entry.queueNumber}
+          </span>
+          <span
+            className="w-1.5 h-1.5 rounded-full shrink-0"
+            style={{
+              background: entry.status === 'ARRIVED'    ? '#00685B'
+                : entry.status === 'CALLED'             ? '#B39168'
+                : entry.status === 'IN_PROGRESS'        ? '#0d9488'
+                : '#cbd5e1',
+            }}
+          />
+          <span className="text-[10px] font-semibold text-foreground leading-tight">
+            {entry.patient.lastName} {entry.patient.firstName}
+            {entry.patient.middleName ? ` ${entry.patient.middleName[0]}.` : ''}
+          </span>
+          {entry.scheduledAt && (
+            <span className="ml-auto shrink-0 text-[8px] font-bold tabular-nums text-primary/70">
+              {new Date(entry.scheduledAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
             </span>
-            {entry.scheduledAt && (
-              <span className="shrink-0 text-[8px] font-bold tabular-nums text-primary/70">
-                {new Date(entry.scheduledAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-            <span className={`text-[8px] font-semibold px-1.5 py-px rounded-full ${prio.cls}`}>
-              {prio.label}
-            </span>
-            <span className={`text-[8px] font-semibold px-1.5 py-px rounded-full ${stat.cls}`}>
-              {stat.label}
-            </span>
-            {cat && (
-              <span className={`text-[8px] font-semibold px-1.5 py-px rounded-full ${cat.cls}`}>
-                {cat.label}
-              </span>
-            )}
-            {!entry.paymentConfirmed && (
-              <span className="text-[8px] text-orange-600 font-medium">· ожидает оплаты</span>
-            )}
-          </div>
+          )}
         </div>
 
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          {entry.waitMinutes !== undefined && entry.waitMinutes > 0 && (
-            <span className={`text-[8px] font-bold tabular-nums ${entry.waitMinutes > 20 ? 'text-red-600' : 'text-muted-foreground'}`}>
-              {entry.waitMinutes} мин
+        {/* Row 2: pills + buttons */}
+        <div className="flex items-center gap-1 mt-1 pl-5 flex-wrap">
+          <span className={`text-[8px] font-semibold px-1.5 py-px rounded-full ${prio.cls}`}>
+            {prio.label}
+          </span>
+          <span className={`text-[8px] font-semibold px-1.5 py-px rounded-full ${stat.cls}`}>
+            {stat.label}
+          </span>
+          {cat && (
+            <span className={`text-[8px] font-semibold px-1.5 py-px rounded-full ${cat.cls}`}>
+              {cat.label}
             </span>
           )}
           {entry.status === 'IN_PROGRESS' && entry.service && (
             <EntryTimer startedAt={entry.startedAt} duration={entry.service.durationMinutes} />
           )}
-          <div className="flex items-center gap-1">
+          {!entry.paymentConfirmed && (
+            <span className="text-[8px] text-orange-600 font-medium">· оплата</span>
+          )}
+          <div className="ml-auto flex items-center gap-1">
             {canCall && (
               <button
                 onClick={() => callSpecific.mutate({ entryId: entry.id })}
@@ -240,7 +231,7 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
                   className="text-[8px] font-bold text-white px-2 py-0.5 disabled:opacity-40 transition-opacity"
                   style={{ background: '#0d9488', borderRadius: '2px 8px 8px 2px' }}
                 >
-                  Начать приём
+                  Начать
                 </button>
               </>
             )}
