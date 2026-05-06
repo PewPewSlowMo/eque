@@ -33,7 +33,7 @@ export function CabinetDialog({ open, onClose, cabinet }: Props) {
     }
   }, [open, cabinet]);
 
-  const { data: departments = [] } = trpc.departments.getAll.useQuery();
+  const { data: departments = [] } = trpc.departments.getAll.useQuery({ includeInactive: false });
   const utils = trpc.useUtils();
 
   const create = trpc.cabinets.create.useMutation({

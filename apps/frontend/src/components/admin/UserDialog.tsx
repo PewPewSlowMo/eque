@@ -77,7 +77,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
     }
   }, [open, editUser]);
 
-  const { data: departments = [] } = trpc.departments.getAll.useQuery();
+  const { data: departments = [] } = trpc.departments.getAll.useQuery({ includeInactive: false });
   const utils = trpc.useUtils();
 
   const { data: allServices = [] } = trpc.services.getAll.useQuery(

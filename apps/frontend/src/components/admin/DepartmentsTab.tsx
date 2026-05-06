@@ -6,11 +6,11 @@ import { Plus, Pencil, X } from 'lucide-react';
 function DeptRow({ dept, showInactive, onEdit }: { dept: any; showInactive: boolean; onEdit: () => void }) {
   const utils = trpc.useUtils();
   const deactivate = trpc.departments.deactivate.useMutation({
-    onSuccess: () => { utils.departments.getAll.invalidate({ includeInactive: true }); toast.info('Отделение деактивировано'); },
+    onSuccess: () => { utils.departments.getAll.invalidate(); toast.info('Отделение деактивировано'); },
     onError: (e: any) => toast.error(e.message),
   });
   const activate = trpc.departments.activate.useMutation({
-    onSuccess: () => { utils.departments.getAll.invalidate({ includeInactive: true }); toast.success('Отделение активировано'); },
+    onSuccess: () => { utils.departments.getAll.invalidate(); toast.success('Отделение активировано'); },
     onError: (e: any) => toast.error(e.message),
   });
 
