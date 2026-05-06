@@ -7,9 +7,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 
 const ROLES = [
   { value: 'ADMIN', label: 'Администратор' },
@@ -29,6 +26,8 @@ const CATEGORY_OPTIONS = [
   { value: 'CONTINGENT', label: 'Контингент' },
   { value: 'EMPLOYEE', label: 'Сотрудник' },
 ];
+
+const selectClass = 'w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 interface Props {
   open: boolean;
@@ -223,15 +222,16 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
 
             <div className="space-y-1">
               <Label>Отделение</Label>
-              <Select value={departmentId} onValueChange={setDepartmentId}>
-                <SelectTrigger><SelectValue placeholder="Без отделения" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_DEPT}>Без отделения</SelectItem>
-                  {(departments as any[]).map((d: any) => (
-                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                value={departmentId}
+                onChange={(e) => setDepartmentId(e.target.value)}
+                className={selectClass}
+              >
+                <option value={NONE_DEPT}>Без отделения</option>
+                {(departments as any[]).map((d: any) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -241,14 +241,15 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
               <>
                 <div className="space-y-1">
                   <Label>Роль *</Label>
-                  <Select value={role} onValueChange={setRole}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {ROLES.map((r) => (
-                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className={selectClass}
+                  >
+                    {ROLES.map((r) => (
+                      <option key={r.value} value={r.value}>{r.label}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-1">
                   <Label>Специальность</Label>

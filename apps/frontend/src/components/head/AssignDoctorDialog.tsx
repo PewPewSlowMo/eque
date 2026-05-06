@@ -5,11 +5,10 @@ import { Label } from '@/components/ui/label';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { UserPlus } from 'lucide-react';
+
+const selectClass = 'w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 interface AssignDoctorDialogProps {
   doctors: any[];
@@ -48,35 +47,35 @@ export function AssignDoctorDialog({ doctors, cabinets }: AssignDoctorDialogProp
         <div className="space-y-4">
           <div className="space-y-1">
             <Label>Врач</Label>
-            <Select value={doctorId} onValueChange={setDoctorId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите врача..." />
-              </SelectTrigger>
-              <SelectContent>
-                {doctors.map((d: any) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    {d.lastName} {d.firstName}
-                    {d.specialty ? ` — ${d.specialty}` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={doctorId}
+              onChange={(e) => setDoctorId(e.target.value)}
+              className={selectClass}
+            >
+              <option value="">Выберите врача...</option>
+              {doctors.map((d: any) => (
+                <option key={d.id} value={d.id}>
+                  {d.lastName} {d.firstName}
+                  {d.specialty ? ` — ${d.specialty}` : ''}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-1">
             <Label>Кабинет</Label>
-            <Select value={cabinetId} onValueChange={setCabinetId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите кабинет..." />
-              </SelectTrigger>
-              <SelectContent>
-                {cabinets.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.number}{c.name ? ` — ${c.name}` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={cabinetId}
+              onChange={(e) => setCabinetId(e.target.value)}
+              className={selectClass}
+            >
+              <option value="">Выберите кабинет...</option>
+              {cabinets.map((c: any) => (
+                <option key={c.id} value={c.id}>
+                  {c.number}{c.name ? ` — ${c.name}` : ''}
+                </option>
+              ))}
+            </select>
           </div>
 
           <Button
