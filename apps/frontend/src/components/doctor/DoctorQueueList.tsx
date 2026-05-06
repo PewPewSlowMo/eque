@@ -175,9 +175,16 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
         />
 
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-semibold text-foreground truncate">
-            {entry.patient.lastName} {entry.patient.firstName}
-            {entry.patient.middleName ? ` ${entry.patient.middleName[0]}.` : ''}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold text-foreground truncate">
+              {entry.patient.lastName} {entry.patient.firstName}
+              {entry.patient.middleName ? ` ${entry.patient.middleName[0]}.` : ''}
+            </span>
+            {entry.scheduledAt && (
+              <span className="shrink-0 text-[8px] font-bold tabular-nums text-primary/70">
+                {new Date(entry.scheduledAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
             <span className={`text-[8px] font-semibold px-1.5 py-px rounded-full ${prio.cls}`}>
