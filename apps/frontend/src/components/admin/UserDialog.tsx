@@ -223,7 +223,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
 
             <div className="space-y-1">
               <Label>Отделение</Label>
-              <Select value={departmentId} onValueChange={setDepartmentId} modal={false}>
+              <Select value={departmentId} onValueChange={setDepartmentId}>
                 <SelectTrigger><SelectValue placeholder="Без отделения" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE_DEPT}>Без отделения</SelectItem>
@@ -241,7 +241,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
               <>
                 <div className="space-y-1">
                   <Label>Роль *</Label>
-                  <Select value={role} onValueChange={setRole} modal={false}>
+                  <Select value={role} onValueChange={setRole}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {ROLES.map((r) => (

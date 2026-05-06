@@ -48,7 +48,7 @@ export function AssignDoctorDialog({ doctors, cabinets }: AssignDoctorDialogProp
         <div className="space-y-4">
           <div className="space-y-1">
             <Label>Врач</Label>
-            <Select value={doctorId} onValueChange={setDoctorId} modal={false}>
+            <Select value={doctorId} onValueChange={setDoctorId}>
               <SelectTrigger>
                 <SelectValue placeholder="Выберите врача..." />
               </SelectTrigger>
@@ -65,7 +65,7 @@ export function AssignDoctorDialog({ doctors, cabinets }: AssignDoctorDialogProp
 
           <div className="space-y-1">
             <Label>Кабинет</Label>
-            <Select value={cabinetId} onValueChange={setCabinetId} modal={false}>
+            <Select value={cabinetId} onValueChange={setCabinetId}>
               <SelectTrigger>
                 <SelectValue placeholder="Выберите кабинет..." />
               </SelectTrigger>
