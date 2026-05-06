@@ -160,7 +160,7 @@ export function UserImportDialog({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Импорт пользователей из Excel</DialogTitle>
         </DialogHeader>
@@ -211,9 +211,9 @@ export function UserImportDialog({ open, onClose }: Props) {
                 )}
               </div>
 
-              <div className="border rounded-lg overflow-hidden">
+              <div className="overflow-y-auto border rounded-lg" style={{ maxHeight: '170px' }}>
                 <table className="w-full text-xs">
-                  <thead className="bg-muted">
+                  <thead className="bg-muted sticky top-0 z-10">
                     <tr>
                       <th className="text-left px-3 py-2 font-medium">#</th>
                       <th className="text-left px-3 py-2 font-medium">Фамилия</th>
