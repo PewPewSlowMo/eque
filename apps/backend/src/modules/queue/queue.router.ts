@@ -272,7 +272,7 @@ export const createQueueRouter = (
         const next = candidates[0];
         const called = await prisma.queueEntry.update({
           where: { id: next.id },
-          data: { status: 'IN_PROGRESS', calledAt: new Date(), startedAt: new Date() },
+          data: { status: 'CALLED', calledAt: new Date() },
           include: { patient: { select: PATIENT_SELECT } },
         });
 
@@ -281,7 +281,7 @@ export const createQueueRouter = (
             queueEntryId: next.id,
             action: 'called',
             oldStatus: 'ARRIVED',
-            newStatus: 'IN_PROGRESS',
+            newStatus: 'CALLED',
             userId: ctx.user!.id,
           } as any,
         });
@@ -316,7 +316,7 @@ export const createQueueRouter = (
 
         const called = await prisma.queueEntry.update({
           where: { id: input.entryId },
-          data: { status: 'IN_PROGRESS', calledAt: new Date(), startedAt: new Date() },
+          data: { status: 'CALLED', calledAt: new Date() },
           include: { patient: { select: PATIENT_SELECT } },
         });
         await prisma.queueHistory.create({
@@ -324,7 +324,7 @@ export const createQueueRouter = (
             queueEntryId: input.entryId,
             action: 'called_specific',
             oldStatus: 'ARRIVED',
-            newStatus: 'IN_PROGRESS',
+            newStatus: 'CALLED',
             userId: ctx.user!.id,
           } as any,
         });
@@ -342,6 +342,36 @@ export const createQueueRouter = (
         });
         events.emit('queue:updated', { doctorId: entry.doctorId, entry: called });
         return { called };
+      }),
+
+    // Doctor starts appointment for a CALLED patient.
+    startAppointment: trpc.protectedProcedure
+      .input(z.object({ entryId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const entry = await prisma.queueEntry.findUnique({ where: { id: input.entryId } });
+        if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Запись не найдена' });
+        if (entry.status !== 'CALLED') {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Пациент не находится в статусе "Вызван"' });
+        }
+
+        const updated = await prisma.queueEntry.update({
+          where: { id: input.entryId },
+          data: { status: 'IN_PROGRESS', startedAt: new Date() },
+          include: { patient: { select: PATIENT_SELECT } },
+        });
+
+        await prisma.queueHistory.create({
+          data: {
+            queueEntryId: input.entryId,
+            action: 'started',
+            oldStatus: 'CALLED',
+            newStatus: 'IN_PROGRESS',
+            userId: ctx.user!.id,
+          } as any,
+        });
+
+        events.emit('queue:updated', { doctorId: entry.doctorId, entry: updated });
+        return updated;
       }),
 
     // Re-announce current IN_PROGRESS patient on the display board (no status change)

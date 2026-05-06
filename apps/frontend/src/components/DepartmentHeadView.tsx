@@ -166,7 +166,9 @@ export function DepartmentHeadView() {
   );
 
   const floorCabinets = (cabinets as any[]).filter((c: any) =>
-    c.isActive !== false && (!departmentId || c.departmentId === departmentId),
+    c.isActive !== false &&
+    (!departmentId || c.departmentId === departmentId) &&
+    (c.floor == null || c.floor === floor),
   );
 
   const now = new Date();

@@ -80,6 +80,11 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
     onError: (e: any) => toast.error(e.message),
   });
 
+  const startAppointment = trpc.queue.startAppointment.useMutation({
+    onSuccess: () => { utils.queue.getByDoctor.invalidate({ doctorId }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const markNoShow = trpc.queue.markNoShow.useMutation({
     onSuccess: () => { utils.queue.getByDoctor.invalidate({ doctorId }); toast.info('Отмечена неявка'); },
     onError: (e: any) => toast.error(e.message),
@@ -91,7 +96,7 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
   });
 
   const canCallNext = entries.some(e => e.status === 'ARRIVED' && e.paymentConfirmed);
-  const anyPending  = callNext.isPending || callSpecific.isPending;
+  const anyPending  = callNext.isPending || callSpecific.isPending || startAppointment.isPending;
 
   // Walk-in = no scheduled slot, regardless of priority label
   const activeEntries   = entries.filter(e => !FINISHED.has(e.status));
@@ -125,6 +130,7 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
     const isCalling  = entry.id === calledEntryId || entry.status === 'CALLED';
     const canNoShow  = ['WAITING_ARRIVAL', 'ARRIVED'].includes(entry.status);
     const canCall    = entry.status === 'ARRIVED' && entry.paymentConfirmed;
+    const canStart   = entry.status === 'CALLED';
 
     return (
       <div
@@ -189,6 +195,16 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
                 style={{ background: '#00685B', borderRadius: '2px 8px 8px 2px' }}
               >
                 Вызвать
+              </button>
+            )}
+            {canStart && (
+              <button
+                onClick={() => startAppointment.mutate({ entryId: entry.id })}
+                disabled={anyPending}
+                className="text-[8px] font-bold text-white px-2 py-0.5 disabled:opacity-40 transition-opacity"
+                style={{ background: '#0d9488', borderRadius: '2px 8px 8px 2px' }}
+              >
+                Начать приём
               </button>
             )}
             {canNoShow && (
