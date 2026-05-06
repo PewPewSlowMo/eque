@@ -4,6 +4,7 @@ import { useUser } from '@/contexts/UserContext';
 import { useQueueSocket } from './registrar/useQueueSocket';
 import { CurrentPatientCard } from './doctor/CurrentPatientCard';
 import { DoctorQueueList } from './doctor/DoctorQueueList';
+import { toast } from 'sonner';
 
 const PRIORITY_LABEL: Record<string, string> = {
   EMERGENCY: 'Экстренный',
@@ -16,6 +17,7 @@ export function DoctorView() {
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
   const [selectedDoctorId, setSelectedDoctorId] = useState('');
+  const utils = trpc.useUtils();
 
   const { data: allDoctors = [] } = trpc.users.getDoctors.useQuery(
     undefined,
@@ -35,6 +37,11 @@ export function DoctorView() {
     { doctorId },
     { enabled: !!doctorId },
   );
+
+  const startAppointment = trpc.queue.startAppointment.useMutation({
+    onSuccess: () => utils.queue.getByDoctor.invalidate({ doctorId }),
+    onError: (e: any) => toast.error(e.message),
+  });
 
   if (!isAdmin && !doctorId) return null;
 
@@ -113,7 +120,7 @@ export function DoctorView() {
       <div className="flex-1 flex flex-col bg-slate-100 overflow-y-auto">
 
         {/* called patient banner */}
-        {calledEntry && !currentPatient && (
+        {calledEntry && inProgressPatients.length === 0 && (
           <div className="mx-3 mt-3 p-3 bg-white border border-border rounded-lg flex items-center justify-between gap-3">
             <div>
               <div className="text-[12px] font-bold text-foreground">
@@ -126,11 +133,10 @@ export function DoctorView() {
               </div>
             </div>
             <button
-              className="shrink-0 text-[10px] font-bold text-white px-4 py-2"
+              className="shrink-0 text-[10px] font-bold text-white px-4 py-2 disabled:opacity-40"
               style={{ background: '#00685B', borderRadius: '4px 20px 20px 4px' }}
-              onClick={() => {
-                /* trigger IN_PROGRESS via complete chain — backend sets via callNext/arrive */
-              }}
+              disabled={startAppointment.isPending}
+              onClick={() => startAppointment.mutate({ entryId: calledEntry.id })}
             >
               Начать приём
             </button>

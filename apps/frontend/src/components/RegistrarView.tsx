@@ -672,6 +672,7 @@ function RescheduleDialog({ entry, patient, onClose, onDone }: {
       const at = new Date(selectedDay);
       at.setHours(h, m, 0, 0);
       const source = (user as any)?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
+      if (!entry.serviceId) { toast.error('У записи не указана услуга — перенос невозможен'); return; }
       addMut.mutate({
         doctorId: entry.doctorId, patientId: patient.id,
         priority: entry.priority, category: entry.category,

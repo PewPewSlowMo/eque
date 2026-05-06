@@ -147,6 +147,11 @@ export function DepartmentHeadView() {
   const { data: allDepartments = [] } = trpc.departments.getAll.useQuery({ includeInactive: false }, { enabled: isAdmin });
   const { data: doctors = [] }        = trpc.users.getDoctors.useQuery({ departmentId }, { enabled: !!departmentId });
   const { data: cabinets = [] }       = trpc.cabinets.getAll.useQuery();
+
+  const unassign = trpc.assignments.unassign.useMutation({
+    onSuccess: () => { utils.assignments.getActive.invalidate(); toast.success('Назначение снято'); },
+    onError: (e: any) => toast.error(e.message),
+  });
   const utils = trpc.useUtils();
 
   const assign = trpc.assignments.assign.useMutation({
@@ -366,10 +371,9 @@ export function DepartmentHeadView() {
                   </div>
                 </div>
                 <button
-                  onClick={() => { if (confirm(`Снять назначение ${a.doctor.lastName}?`)) {
-                    trpc.useUtils(); // note: actual unassign needs mutation
-                  }}}
-                  className="text-[8px] px-2 py-1"
+                  onClick={() => { if (confirm(`Снять назначение ${a.doctor.lastName}?`)) unassign.mutate({ assignmentId: a.id }); }}
+                  disabled={unassign.isPending}
+                  className="text-[8px] px-2 py-1 disabled:opacity-40"
                   style={{ border: '1px solid rgba(239,68,68,.3)', color: '#ef4444', borderRadius: '3px 10px 10px 3px' }}>
                   Снять
                 </button>
