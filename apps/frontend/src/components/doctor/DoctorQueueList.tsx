@@ -85,6 +85,11 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
     onError: (e: any) => toast.error(e.message),
   });
 
+  const callRepeat = trpc.queue.callRepeat.useMutation({
+    onSuccess: () => { utils.queue.getByDoctor.invalidate({ doctorId }); toast.success('Пациент вызван повторно'); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const markNoShow = trpc.queue.markNoShow.useMutation({
     onSuccess: () => { utils.queue.getByDoctor.invalidate({ doctorId }); toast.info('Отмечена неявка'); },
     onError: (e: any) => toast.error(e.message),
@@ -96,7 +101,7 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
   });
 
   const canCallNext = entries.some(e => e.status === 'ARRIVED' && e.paymentConfirmed);
-  const anyPending  = callNext.isPending || callSpecific.isPending || startAppointment.isPending;
+  const anyPending  = callNext.isPending || callSpecific.isPending || startAppointment.isPending || callRepeat.isPending;
 
   // Walk-in = no scheduled slot, regardless of priority label
   const activeEntries   = entries.filter(e => !FINISHED.has(e.status));
@@ -198,14 +203,24 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
               </button>
             )}
             {canStart && (
-              <button
-                onClick={() => startAppointment.mutate({ entryId: entry.id })}
-                disabled={anyPending}
-                className="text-[8px] font-bold text-white px-2 py-0.5 disabled:opacity-40 transition-opacity"
-                style={{ background: '#0d9488', borderRadius: '2px 8px 8px 2px' }}
-              >
-                Начать приём
-              </button>
+              <>
+                <button
+                  onClick={() => callRepeat.mutate({ entryId: entry.id })}
+                  disabled={anyPending}
+                  className="text-[8px] font-bold px-2 py-0.5 disabled:opacity-40 transition-opacity"
+                  style={{ background: 'rgba(179,145,104,.14)', border: '1px solid rgba(179,145,104,.4)', color: '#B39168', borderRadius: '2px 8px 8px 2px' }}
+                >
+                  Повтор
+                </button>
+                <button
+                  onClick={() => startAppointment.mutate({ entryId: entry.id })}
+                  disabled={anyPending}
+                  className="text-[8px] font-bold text-white px-2 py-0.5 disabled:opacity-40 transition-opacity"
+                  style={{ background: '#0d9488', borderRadius: '2px 8px 8px 2px' }}
+                >
+                  Начать приём
+                </button>
+              </>
             )}
             {canNoShow && (
               <button

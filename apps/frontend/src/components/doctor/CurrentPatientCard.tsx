@@ -52,11 +52,6 @@ export function CurrentPatientCard({ entry, doctorId }: { entry: QueueEntry; doc
     onError: (e: any) => toast.error(e.message),
   });
 
-  const callRepeat = trpc.queue.callRepeat.useMutation({
-    onSuccess: () => toast.success('Пациент вызван повторно'),
-    onError: (e: any) => toast.error(e.message),
-  });
-
   const fullName = [entry.patient.lastName, entry.patient.firstName, entry.patient.middleName]
     .filter(Boolean)
     .join(' ');
@@ -124,19 +119,6 @@ export function CurrentPatientCard({ entry, doctorId }: { entry: QueueEntry; doc
           }}
         >
           Направление
-        </button>
-        <button
-          onClick={() => callRepeat.mutate({ entryId: entry.id })}
-          disabled={callRepeat.isPending}
-          className="text-[9px] font-bold px-2.5 py-1 disabled:opacity-50"
-          style={{
-            background: 'rgba(179,145,104,.14)',
-            border: '1px solid rgba(179,145,104,.4)',
-            color: '#B39168',
-            borderRadius: '4px 16px 16px 4px',
-          }}
-        >
-          Повторный вызов
         </button>
       </div>
     </div>
