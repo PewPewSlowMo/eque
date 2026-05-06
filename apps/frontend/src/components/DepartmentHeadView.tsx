@@ -130,7 +130,10 @@ function OverloadConfirm({ cabinet, count, onConfirm, onCancel }: {
 /* ─── DepartmentHeadView ─────────────────────────── */
 export function DepartmentHeadView() {
   const { user } = useUser();
-  const departmentId = user?.departmentId ?? '';
+  const isAdmin = user?.role === 'ADMIN';
+  const [adminDeptId, setAdminDeptId] = useState('');
+
+  const departmentId = isAdmin ? adminDeptId : (user?.departmentId ?? '');
 
   useQueueSocket();
 
@@ -141,6 +144,7 @@ export function DepartmentHeadView() {
   const [overload,   setOverload]   = useState<{ doctorId: string; cabinet: any } | null>(null);
 
   const { data: allAssignments = [] } = trpc.assignments.getActive.useQuery();
+  const { data: allDepartments = [] } = trpc.departments.getAll.useQuery({ includeInactive: false }, { enabled: isAdmin });
   const { data: doctors = [] }        = trpc.users.getDoctors.useQuery({ departmentId }, { enabled: !!departmentId });
   const { data: cabinets = [] }       = trpc.cabinets.getAll.useQuery();
   const utils = trpc.useUtils();
@@ -223,6 +227,19 @@ export function DepartmentHeadView() {
         style={{ background: '#12151e', borderBottom: '1px solid #252831' }}>
         <div className="flex items-center gap-3">
           <span className="text-[11px] font-bold" style={{ color: '#B39168' }}>Планировка</span>
+          {isAdmin && (
+            <select
+              value={adminDeptId}
+              onChange={e => setAdminDeptId(e.target.value)}
+              className="text-[9px] px-2 py-1 rounded outline-none"
+              style={{ background: '#1a1d27', border: '1px solid #252831', color: '#d1d5db', maxWidth: '180px' }}
+            >
+              <option value="">— отделение —</option>
+              {(allDepartments as any[]).map((d: any) => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+          )}
           <div className="flex gap-1">
             {[1,2,3,4,5].map(f => (
               <button key={f} onClick={() => setFloor(f)}
