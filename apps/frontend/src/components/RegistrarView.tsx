@@ -106,8 +106,16 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
   onClose: () => void; onBooked: () => void;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
+  const [serviceId, setServiceId] = useState('');
   const { user } = useUser();
   const utils = trpc.useUtils();
+
+  const { data: servicesData = [] } = trpc.services.getForDoctor.useQuery({
+    doctorId: doctor.id,
+    paymentCategory: category as any,
+  });
+  const services = servicesData as any[];
+  const effectiveServiceId = services.length === 1 ? services[0].id : serviceId;
 
   const source = (user as any)?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
 
@@ -171,15 +179,42 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
           })}
         </div>
 
+        {/* Service selector */}
+        {services.length === 0 && (
+          <div className="mb-2 text-[9px] text-amber-600 bg-amber-50 px-2 py-1.5 rounded border border-amber-200">
+            Нет услуг для этой категории у данного врача
+          </div>
+        )}
+        {services.length > 1 && (
+          <div className="mb-3">
+            <select
+              value={serviceId}
+              onChange={(e) => setServiceId(e.target.value)}
+              className="w-full text-[9px] px-2 py-1.5 rounded border border-border bg-white outline-none focus:border-primary"
+            >
+              <option value="">— выберите услугу —</option>
+              {services.map((s: any) => (
+                <option key={s.id} value={s.id}>{s.name} · {s.durationMinutes} мин</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {services.length === 1 && (
+          <div className="mb-2 text-[9px] text-muted-foreground px-0.5">
+            Услуга: <span className="font-medium text-foreground">{services[0].name}</span>
+          </div>
+        )}
+
         {/* Walk-in separator */}
         <div className="border-t border-border mt-1 mb-2" />
 
         {/* Walk-in button */}
         <button
-          disabled={anyPending}
+          disabled={anyPending || !effectiveServiceId}
           onClick={() => walkInMut.mutate({
             doctorId: doctor.id, patientId: patient.id,
             priority: 'WALK_IN', category: category as any,
+            serviceId: effectiveServiceId,
             source: source as any,
           })}
           className="w-full text-[9px] font-bold py-1.5 mb-3 disabled:opacity-40 transition-opacity"
@@ -194,7 +229,7 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
             Отмена
           </button>
           <button
-            disabled={!selected || anyPending}
+            disabled={!selected || !effectiveServiceId || anyPending}
             onClick={() => {
               if (!selected) return;
               const [h, m] = selected.split(':').map(Number);
@@ -203,6 +238,7 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
               addMutation.mutate({
                 doctorId: doctor.id, patientId: patient.id,
                 priority: priority as any, category: category as any,
+                serviceId: effectiveServiceId,
                 source: source as any, scheduledAt: at.toISOString(),
               });
             }}
@@ -639,6 +675,7 @@ function RescheduleDialog({ entry, patient, onClose, onDone }: {
       addMut.mutate({
         doctorId: entry.doctorId, patientId: patient.id,
         priority: entry.priority, category: entry.category,
+        serviceId: entry.serviceId,
         source, scheduledAt: at.toISOString(),
       });
     } catch { /* cancelMut error already toasted */ }
@@ -928,8 +965,13 @@ function CalendarTab() {
   const doctors = useMemo(() => {
     let list = allDoctors as any[];
     if (deptFilter) list = list.filter((d: any) => d.departmentId === deptFilter);
+    // Filter by acceptedCategories: empty array = accepts all categories
+    list = list.filter((d: any) => {
+      const cats: string[] = d.acceptedCategories ?? [];
+      return cats.length === 0 || cats.includes(category);
+    });
     return list;
-  }, [allDoctors, deptFilter]);
+  }, [allDoctors, deptFilter, category]);
 
   const allowedCats = (user as any)?.allowedCategories?.length
     ? CATEGORY_OPTS.filter(o => (user as any).allowedCategories.includes(o.value))
