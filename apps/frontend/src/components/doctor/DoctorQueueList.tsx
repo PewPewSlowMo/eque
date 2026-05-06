@@ -35,11 +35,20 @@ const STATUS_PILL: Record<string, { label: string; cls: string }> = {
 
 const FINISHED = new Set(['COMPLETED', 'CANCELLED', 'NO_SHOW']);
 
+const CATEGORY_PILL: Record<string, { label: string; cls: string }> = {
+  PAID_ONCE:     { label: 'Платный',    cls: 'bg-blue-50 text-blue-600' },
+  PAID_CONTRACT: { label: 'По договору',cls: 'bg-indigo-50 text-indigo-600' },
+  OSMS:          { label: 'ОСМС',       cls: 'bg-teal-50 text-teal-700' },
+  CONTINGENT:    { label: 'Контингент', cls: 'bg-purple-50 text-purple-700' },
+  EMPLOYEE:      { label: 'Сотрудник',  cls: 'bg-slate-100 text-slate-600' },
+};
+
 interface QueueEntry {
   id: string;
   queueNumber: number;
   status: string;
   priority: string;
+  category?: string | null;
   paymentConfirmed: boolean;
   scheduledAt?: string | null;
   waitMinutes?: number;
@@ -132,6 +141,7 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
     const isFinished = FINISHED.has(entry.status);
     const prio       = PRIORITY_PILL[entry.priority] ?? PRIORITY_PILL.WALK_IN;
     const stat       = STATUS_PILL[entry.status] ?? { label: entry.status, cls: 'bg-slate-100 text-slate-500' };
+    const cat        = entry.category ? (CATEGORY_PILL[entry.category] ?? null) : null;
     const isCalling  = entry.id === calledEntryId || entry.status === 'CALLED';
     const canNoShow  = ['WAITING_ARRIVAL', 'ARRIVED'].includes(entry.status);
     const canCall    = entry.status === 'ARRIVED' && entry.paymentConfirmed;
@@ -176,6 +186,11 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
             <span className={`text-[8px] font-semibold px-1.5 py-px rounded-full ${stat.cls}`}>
               {stat.label}
             </span>
+            {cat && (
+              <span className={`text-[8px] font-semibold px-1.5 py-px rounded-full ${cat.cls}`}>
+                {cat.label}
+              </span>
+            )}
             {!entry.paymentConfirmed && (
               <span className="text-[8px] text-orange-600 font-medium">· ожидает оплаты</span>
             )}

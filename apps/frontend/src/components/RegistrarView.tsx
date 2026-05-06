@@ -237,7 +237,8 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
               at.setHours(h, m, 0, 0);
               addMutation.mutate({
                 doctorId: doctor.id, patientId: patient.id,
-                priority: priority as any, category: category as any,
+                priority: (priority === 'WALK_IN' ? 'SCHEDULED' : priority) as any,
+                category: category as any,
                 serviceId: effectiveServiceId,
                 source: source as any, scheduledAt: at.toISOString(),
               });
