@@ -165,7 +165,9 @@ export function DepartmentHeadView() {
     (a: any) => !departmentId || a.doctor.departmentId === departmentId,
   );
 
-  const floorCabinets = (cabinets as any[]).filter((c: any) => !c.isDeactivated);
+  const floorCabinets = (cabinets as any[]).filter((c: any) =>
+    c.isActive !== false && (!departmentId || c.departmentId === departmentId),
+  );
 
   const now = new Date();
   const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
