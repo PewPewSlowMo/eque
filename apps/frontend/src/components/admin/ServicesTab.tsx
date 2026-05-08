@@ -5,11 +5,19 @@ import { Button } from '@/components/ui/button';
 import { ServiceDialog } from './ServiceDialog';
 
 const CATEGORY_LABEL: Record<string, string> = {
-  PAID_ONCE:     'Платный (разово)',
-  PAID_CONTRACT: 'По договору',
+  PAID_ONCE:     'Платный',
+  PAID_CONTRACT: 'Договор',
   OSMS:          'ОСМС',
   CONTINGENT:    'Контингент',
   EMPLOYEE:      'Сотрудник',
+};
+
+const CATEGORY_CLS: Record<string, string> = {
+  PAID_ONCE:     'bg-blue-50 text-blue-700',
+  PAID_CONTRACT: 'bg-indigo-50 text-indigo-700',
+  OSMS:          'bg-teal-50 text-teal-700',
+  CONTINGENT:    'bg-purple-50 text-purple-700',
+  EMPLOYEE:      'bg-slate-100 text-slate-600',
 };
 
 export function ServicesTab() {
@@ -23,18 +31,12 @@ export function ServicesTab() {
   const utils = trpc.useUtils();
 
   const deactivate = trpc.services.update.useMutation({
-    onSuccess: () => {
-      utils.services.getAll.invalidate();
-      toast.success('Услуга деактивирована');
-    },
+    onSuccess: () => { utils.services.getAll.invalidate(); toast.success('Услуга деактивирована'); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const deleteService = trpc.services.delete.useMutation({
-    onSuccess: () => {
-      utils.services.getAll.invalidate();
-      toast.success('Услуга удалена');
-    },
+    onSuccess: () => { utils.services.getAll.invalidate(); toast.success('Услуга удалена'); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -43,7 +45,9 @@ export function ServicesTab() {
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Загрузка...</p>;
 
-  const visibleServices = (services as any[]).filter((s: any) => showInactive || s.isActive !== false);
+  const visibleServices = (services as any[]).filter(
+    (s: any) => showInactive || s.isActive !== false,
+  );
 
   return (
     <div className="space-y-4">
@@ -52,7 +56,7 @@ export function ServicesTab() {
           <input
             type="checkbox"
             checked={showInactive}
-            onChange={e => setShowInactive(e.target.checked)}
+            onChange={(e) => setShowInactive(e.target.checked)}
             className="h-4 w-4 accent-primary"
           />
           Показать деактивированные
@@ -68,18 +72,15 @@ export function ServicesTab() {
             <thead className="bg-muted">
               <tr>
                 <th className="text-left px-4 py-2 font-medium">Название</th>
-                <th className="text-left px-4 py-2 font-medium">Длительность</th>
-                <th className="text-left px-4 py-2 font-medium">Категория оплаты</th>
+                <th className="text-left px-4 py-2 font-medium">Длит.</th>
+                <th className="text-left px-4 py-2 font-medium">Категории</th>
                 <th className="text-left px-4 py-2 font-medium">Статус</th>
                 <th className="px-4 py-2" />
               </tr>
             </thead>
             <tbody className="divide-y">
               {visibleServices.map((s: any) => (
-                <tr
-                  key={s.id}
-                  className={`hover:bg-muted/50 ${!s.isActive ? 'opacity-50' : ''}`}
-                >
+                <tr key={s.id} className={`hover:bg-muted/50 ${!s.isActive ? 'opacity-50' : ''}`}>
                   <td className="px-4 py-2 font-medium">
                     {s.name}
                     {s.description && (
@@ -87,7 +88,18 @@ export function ServicesTab() {
                     )}
                   </td>
                   <td className="px-4 py-2 text-muted-foreground">{s.durationMinutes} мин</td>
-                  <td className="px-4 py-2">{CATEGORY_LABEL[s.paymentCategory] ?? s.paymentCategory}</td>
+                  <td className="px-4 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {(s.categories as { category: string }[]).map(({ category }) => (
+                        <span
+                          key={category}
+                          className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${CATEGORY_CLS[category] ?? 'bg-slate-100 text-slate-600'}`}
+                        >
+                          {CATEGORY_LABEL[category] ?? category}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
                   <td className="px-4 py-2">
                     {s.isActive
                       ? <span className="text-xs text-emerald-600 font-medium">Активна</span>
