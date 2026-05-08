@@ -150,15 +150,15 @@ export function ServiceDialog({ open, onClose, service }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Редактировать услугу' : 'Новая услуга'}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-5 py-2">
-          {/* Basic info */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1 col-span-2">
+        <div className="flex gap-6">
+          {/* Left column: fields + doctors */}
+          <div className="flex-1 space-y-3 min-w-0">
+            <div className="space-y-1">
               <Label>Название *</Label>
               <Input
                 value={name}
@@ -166,105 +166,101 @@ export function ServiceDialog({ open, onClose, service }: Props) {
                 placeholder="Консультация терапевта"
               />
             </div>
-            <div className="space-y-1">
-              <Label>Длительность (мин) *</Label>
-              <Input
-                type="number"
-                min="1"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label>Длительность (мин) *</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Описание</Label>
+                <Input
+                  value={description}
+                  onChange={(e) => setDesc(e.target.value)}
+                  placeholder="Необязательно"
+                />
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label>Описание</Label>
-              <Input
-                value={description}
-                onChange={(e) => setDesc(e.target.value)}
-                placeholder="Необязательно"
-              />
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Врачи</Label>
+              <div className="border rounded-lg overflow-hidden max-h-44 overflow-y-auto">
+                {[...deptMap.entries()].map(([deptId, dept]) => (
+                  <div key={deptId}>
+                    <div className="px-3 py-1 bg-muted text-xs font-semibold text-muted-foreground sticky top-0">
+                      {dept.name}
+                    </div>
+                    {dept.doctors.map((d: any) => (
+                      <label
+                        key={d.id}
+                        className="flex items-center gap-2 px-3 py-1 hover:bg-muted/50 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-3.5 w-3.5 accent-primary"
+                          checked={doctorIds.has(d.id)}
+                          onChange={() => toggleDoctor(d.id)}
+                        />
+                        <span className="text-xs">
+                          {d.lastName} {d.firstName} {d.middleName ?? ''}
+                          {d.specialty ? <span className="text-muted-foreground"> · {d.specialty}</span> : null}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                ))}
+                {noDept.length > 0 && (
+                  <div>
+                    <div className="px-3 py-1 bg-muted text-xs font-semibold text-muted-foreground">
+                      Без отделения
+                    </div>
+                    {noDept.map((d: any) => (
+                      <label
+                        key={d.id}
+                        className="flex items-center gap-2 px-3 py-1 hover:bg-muted/50 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-3.5 w-3.5 accent-primary"
+                          checked={doctorIds.has(d.id)}
+                          onChange={() => toggleDoctor(d.id)}
+                        />
+                        <span className="text-xs">{d.lastName} {d.firstName} {d.middleName ?? ''}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {doctors.length === 0 && (
+                  <p className="px-3 py-3 text-xs text-muted-foreground text-center">Нет врачей</p>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Categories */}
-          <div className="space-y-2">
-            <Label>Категории пациентов *</Label>
-            <div className="flex flex-wrap gap-2">
+          {/* Right column: categories */}
+          <div className="w-[160px] flex-shrink-0 space-y-1.5">
+            <Label className="text-xs">Категории *</Label>
+            <div className="space-y-1">
               {CATEGORY_OPTIONS.map((opt) => (
-                <label
-                  key={opt.value}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm cursor-pointer select-none transition-colors ${
-                    categories.has(opt.value)
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-white text-muted-foreground border-border hover:border-primary/50'
-                  }`}
-                >
+                <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    className="sr-only"
+                    className="h-3.5 w-3.5 accent-primary"
                     checked={categories.has(opt.value)}
                     onChange={() => toggleCategory(opt.value)}
                   />
-                  {opt.label}
+                  <span className="text-xs">{opt.label}</span>
                 </label>
               ))}
             </div>
           </div>
-
-          {/* Doctors */}
-          <div className="space-y-2">
-            <Label>Врачи</Label>
-            <div className="border rounded-lg overflow-hidden max-h-56 overflow-y-auto">
-              {[...deptMap.entries()].map(([deptId, dept]) => (
-                <div key={deptId}>
-                  <div className="px-3 py-1.5 bg-muted text-xs font-semibold text-muted-foreground sticky top-0">
-                    {dept.name}
-                  </div>
-                  {dept.doctors.map((d: any) => (
-                    <label
-                      key={d.id}
-                      className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        className="h-3.5 w-3.5 accent-primary"
-                        checked={doctorIds.has(d.id)}
-                        onChange={() => toggleDoctor(d.id)}
-                      />
-                      {d.lastName} {d.firstName} {d.middleName ?? ''}
-                      {d.specialty ? <span className="text-xs text-muted-foreground ml-1">· {d.specialty}</span> : null}
-                    </label>
-                  ))}
-                </div>
-              ))}
-              {noDept.length > 0 && (
-                <div>
-                  <div className="px-3 py-1.5 bg-muted text-xs font-semibold text-muted-foreground">
-                    Без отделения
-                  </div>
-                  {noDept.map((d: any) => (
-                    <label
-                      key={d.id}
-                      className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        className="h-3.5 w-3.5 accent-primary"
-                        checked={doctorIds.has(d.id)}
-                        onChange={() => toggleDoctor(d.id)}
-                      />
-                      {d.lastName} {d.firstName} {d.middleName ?? ''}
-                    </label>
-                  ))}
-                </div>
-              )}
-              {doctors.length === 0 && (
-                <p className="px-3 py-4 text-sm text-muted-foreground text-center">Нет врачей</p>
-              )}
-            </div>
-          </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mt-2">
           <Button variant="outline" onClick={onClose} disabled={isPending}>Отмена</Button>
           <Button onClick={handleSubmit} disabled={isPending}>
             {isPending ? 'Сохранение...' : isEdit ? 'Сохранить' : 'Создать'}
