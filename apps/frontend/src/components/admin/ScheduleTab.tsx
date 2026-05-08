@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
@@ -84,7 +84,7 @@ function CellEditor({
               onChange={e => setSlotMinutes(Number(e.target.value))}
               className="flex-1 text-[10px] px-2 py-1 border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary bg-white"
             >
-              {[5, 10, 15, 20, 30].map(m => (
+              {SLOT_OPTIONS.map(m => (
                 <option key={m} value={m}>{m} мин</option>
               ))}
             </select>
@@ -167,7 +167,7 @@ function SlotMinutesConfirmDialog({
           У врача <span className="font-semibold">{doctorName}</span> есть записи на даты:
         </p>
         <div className="text-[9px] text-muted-foreground mb-3 font-mono">
-          {bookedDates.join(', ')}
+          {bookedDates.slice(0, 5).join(', ')}{bookedDates.length > 5 ? ` и ещё ${bookedDates.length - 5}...` : ''}
         </div>
         <p className="text-[9px] text-foreground mb-3">
           Перезаписать автоматически на ближайший слот по {slotMinutes} мин?
@@ -283,39 +283,53 @@ export function ScheduleTab() {
     scheduleMap.set(key, s);
   }
 
-  function doctorSlotMinutes(docId: string): number {
-    const docScheds = schedules.filter((s: any) => s.doctorId === docId);
-    if (!docScheds.length) return 15;
-    const counts: Record<number, number> = {};
-    for (const s of docScheds) {
-      const v = s.slotMinutes ?? 15;
-      counts[v] = (counts[v] ?? 0) + 1;
+  const doctorSlotMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const doc of doctors) {
+      const docScheds = (schedules as any[]).filter((s: any) => s.doctorId === doc.id);
+      if (!docScheds.length) { map.set(doc.id, 15); continue; }
+      const counts: Record<number, number> = {};
+      for (const s of docScheds) {
+        const v = s.slotMinutes ?? 15;
+        counts[v] = (counts[v] ?? 0) + 1;
+      }
+      const mode = Number(Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]);
+      map.set(doc.id, mode);
     }
-    return Number(Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]);
-  }
+    return map;
+  }, [schedules, doctors]);
+
+  const [slotChanging, setSlotChanging] = useState(false);
 
   const handleSlotMinutesChange = async (doc: any, newSlotMinutes: number) => {
-    const booked: string[] = await utils.schedules.getBookedDatesInRange.fetch({
-      doctorId: doc.id,
-      dateFrom: monthFrom,
-      dateTo:   monthTo,
-    });
+    setSlotChanging(true);
+    try {
+      const booked: string[] = await utils.schedules.getBookedDatesInRange.fetch({
+        doctorId: doc.id,
+        dateFrom: monthFrom,
+        dateTo:   monthTo,
+      });
 
-    if (booked.length > 0) {
-      setSlotConfirm({
-        doctorId:    doc.id,
-        doctorName:  `${doc.lastName} ${doc.firstName[0]}.`,
-        slotMinutes: newSlotMinutes,
-        bookedDates: booked,
-      });
-    } else {
-      setSlotMut.mutate({
-        doctorId:    doc.id,
-        dateFrom:    monthFrom,
-        dateTo:      monthTo,
-        slotMinutes: newSlotMinutes,
-        reschedule:  false,
-      });
+      if (booked.length > 0) {
+        setSlotConfirm({
+          doctorId:    doc.id,
+          doctorName:  `${doc.lastName} ${doc.firstName[0]}.`,
+          slotMinutes: newSlotMinutes,
+          bookedDates: booked,
+        });
+      } else {
+        setSlotMut.mutate({
+          doctorId:    doc.id,
+          dateFrom:    monthFrom,
+          dateTo:      monthTo,
+          slotMinutes: newSlotMinutes,
+          reschedule:  false,
+        });
+      }
+    } catch (e: any) {
+      toast.error(e.message ?? 'Ошибка загрузки');
+    } finally {
+      setSlotChanging(false);
     }
   };
 
@@ -422,8 +436,9 @@ export function ScheduleTab() {
                       </div>
                       {/* Slot minutes selector */}
                       <select
-                        value={doctorSlotMinutes(doc.id)}
+                        value={doctorSlotMap.get(doc.id) ?? 15}
                         onChange={e => handleSlotMinutesChange(doc, Number(e.target.value))}
+                        disabled={slotChanging || setSlotMut.isPending}
                         title="Шаг слота"
                         className="text-[8px] px-1 py-0.5 border border-border rounded bg-white focus:outline-none focus:ring-1 focus:ring-primary shrink-0"
                         style={{ minWidth: '46px' }}
