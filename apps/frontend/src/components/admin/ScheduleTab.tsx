@@ -21,7 +21,7 @@ function toIsoDate(year: number, month: number, day: number) {
 
 type BreakItem = { startTime: string; endTime: string; label: string };
 
-const SLOT_OPTIONS = [5, 10, 15, 20, 30] as const;
+const SLOT_OPTIONS = [15, 20, 25, 30, 40, 60, 80, 90] as const;
 
 /* ─── CellEditor ─────────────────────────────────── */
 function CellEditor({

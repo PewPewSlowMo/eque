@@ -222,7 +222,7 @@ export class SchedulesImportController {
       let slotMinutes = 15;
       if (hasSlotCol) {
         const raw = Number(row.getCell(3).value);
-        if (Number.isInteger(raw) && raw >= 5 && raw <= 60) slotMinutes = raw;
+        if (Number.isInteger(raw) && raw >= 15 && raw <= 90) slotMinutes = raw;
       }
 
       for (let d = 1; d <= days; d++) {

@@ -89,7 +89,7 @@ export const createSchedulesRouter = (trpc: TrpcService, prisma: PrismaService) 
         date:        z.string(),  // ISO "YYYY-MM-DD"
         startTime:   z.string().regex(/^\d{2}:\d{2}$/),
         endTime:     z.string().regex(/^\d{2}:\d{2}$/),
-        slotMinutes: z.number().int().min(5).max(60).default(15),
+        slotMinutes: z.number().int().min(15).max(90).default(15),
         breaks:      z.array(breakSchema).default([]),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -193,7 +193,7 @@ export const createSchedulesRouter = (trpc: TrpcService, prisma: PrismaService) 
         doctorId:    z.string(),
         dateFrom:    z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         dateTo:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        slotMinutes: z.number().int().min(5).max(60),
+        slotMinutes: z.number().int().min(15).max(90),
         reschedule:  z.boolean().default(false),
       }))
       .mutation(async ({ ctx, input }) => {
