@@ -96,6 +96,7 @@ model DoctorDaySchedule {
   date      DateTime           @db.Date  // конкретная дата, без времени
   startTime String             // "08:00"
   endTime   String             // "14:00"
+  slotMinutes Int              @default(15)
   breaks    DayScheduleBreak[]
 
   createdAt DateTime @default(now())
