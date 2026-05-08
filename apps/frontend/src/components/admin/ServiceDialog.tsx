@@ -46,14 +46,23 @@ export function ServiceDialog({ open, onClose, service }: Props) {
     { enabled: isEdit && open && !!service?.id },
   );
 
+  // Reset form fields when dialog opens or service changes
   useEffect(() => {
     if (!open) return;
     setName(service?.name ?? '');
     setDesc(service?.description ?? '');
     setDuration(String(service?.durationMinutes ?? 30));
     setCategories(new Set((service?.categories ?? []).map((c) => c.category)));
-    setDoctorIds(new Set(assignedIds as string[]));
-  }, [open, service, assignedIds]);
+    setDoctorIds(new Set());
+  }, [open, service]);
+
+  // Initialise doctor checkboxes once server data arrives (only if user hasn't interacted yet)
+  useEffect(() => {
+    if (!open || !isEdit) return;
+    if ((assignedIds as string[]).length > 0) {
+      setDoctorIds(new Set(assignedIds as string[]));
+    }
+  }, [assignedIds]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const utils = trpc.useUtils();
 
@@ -62,8 +71,7 @@ export function ServiceDialog({ open, onClose, service }: Props) {
   });
 
   const create = trpc.services.create.useMutation({
-    onSuccess: async (created: any) => {
-      await setDoctorsMut.mutateAsync({ serviceId: created.id, doctorIds: [...doctorIds] });
+    onSuccess: () => {
       utils.services.getAll.invalidate();
       toast.success('Услуга создана');
       onClose();
@@ -73,7 +81,11 @@ export function ServiceDialog({ open, onClose, service }: Props) {
 
   const update = trpc.services.update.useMutation({
     onSuccess: async () => {
-      await setDoctorsMut.mutateAsync({ serviceId: service!.id, doctorIds: [...doctorIds] });
+      try {
+        await setDoctorsMut.mutateAsync({ serviceId: service!.id, doctorIds: [...doctorIds] });
+      } catch {
+        toast.error('Услуга обновлена, но не удалось обновить список врачей');
+      }
       utils.services.getAll.invalidate();
       toast.success('Услуга обновлена');
       onClose();
