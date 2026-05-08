@@ -152,7 +152,7 @@ export class SchedulesImportController {
     // Hint row
     const hintRow = sheet.addRow(['', 'Формат: 08:00-14:30 или 08:00-14:30/11:00-12:00 (перерыв)']);
     hintRow.font = { italic: true, color: { argb: 'FF808080' } };
-    sheet.mergeCells(`B${hintRow.number}:${String.fromCharCode(67 + days)}${hintRow.number}`);
+    sheet.mergeCells(hintRow.number, 2, hintRow.number, 3 + days);
 
     // Doctor rows
     for (const doc of doctors) {
@@ -222,7 +222,7 @@ export class SchedulesImportController {
       let slotMinutes = 15;
       if (hasSlotCol) {
         const raw = Number(row.getCell(3).value);
-        if (!isNaN(raw) && raw >= 5 && raw <= 60) slotMinutes = raw;
+        if (Number.isInteger(raw) && raw >= 5 && raw <= 60) slotMinutes = raw;
       }
 
       for (let d = 1; d <= days; d++) {
