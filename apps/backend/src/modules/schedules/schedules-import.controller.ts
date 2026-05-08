@@ -58,6 +58,7 @@ export interface ParsedRow {
   date: string;       // YYYY-MM-DD
   startTime: string;
   endTime: string;
+  slotMinutes: number;
   breaks: { startTime: string; endTime: string }[];
   hasConflict: boolean;
   errors: string[];
@@ -135,12 +136,14 @@ export class SchedulesImportController {
     sheet.getColumn(1).width  = 0.1;
     sheet.getColumn(1).hidden = true;
     sheet.getColumn(2).width  = 30;
-    for (let d = 1; d <= days; d++) sheet.getColumn(d + 2).width = 15;
+    sheet.getColumn(3).width  = 10;
+    for (let d = 1; d <= days; d++) sheet.getColumn(d + 3).width = 15;
 
     // Header row
     const headerRow = sheet.addRow([
       '',
       'Врач',
+      'Шаг (мин)',
       ...Array.from({ length: days }, (_, i) => String(i + 1).padStart(2, '0')),
     ]);
     headerRow.font = { bold: true };
@@ -149,12 +152,17 @@ export class SchedulesImportController {
     // Hint row
     const hintRow = sheet.addRow(['', 'Формат: 08:00-14:30 или 08:00-14:30/11:00-12:00 (перерыв)']);
     hintRow.font = { italic: true, color: { argb: 'FF808080' } };
-    sheet.mergeCells(`B${hintRow.number}:${String.fromCharCode(66 + days)}${hintRow.number}`);
+    sheet.mergeCells(`B${hintRow.number}:${String.fromCharCode(67 + days)}${hintRow.number}`);
 
     // Doctor rows
     for (const doc of doctors) {
       const fullName = [doc.lastName, doc.firstName, doc.middleName].filter(Boolean).join(' ');
-      const rowData: any[] = [doc.id, fullName];
+
+      // Derive slotMinutes from first scheduled day, default 15
+      const docSchedules = [...(schedMap.get(doc.id)?.values() ?? [])];
+      const slotMins = docSchedules.length > 0 ? (docSchedules[0].slotMinutes ?? 15) : 15;
+
+      const rowData: any[] = [doc.id, fullName, slotMins];
 
       for (let d = 1; d <= days; d++) {
         const dateStr = isoDate(year, month, d);
@@ -169,7 +177,7 @@ export class SchedulesImportController {
       }
       const r = sheet.addRow(rowData);
       r.eachCell((cell, colNum) => {
-        if (colNum > 2 && cell.value) {
+        if (colNum > 3 && cell.value) {
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F4EA' } };
         }
       });
@@ -196,6 +204,11 @@ export class SchedulesImportController {
     const sheet = workbook.getWorksheet('График');
     if (!sheet) throw new BadRequestException('Лист "График" не найден');
 
+    // Detect format: new files have "Шаг (мин)" as column 3 header
+    const col3Header = String(sheet.getRow(1).getCell(3).value ?? '').trim();
+    const hasSlotCol = col3Header === 'Шаг (мин)';
+    const dayOffset  = hasSlotCol ? 3 : 2;  // days start at col (dayOffset+1)
+
     const days = daysInMonth(year, month);
     const rows: ParsedRow[] = [];
 
@@ -205,8 +218,15 @@ export class SchedulesImportController {
       const doctorName = String(row.getCell(2).value ?? '').trim();
       if (!doctorId) return;
 
+      // Parse slotMinutes (only in new format files)
+      let slotMinutes = 15;
+      if (hasSlotCol) {
+        const raw = Number(row.getCell(3).value);
+        if (!isNaN(raw) && raw >= 5 && raw <= 60) slotMinutes = raw;
+      }
+
       for (let d = 1; d <= days; d++) {
-        const cellVal = String(row.getCell(d + 2).value ?? '').trim();
+        const cellVal = String(row.getCell(d + dayOffset).value ?? '').trim();
         if (!cellVal) continue;
 
         const dateStr = isoDate(year, month, d);
@@ -214,7 +234,7 @@ export class SchedulesImportController {
         if (!parsed) {
           rows.push({
             doctorId, doctorName, date: dateStr,
-            startTime: '', endTime: '', breaks: [],
+            startTime: '', endTime: '', slotMinutes, breaks: [],
             hasConflict: false,
             errors: [`День ${String(d).padStart(2,'0')}: неверный формат "${cellVal}"`],
           });
@@ -222,7 +242,9 @@ export class SchedulesImportController {
         }
         rows.push({
           doctorId, doctorName, date: dateStr,
-          startTime: parsed.startTime, endTime: parsed.endTime, breaks: parsed.breaks,
+          startTime: parsed.startTime, endTime: parsed.endTime,
+          slotMinutes,
+          breaks: parsed.breaks,
           hasConflict: false, errors: [],
         });
       }
@@ -328,12 +350,12 @@ export class SchedulesImportController {
             await tx.dayScheduleBreak.deleteMany({ where: { scheduleId: existing.id } });
             await tx.doctorDaySchedule.update({
               where: { id: existing.id },
-              data: { startTime: row.startTime, endTime: row.endTime },
+              data: { startTime: row.startTime, endTime: row.endTime, slotMinutes: row.slotMinutes },
             });
             scheduleId = existing.id;
           } else {
             const created = await tx.doctorDaySchedule.create({
-              data: { doctorId: row.doctorId, date, startTime: row.startTime, endTime: row.endTime },
+              data: { doctorId: row.doctorId, date, startTime: row.startTime, endTime: row.endTime, slotMinutes: row.slotMinutes },
             });
             scheduleId = created.id;
           }
