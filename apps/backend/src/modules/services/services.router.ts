@@ -8,6 +8,10 @@ const ALLOWED_ROLES: UserRole[] = ['ADMIN', 'DEPARTMENT_HEAD'];
 
 const PatientCategoryEnum = z.nativeEnum(PatientCategory);
 
+const CATEGORIES_INCLUDE = {
+  categories: { select: { category: true } },
+} as const;
+
 export const createServicesRouter = (trpc: TrpcService, prisma: PrismaService) => {
   return trpc.router({
 
@@ -16,6 +20,7 @@ export const createServicesRouter = (trpc: TrpcService, prisma: PrismaService) =
       .query(async ({ input }) => {
         return prisma.service.findMany({
           where: input?.includeInactive ? {} : { isActive: true },
+          include: CATEGORIES_INCLUDE,
           orderBy: { name: 'asc' },
         });
       }),
@@ -25,13 +30,34 @@ export const createServicesRouter = (trpc: TrpcService, prisma: PrismaService) =
         name:            z.string().min(1),
         description:     z.string().optional(),
         durationMinutes: z.number().int().min(1),
-        paymentCategory: PatientCategoryEnum,
+        categories:      z.array(PatientCategoryEnum).min(1),
+        doctorIds:       z.array(z.string()).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ALLOWED_ROLES.includes(ctx.user.role as UserRole)) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         }
-        return prisma.service.create({ data: input as any });
+        const { categories, doctorIds, name, description, durationMinutes } = input;
+        return prisma.$transaction(async (tx) => {
+          const service = await tx.service.create({
+            data: {
+              name,
+              description,
+              durationMinutes,
+              categories: {
+                create: categories.map((category) => ({ category })),
+              },
+            },
+            include: CATEGORIES_INCLUDE,
+          });
+          if (doctorIds && doctorIds.length > 0) {
+            await tx.doctorService.createMany({
+              data: doctorIds.map((doctorId) => ({ doctorId, serviceId: service.id })),
+              skipDuplicates: true,
+            });
+          }
+          return service;
+        });
       }),
 
     update: trpc.protectedProcedure
@@ -40,15 +66,48 @@ export const createServicesRouter = (trpc: TrpcService, prisma: PrismaService) =
         name:            z.string().min(1).optional(),
         description:     z.string().optional(),
         durationMinutes: z.number().int().min(1).optional(),
-        paymentCategory: PatientCategoryEnum.optional(),
+        categories:      z.array(PatientCategoryEnum).min(1).optional(),
         isActive:        z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ALLOWED_ROLES.includes(ctx.user.role as UserRole)) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         }
-        const { id, ...data } = input;
-        return prisma.service.update({ where: { id }, data });
+        const { id, categories, ...serviceData } = input;
+        return prisma.$transaction(async (tx) => {
+          if (categories) {
+            await tx.serviceCategory.deleteMany({ where: { serviceId: id } });
+            await tx.serviceCategory.createMany({
+              data: categories.map((category) => ({ serviceId: id, category })),
+            });
+          }
+          return tx.service.update({
+            where: { id },
+            data: serviceData,
+            include: CATEGORIES_INCLUDE,
+          });
+        });
+      }),
+
+    setDoctors: trpc.protectedProcedure
+      .input(z.object({
+        serviceId: z.string(),
+        doctorIds: z.array(z.string()),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ALLOWED_ROLES.includes(ctx.user.role as UserRole)) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
+        }
+        return prisma.$transaction(async (tx) => {
+          await tx.doctorService.deleteMany({ where: { serviceId: input.serviceId } });
+          if (input.doctorIds.length > 0) {
+            await tx.doctorService.createMany({
+              data: input.doctorIds.map((doctorId) => ({ doctorId, serviceId: input.serviceId })),
+              skipDuplicates: true,
+            });
+          }
+          return { ok: true };
+        });
       }),
 
     delete: trpc.protectedProcedure
@@ -96,18 +155,31 @@ export const createServicesRouter = (trpc: TrpcService, prisma: PrismaService) =
 
     getForDoctor: trpc.protectedProcedure
       .input(z.object({
-        doctorId:        z.string(),
-        paymentCategory: PatientCategoryEnum.optional(),
+        doctorId: z.string(),
+        category: PatientCategoryEnum.optional(),
       }))
       .query(async ({ input }) => {
         return prisma.service.findMany({
           where: {
             isActive: true,
             doctors: { some: { doctorId: input.doctorId } },
-            ...(input.paymentCategory ? { paymentCategory: input.paymentCategory } : {}),
+            ...(input.category
+              ? { categories: { some: { category: input.category } } }
+              : {}),
           },
+          include: CATEGORIES_INCLUDE,
           orderBy: { name: 'asc' },
         });
+      }),
+
+    getDoctorIds: trpc.protectedProcedure
+      .input(z.object({ serviceId: z.string() }))
+      .query(async ({ input }) => {
+        const rows = await prisma.doctorService.findMany({
+          where: { serviceId: input.serviceId },
+          select: { doctorId: true },
+        });
+        return rows.map((r) => r.doctorId);
       }),
 
   });
