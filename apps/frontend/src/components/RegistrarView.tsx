@@ -6,18 +6,24 @@ import { useQueueSocket } from './registrar/useQueueSocket';
 import { toast } from 'sonner';
 
 /* ─── schedule helpers ──────────────────────────── */
-function slotsFromSchedule(sched: { startTime: string; endTime: string; breaks: Array<{ startTime: string; endTime: string }> }): string[] {
+function slotsFromSchedule(sched: {
+  startTime: string;
+  endTime: string;
+  slotMinutes?: number;
+  breaks: Array<{ startTime: string; endTime: string }>;
+}): string[] {
   const [sh, sm] = sched.startTime.split(':').map(Number);
   const [eh, em] = sched.endTime.split(':').map(Number);
-  const startMins = sh * 60 + sm;
-  const endMins   = eh * 60 + em;
+  const startMins  = sh * 60 + sm;
+  const endMins    = eh * 60 + em;
+  const step       = sched.slotMinutes ?? 15;
   const breakRanges = sched.breaks.map(b => {
     const [bs, bsm] = b.startTime.split(':').map(Number);
     const [be, bem] = b.endTime.split(':').map(Number);
     return [bs * 60 + bsm, be * 60 + bem] as [number, number];
   });
   const slots: string[] = [];
-  for (let m = startMins; m < endMins; m += 15) {
+  for (let m = startMins; m < endMins; m += step) {
     if (!breakRanges.some(([s, e]) => m >= s && m < e)) {
       slots.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
     }
