@@ -21,21 +21,24 @@ function toIsoDate(year: number, month: number, day: number) {
 
 type BreakItem = { startTime: string; endTime: string; label: string };
 
+const SLOT_OPTIONS = [5, 10, 15, 20, 30] as const;
+
 /* ─── CellEditor ─────────────────────────────────── */
 function CellEditor({
   doctorName, date, existing, anchorEl,
   onSave, onDelete, onClose,
 }: {
   doctorName: string; date: string;
-  existing: { startTime: string; endTime: string; breaks: BreakItem[] } | null;
+  existing: { startTime: string; endTime: string; slotMinutes: number; breaks: BreakItem[] } | null;
   anchorEl: HTMLElement;
-  onSave: (start: string, end: string, breaks: BreakItem[]) => void;
+  onSave: (start: string, end: string, slotMinutes: number, breaks: BreakItem[]) => void;
   onDelete: () => void;
   onClose: () => void;
 }) {
-  const [startTime, setStartTime] = useState(existing?.startTime ?? '08:00');
-  const [endTime,   setEndTime]   = useState(existing?.endTime   ?? '14:00');
-  const [breaks,    setBreaks]    = useState<BreakItem[]>(existing?.breaks ?? []);
+  const [startTime,   setStartTime]   = useState(existing?.startTime ?? '08:00');
+  const [endTime,     setEndTime]     = useState(existing?.endTime   ?? '14:00');
+  const [slotMinutes, setSlotMinutes] = useState(existing?.slotMinutes ?? 15);
+  const [breaks,      setBreaks]      = useState<BreakItem[]>(existing?.breaks ?? []);
   const popRef = useRef<HTMLDivElement>(null);
 
   const addBreak = () => setBreaks(prev => [...prev, { startTime: '12:00', endTime: '13:00', label: '' }]);
@@ -71,6 +74,20 @@ function CellEditor({
             <span className="text-[9px] text-muted-foreground">до</span>
             <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
               className="flex-1 text-[10px] px-2 py-1 border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary" />
+          </div>
+
+          {/* Slot duration */}
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-muted-foreground w-[16px]">Шаг</span>
+            <select
+              value={slotMinutes}
+              onChange={e => setSlotMinutes(Number(e.target.value))}
+              className="flex-1 text-[10px] px-2 py-1 border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary bg-white"
+            >
+              {[5, 10, 15, 20, 30].map(m => (
+                <option key={m} value={m}>{m} мин</option>
+              ))}
+            </select>
           </div>
 
           {breaks.length > 0 && (
@@ -114,12 +131,61 @@ function CellEditor({
               className="text-[9px] px-2.5 py-1 border border-border rounded text-muted-foreground hover:bg-slate-100 transition-colors">
               Отмена
             </button>
-            <button onClick={() => onSave(startTime, endTime, breaks)}
+            <button onClick={() => onSave(startTime, endTime, slotMinutes, breaks)}
               className="text-[9px] font-semibold text-white px-3 py-1"
               style={{ background: '#00685B', borderRadius: '3px 12px 12px 3px' }}>
               Сохранить
             </button>
           </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── SlotMinutesConfirmDialog ───────────────────── */
+function SlotMinutesConfirmDialog({
+  doctorName, bookedDates, slotMinutes,
+  onConfirm, onSkip, onCancel,
+}: {
+  doctorName: string;
+  bookedDates: string[];
+  slotMinutes: number;
+  onConfirm: () => void;
+  onSkip: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/20" onClick={onCancel} />
+      <div className="fixed z-50 bg-white shadow-2xl p-4 w-[300px]"
+        style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', borderRadius: '6px 20px 20px 6px', border: '1.5px solid #fcd34d' }}>
+        <div className="text-[10px] font-bold text-amber-700 mb-2">
+          ⚠ Есть записи пациентов
+        </div>
+        <p className="text-[9px] text-foreground mb-1">
+          У врача <span className="font-semibold">{doctorName}</span> есть записи на даты:
+        </p>
+        <div className="text-[9px] text-muted-foreground mb-3 font-mono">
+          {bookedDates.join(', ')}
+        </div>
+        <p className="text-[9px] text-foreground mb-3">
+          Перезаписать автоматически на ближайший слот по {slotMinutes} мин?
+        </p>
+        <div className="flex gap-2 justify-end">
+          <button onClick={onCancel}
+            className="text-[9px] px-2.5 py-1 border border-border rounded text-muted-foreground hover:bg-slate-100">
+            Отмена
+          </button>
+          <button onClick={onSkip}
+            className="text-[9px] px-2.5 py-1 border border-border rounded text-foreground hover:bg-slate-100">
+            Изменить без переноса
+          </button>
+          <button onClick={onConfirm}
+            className="text-[9px] font-semibold text-white px-3 py-1"
+            style={{ background: '#00685B', borderRadius: '3px 12px 12px 3px' }}>
+            Перенести
+          </button>
         </div>
       </div>
     </>
@@ -137,7 +203,7 @@ export function ScheduleTab() {
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<{
     doctorId: string; doctorName: string; date: string;
-    existing: { startTime: string; endTime: string; breaks: BreakItem[] } | null;
+    existing: { startTime: string; endTime: string; slotMinutes: number; breaks: BreakItem[] } | null;
     anchorEl: HTMLElement;
   } | null>(null);
 
@@ -175,6 +241,27 @@ export function ScheduleTab() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const [slotConfirm, setSlotConfirm] = useState<{
+    doctorId:    string;
+    doctorName:  string;
+    slotMinutes: number;
+    bookedDates: string[];
+  } | null>(null);
+
+  const setSlotMut = trpc.schedules.setSlotMinutesForRange.useMutation({
+    onSuccess: () => {
+      utils.schedules.getForDepartmentMonth.invalidate();
+      utils.schedules.getForDateRange.invalidate();
+      toast.success('Шаг слота обновлён');
+      setSlotConfirm(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const monthFrom = `${year}-${String(month).padStart(2,'0')}-01`;
+  const lastDay   = new Date(year, month, 0).getDate();
+  const monthTo   = `${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+
   const prevMonth = () => {
     if (month === 1) { setMonth(12); setYear(y => y - 1); }
     else setMonth(m => m - 1);
@@ -195,6 +282,42 @@ export function ScheduleTab() {
     const key = `${s.doctorId}|${toIsoDate(d.getFullYear(), d.getMonth()+1, d.getDate())}`;
     scheduleMap.set(key, s);
   }
+
+  function doctorSlotMinutes(docId: string): number {
+    const docScheds = schedules.filter((s: any) => s.doctorId === docId);
+    if (!docScheds.length) return 15;
+    const counts: Record<number, number> = {};
+    for (const s of docScheds) {
+      const v = s.slotMinutes ?? 15;
+      counts[v] = (counts[v] ?? 0) + 1;
+    }
+    return Number(Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]);
+  }
+
+  const handleSlotMinutesChange = async (doc: any, newSlotMinutes: number) => {
+    const booked: string[] = await utils.schedules.getBookedDatesInRange.fetch({
+      doctorId: doc.id,
+      dateFrom: monthFrom,
+      dateTo:   monthTo,
+    });
+
+    if (booked.length > 0) {
+      setSlotConfirm({
+        doctorId:    doc.id,
+        doctorName:  `${doc.lastName} ${doc.firstName[0]}.`,
+        slotMinutes: newSlotMinutes,
+        bookedDates: booked,
+      });
+    } else {
+      setSlotMut.mutate({
+        doctorId:    doc.id,
+        dateFrom:    monthFrom,
+        dateTo:      monthTo,
+        slotMinutes: newSlotMinutes,
+        reschedule:  false,
+      });
+    }
+  };
 
   const todayStr = toIsoDate(today.getFullYear(), today.getMonth()+1, today.getDate());
 
@@ -283,13 +406,13 @@ export function ScheduleTab() {
             <tbody>
               {doctors.map((doc: any) => (
                 <tr key={doc.id} className="hover:bg-primary/5 transition-colors">
-                  <td className="sticky left-0 z-[5] bg-white border-b border-r border-border px-3 py-2">
+                  <td className="sticky left-0 z-[5] bg-white border-b border-r border-border px-2 py-2">
                     <div className="flex items-center gap-2">
                       <div className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0"
                         style={{ background: '#00685B' }}>
                         {doc.lastName[0]}{doc.firstName[0]}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="text-[10px] font-semibold text-foreground truncate">
                           {doc.lastName} {doc.firstName[0]}.
                         </div>
@@ -297,6 +420,18 @@ export function ScheduleTab() {
                           <div className="text-[8px] text-muted-foreground truncate">{doc.specialty}</div>
                         )}
                       </div>
+                      {/* Slot minutes selector */}
+                      <select
+                        value={doctorSlotMinutes(doc.id)}
+                        onChange={e => handleSlotMinutesChange(doc, Number(e.target.value))}
+                        title="Шаг слота"
+                        className="text-[8px] px-1 py-0.5 border border-border rounded bg-white focus:outline-none focus:ring-1 focus:ring-primary shrink-0"
+                        style={{ minWidth: '46px' }}
+                      >
+                        {SLOT_OPTIONS.map(m => (
+                          <option key={m} value={m}>{m} мин</option>
+                        ))}
+                      </select>
                     </div>
                   </td>
 
@@ -316,9 +451,10 @@ export function ScheduleTab() {
                               doctorName: `${doc.lastName} ${doc.firstName[0]}.`,
                               date: dateStr,
                               existing: sched ? {
-                                startTime: sched.startTime,
-                                endTime:   sched.endTime,
-                                breaks:    sched.breaks.map((b: any) => ({
+                                startTime:   sched.startTime,
+                                endTime:     sched.endTime,
+                                slotMinutes: sched.slotMinutes ?? 15,
+                                breaks:      sched.breaks.map((b: any) => ({
                                   startTime: b.startTime, endTime: b.endTime, label: b.label ?? '',
                                 })),
                               } : null,
@@ -366,12 +502,13 @@ export function ScheduleTab() {
           existing={editing.existing}
           anchorEl={editing.anchorEl}
           onClose={() => setEditing(null)}
-          onSave={(start, end, brs) => saveDay.mutate({
-            doctorId: editing.doctorId,
-            date: editing.date,
-            startTime: start,
-            endTime: end,
-            breaks: brs,
+          onSave={(start, end, slotMinutes, brs) => saveDay.mutate({
+            doctorId:    editing.doctorId,
+            date:        editing.date,
+            startTime:   start,
+            endTime:     end,
+            slotMinutes,
+            breaks:      brs,
           })}
           onDelete={() => deleteDay.mutate({ doctorId: editing.doctorId, date: editing.date })}
         />
@@ -384,6 +521,29 @@ export function ScheduleTab() {
         defaultYear={year}
         defaultMonth={month}
       />
+
+      {slotConfirm && (
+        <SlotMinutesConfirmDialog
+          doctorName={slotConfirm.doctorName}
+          bookedDates={slotConfirm.bookedDates}
+          slotMinutes={slotConfirm.slotMinutes}
+          onConfirm={() => setSlotMut.mutate({
+            doctorId:    slotConfirm.doctorId,
+            dateFrom:    monthFrom,
+            dateTo:      monthTo,
+            slotMinutes: slotConfirm.slotMinutes,
+            reschedule:  true,
+          })}
+          onSkip={() => setSlotMut.mutate({
+            doctorId:    slotConfirm.doctorId,
+            dateFrom:    monthFrom,
+            dateTo:      monthTo,
+            slotMinutes: slotConfirm.slotMinutes,
+            reschedule:  false,
+          })}
+          onCancel={() => setSlotConfirm(null)}
+        />
+      )}
     </div>
   );
 }
