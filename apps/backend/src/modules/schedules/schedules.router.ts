@@ -157,8 +157,8 @@ export const createSchedulesRouter = (trpc: TrpcService, prisma: PrismaService) 
     getBookedDatesInRange: trpc.protectedProcedure
       .input(z.object({
         doctorId: z.string(),
-        dateFrom: z.string(),
-        dateTo:   z.string(),
+        dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        dateTo:   z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       }))
       .query(async ({ input }) => {
         const start = new Date(input.dateFrom);
@@ -177,7 +177,11 @@ export const createSchedulesRouter = (trpc: TrpcService, prisma: PrismaService) 
 
         const dates = new Set<string>();
         for (const e of entries) {
-          if (e.scheduledAt) dates.add(e.scheduledAt.toISOString().slice(0, 10));
+          if (e.scheduledAt) {
+            const d = e.scheduledAt;
+            const localDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            dates.add(localDate);
+          }
         }
         return [...dates].sort();
       }),
@@ -187,8 +191,8 @@ export const createSchedulesRouter = (trpc: TrpcService, prisma: PrismaService) 
     setSlotMinutesForRange: trpc.protectedProcedure
       .input(z.object({
         doctorId:    z.string(),
-        dateFrom:    z.string(),
-        dateTo:      z.string(),
+        dateFrom:    z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        dateTo:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         slotMinutes: z.number().int().min(5).max(60),
         reschedule:  z.boolean().default(false),
       }))
@@ -202,12 +206,13 @@ export const createSchedulesRouter = (trpc: TrpcService, prisma: PrismaService) 
         const end = new Date(input.dateTo);
         end.setHours(23, 59, 59, 999);
 
-        const schedules = await (prisma as any).doctorDaySchedule.findMany({
-          where: { doctorId: input.doctorId, date: { gte: start, lte: end } },
-          include: { breaks: true },
-        });
-
+        let updatedCount = 0;
         await prisma.$transaction(async (tx: any) => {
+          const schedules = await tx.doctorDaySchedule.findMany({
+            where: { doctorId: input.doctorId, date: { gte: start, lte: end } },
+            include: { breaks: true },
+          });
+          updatedCount = schedules.length;
           for (const sched of schedules) {
             await tx.doctorDaySchedule.update({
               where: { id: sched.id },
@@ -261,7 +266,7 @@ export const createSchedulesRouter = (trpc: TrpcService, prisma: PrismaService) 
           }
         });
 
-        return { updated: schedules.length };
+        return { updated: updatedCount };
       }),
   });
 };
