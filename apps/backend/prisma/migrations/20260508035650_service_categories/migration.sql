@@ -1,3 +1,7 @@
+-- DEPLOYMENT NOTE: This migration must be deployed together with the updated
+-- services.router.ts and frontend changes (Tasks 2-5). Running this migration
+-- alone will break the application until the router is updated.
+
 -- Step 1: Create service_categories table
 CREATE TABLE "service_categories" (
     "id" TEXT NOT NULL,
@@ -18,7 +22,8 @@ ALTER TABLE "service_categories"
 -- Step 2: Seed service_categories from existing paymentCategory values
 INSERT INTO "service_categories" ("id", "serviceId", "category")
 SELECT gen_random_uuid()::text, "id", "paymentCategory"
-FROM "services";
+FROM "services"
+WHERE "paymentCategory" IS NOT NULL;
 
 -- Step 3: Merge duplicate services (same name → keep max durationMinutes)
 DO $$
@@ -27,6 +32,8 @@ DECLARE
   winner_id TEXT;
   loser RECORD;
 BEGIN
+  LOCK TABLE "services" IN SHARE ROW EXCLUSIVE MODE;
+
   FOR grp IN
     SELECT name FROM "services" GROUP BY name HAVING COUNT(*) > 1
   LOOP
@@ -35,12 +42,6 @@ BEGIN
     WHERE name = grp.name
     ORDER BY "durationMinutes" DESC, "createdAt" ASC
     LIMIT 1;
-
-    UPDATE "services"
-    SET "durationMinutes" = (
-      SELECT MAX("durationMinutes") FROM "services" WHERE name = grp.name
-    )
-    WHERE id = winner_id;
 
     FOR loser IN
       SELECT id FROM "services"
