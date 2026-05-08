@@ -128,13 +128,19 @@ export const createQueueRouter = (
 
         // Atomic: compute queue number and create entry in one transaction to avoid race conditions
         const entry = await prisma.$transaction(async (tx) => {
-          const todayStart = new Date();
-          todayStart.setHours(0, 0, 0, 0);
-          const todayEnd = new Date(todayStart);
-          todayEnd.setDate(todayEnd.getDate() + 1);
+          const targetDate = input.scheduledAt ? new Date(input.scheduledAt) : new Date();
+          const dayStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0);
+          const dayEnd   = new Date(dayStart);
+          dayEnd.setDate(dayEnd.getDate() + 1);
 
           const last = await tx.queueEntry.findFirst({
-            where: { doctorId: input.doctorId, createdAt: { gte: todayStart, lt: todayEnd } },
+            where: {
+              doctorId: input.doctorId,
+              OR: [
+                { scheduledAt: { gte: dayStart, lt: dayEnd } },
+                { scheduledAt: null, createdAt: { gte: dayStart, lt: dayEnd } },
+              ],
+            },
             orderBy: { queueNumber: 'desc' },
             select: { queueNumber: true },
           });
