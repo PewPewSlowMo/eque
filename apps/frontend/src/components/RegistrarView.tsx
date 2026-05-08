@@ -112,7 +112,7 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
 
   const { data: servicesData = [] } = trpc.services.getForDoctor.useQuery({
     doctorId: doctor.id,
-    paymentCategory: category as any,
+    category: category as any,
   });
   const services = servicesData as any[];
   const effectiveServiceId = services.length === 1 ? services[0].id : serviceId;

@@ -40,7 +40,7 @@ export function AddToQueueForm() {
   const { data: assignments = [] } = trpc.assignments.getActive.useQuery();
 
   const { data: availableServices = [] } = trpc.services.getForDoctor.useQuery(
-    { doctorId, paymentCategory: category as any },
+    { doctorId, category: category as any },
     { enabled: !!(doctorId && category) },
   );
 
