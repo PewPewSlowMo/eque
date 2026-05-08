@@ -335,13 +335,13 @@ model DisplayBoardCabinet {
 // ============================================================================
 
 model Service {
-  id              String          @id @default(cuid())
+  id              String            @id @default(cuid())
   name            String
   description     String?
   durationMinutes Int
-  paymentCategory PatientCategory
-  isActive        Boolean         @default(true)
+  isActive        Boolean           @default(true)
 
+  categories   ServiceCategory[]
   doctors      DoctorService[]
   queueEntries QueueEntry[]
 
@@ -349,6 +349,17 @@ model Service {
   updatedAt DateTime @updatedAt
 
   @@map("services")
+}
+
+model ServiceCategory {
+  id        String          @id @default(cuid())
+  serviceId String
+  category  PatientCategory
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, category])
+  @@map("service_categories")
 }
 
 model DoctorService {
