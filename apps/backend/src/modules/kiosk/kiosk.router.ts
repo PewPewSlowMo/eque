@@ -55,30 +55,16 @@ export const createKioskRouter = (
         slug:        z.string(),
         lastName:    z.string().min(1),
         firstName:   z.string().min(1),
-        middleName:  z.string().optional(),
+        middleName:  z.string().min(1).optional(),
       }))
       .mutation(async ({ input }) => {
         const kiosk = await prisma.kiosk.findUnique({ where: { slug: input.slug } });
-        if (!kiosk || !kiosk.active) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: 'Киоск недоступен' });
-        }
+        if (!kiosk) throw new TRPCError({ code: 'NOT_FOUND', message: 'Киоск не найден' });
+        if (!kiosk.active) throw new TRPCError({ code: 'FORBIDDEN', message: 'Киоск недоступен' });
 
         const lastName   = input.lastName.trim().toUpperCase();
         const firstName  = input.firstName.trim();
         const middleName = input.middleName?.trim() || undefined;
-
-        // Find or create patient
-        let patient = await prisma.patient.findFirst({
-          where: {
-            lastName:  { equals: lastName,  mode: 'insensitive' },
-            firstName: { equals: firstName, mode: 'insensitive' },
-          },
-        });
-        if (!patient) {
-          patient = await prisma.patient.create({
-            data: { lastName, firstName, middleName, categories: [kiosk.defaultCategory] },
-          });
-        }
 
         // UTC midnight today — no browser timezone shift
         const now = new Date();
@@ -86,6 +72,19 @@ export const createKioskRouter = (
         const dayEnd      = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 1));
 
         const entry = await prisma.$transaction(async (tx) => {
+          // Find or create patient inside transaction
+          let patient = await tx.patient.findFirst({
+            where: {
+              lastName:  { equals: lastName,  mode: 'insensitive' },
+              firstName: { equals: firstName, mode: 'insensitive' },
+            },
+          });
+          if (!patient) {
+            patient = await tx.patient.create({
+              data: { lastName, firstName, middleName, categories: [kiosk.defaultCategory] },
+            });
+          }
+
           const last = await tx.queueEntry.findFirst({
             where: {
               doctorId: kiosk.doctorId,
@@ -102,7 +101,7 @@ export const createKioskRouter = (
           return tx.queueEntry.create({
             data: {
               doctorId:                    kiosk.doctorId,
-              patientId:                   patient!.id,
+              patientId:                   patient.id,
               serviceId:                   kiosk.serviceId,
               priority:                    'WALK_IN',
               source:                      'KIOSK',
@@ -126,7 +125,7 @@ export const createKioskRouter = (
     // ── Admin: list all kiosk points ──────────────────────────────────────
     list: trpc.protectedProcedure
       .query(async ({ ctx }) => {
-        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN' });
+        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         return prisma.kiosk.findMany({
           include: {
             doctor:  { select: { firstName: true, lastName: true } },
@@ -147,7 +146,7 @@ export const createKioskRouter = (
         active:          z.boolean().default(true),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN' });
+        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         return prisma.kiosk.create({ data: input as any });
       }),
 
@@ -163,7 +162,7 @@ export const createKioskRouter = (
         active:          z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN' });
+        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         const { id, ...data } = input;
         return prisma.kiosk.update({ where: { id }, data });
       }),
@@ -172,7 +171,7 @@ export const createKioskRouter = (
     delete: trpc.protectedProcedure
       .input(z.object({ id: z.string() }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN' });
+        if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         return prisma.kiosk.delete({ where: { id: input.id } });
       }),
   });
