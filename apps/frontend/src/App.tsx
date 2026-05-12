@@ -96,6 +96,7 @@ function AppContent() {
     }
     switch (user.role) {
       case 'REGISTRAR':
+      case 'DEPT_REGISTRAR':
       case 'CALL_CENTER':   return <RegistrarView />;
       case 'DOCTOR':        return <DoctorView />;
       case 'DEPARTMENT_HEAD': return <DepartmentHeadView />;
@@ -106,6 +107,7 @@ function AppContent() {
 
   const TITLE_MAP: Record<string, string> = {
     REGISTRAR:       'Регистратура',
+    DEPT_REGISTRAR:  'Регистратура отделения',
     CALL_CENTER:     'Колл-центр',
     DOCTOR:          'Рабочее место врача',
     DEPARTMENT_HEAD: 'Управление отделением',
