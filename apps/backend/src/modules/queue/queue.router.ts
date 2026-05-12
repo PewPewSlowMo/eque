@@ -556,7 +556,7 @@ export const createQueueRouter = (
         date:         z.string().optional(), // ISO date "2026-04-27"
         departmentId: z.string().optional(),
       }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
         const where: any = { status: { notIn: TERMINAL_STATUSES as any } };
 
         if (input.date) {
@@ -570,8 +570,14 @@ export const createQueueRouter = (
           ];
         }
 
-        if (input.departmentId) {
-          where.doctor = { departmentId: input.departmentId };
+        // DEPT_REGISTRAR always sees only their department — ignore client-supplied value
+        const effectiveDeptId =
+          (ctx.user as any)?.role === 'DEPT_REGISTRAR'
+            ? (ctx.user as any)?.departmentId
+            : input.departmentId ?? undefined;
+
+        if (effectiveDeptId) {
+          where.doctor = { departmentId: effectiveDeptId };
         }
 
         return prisma.queueEntry.findMany({
