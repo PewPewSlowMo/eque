@@ -6,3 +6,4 @@ build
 .turbo
 *.log
 coverage
+.superpowers/
