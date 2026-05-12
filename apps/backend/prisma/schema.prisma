@@ -207,7 +207,7 @@ model Patient {
   middleName  String?
   dateOfBirth DateTime?
   phone       String?
-  iin         String?  @unique
+  address     String?
 
   categories       PatientCategory[]
   contractNumber   String?
