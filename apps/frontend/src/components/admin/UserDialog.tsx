@@ -27,6 +27,21 @@ const CATEGORY_OPTIONS = [
   { value: 'EMPLOYEE', label: 'Сотрудник' },
 ];
 
+const CAT_SHORT: Record<string, string> = {
+  PAID_ONCE: 'Платн', PAID_CONTRACT: 'Договор', OSMS: 'ОСМС',
+  CONTINGENT: 'Континг', EMPLOYEE: 'Сотр',
+};
+const CAT_CLS: Record<string, string> = {
+  PAID_ONCE: 'bg-blue-50 text-blue-700', PAID_CONTRACT: 'bg-indigo-50 text-indigo-700',
+  OSMS: 'bg-teal-50 text-teal-700', CONTINGENT: 'bg-purple-50 text-purple-700',
+  EMPLOYEE: 'bg-slate-100 text-slate-600',
+};
+
+function serviceCatLabel(s: any): string {
+  const cats: string[] = (s.categories ?? []).map((c: any) => CAT_SHORT[c.category] ?? c.category);
+  return cats.length ? ` [${cats.join(', ')}]` : '';
+}
+
 const selectClass = 'w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 interface Props {
@@ -290,7 +305,17 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
                 <div className="space-y-1 max-h-[120px] overflow-y-auto">
                   {(doctorServices as any[]).map((s: any) => (
                     <div key={s.id} className="flex items-center justify-between text-xs px-2 py-1 rounded bg-muted/50 gap-1">
-                      <span className="truncate">{s.name} <span className="text-muted-foreground">· {s.durationMinutes} мин</span></span>
+                      <div className="flex items-center gap-1 min-w-0">
+                        <span className="truncate font-medium">{s.name}</span>
+                        <span className="text-muted-foreground flex-shrink-0">· {s.durationMinutes} мин</span>
+                        <div className="flex gap-0.5 flex-shrink-0">
+                          {(s.categories ?? []).map((c: any) => (
+                            <span key={c.category} className={`px-1 py-0.5 rounded text-[9px] font-medium ${CAT_CLS[c.category] ?? 'bg-slate-100 text-slate-600'}`}>
+                              {CAT_SHORT[c.category] ?? c.category}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                       <button
                         type="button"
                         className="text-xs text-destructive hover:underline flex-shrink-0"
@@ -311,7 +336,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
                     {(allServices as any[])
                       .filter((s: any) => !(doctorServices as any[]).some((ds: any) => ds.id === s.id))
                       .map((s: any) => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
+                        <option key={s.id} value={s.id}>{s.name}{serviceCatLabel(s)}</option>
                       ))}
                   </select>
                   <Button
