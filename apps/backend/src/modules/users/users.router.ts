@@ -31,6 +31,12 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
       }))
       .mutation(async ({ input, ctx }) => {
         if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
+        if (input.role === 'DEPT_REGISTRAR' && !input.departmentId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Для роли DEPT_REGISTRAR необходимо указать отделение',
+          });
+        }
         const hashed = await bcrypt.hash(input.password, 10);
         return prisma.user.create({
           data: { ...input, password: hashed, allowedCategories: input.allowedCategories ?? [], acceptedCategories: input.acceptedCategories ?? [] } as any,
@@ -54,6 +60,19 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
       }))
       .mutation(async ({ input, ctx }) => {
         if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
+        const existing = await prisma.user.findUnique({
+          where: { id: input.id },
+          select: { role: true },
+        });
+        if (
+          existing?.role === 'DEPT_REGISTRAR' &&
+          (input.departmentId === undefined || input.departmentId === null)
+        ) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'DEPT_REGISTRAR должен принадлежать отделению',
+          });
+        }
         const { id, password, ...rest } = input;
         const data: any = { ...rest };
         if (password) data.password = await bcrypt.hash(password, 10);
