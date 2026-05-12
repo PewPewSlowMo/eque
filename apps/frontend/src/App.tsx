@@ -9,6 +9,7 @@ import { DoctorView } from '@/components/DoctorView';
 import { DepartmentHeadView } from '@/components/DepartmentHeadView';
 import { DisplayBoard } from '@/components/DisplayBoard';
 import { BoardView } from '@/components/board/BoardView';
+import { KioskPage } from '@/components/kiosk/KioskPage';
 import { AdminPanel } from '@/components/AdminPanel';
 import { Toaster } from 'sonner';
 
@@ -70,6 +71,11 @@ function AppContent() {
   if (path.startsWith('/board/')) {
     const slug = path.replace('/board/', '').split('/')[0];
     return <BoardView slug={slug} />;
+  }
+
+  if (path.startsWith('/kiosk/')) {
+    const slug = path.replace('/kiosk/', '').split('/')[0];
+    return <KioskPage slug={slug} />;
   }
 
   if (isLoading) {
