@@ -178,13 +178,14 @@ export function KioskPage({ slug }: { slug: string }) {
   }, [activeField, fields, slug, addMutation]);
 
   const baseStyle = s({
-    background: GR, width:'100vw', height:'100vh', overflow:'hidden',
+    background: GR, width:'100%', height:'100%', overflow:'hidden',
     display:'flex', flexDirection:'column', alignItems:'center',
     fontFamily:"'Segoe UI',system-ui,sans-serif",
   });
 
-  const hosp = s({ color:'rgba(255,255,255,.6)', fontSize:'clamp(11px,1.5vmin,16px)',
-    letterSpacing:'2px', textTransform:'uppercase', flexShrink:0 });
+  const Logo = () => (
+    <img src="/logo.png" alt="Логотип" style={{ height:'clamp(40px,6vmin,72px)', width:'auto', flexShrink:0 }} />
+  );
 
   // Loading
   if (isLoading) return (
@@ -222,7 +223,7 @@ export function KioskPage({ slug }: { slug: string }) {
   if (screen === 'welcome') return (
     <div style={{ ...baseStyle, justifyContent:'space-evenly',
       padding:'clamp(20px,4vh,60px) clamp(20px,4vw,60px)' }}>
-      <div style={hosp}>УЛТ. ГОСПИТАЛЬ</div>
+      <Logo />
       <div style={{ color:'white', fontSize:'clamp(24px,5vmin,60px)', fontWeight:800,
         lineHeight:1.15, textAlign:'center' }}>
         {config.name}
@@ -254,7 +255,7 @@ export function KioskPage({ slug }: { slug: string }) {
     return (
       <div style={{ ...baseStyle, justifyContent:'space-between',
         padding:'clamp(8px,1.6vh,20px) clamp(8px,1.5vw,24px)' }}>
-        <div style={hosp}>УЛТ. ГОСПИТАЛЬ</div>
+        <Logo />
         <div style={{ textAlign:'center', flexShrink:0 }}>
           <div style={{ color:'white', fontSize:'clamp(14px,2.4vmin,22px)', fontWeight:700 }}>
             Деректеріңізді енгізіңіз
@@ -332,7 +333,7 @@ export function KioskPage({ slug }: { slug: string }) {
   return (
     <div style={{ ...baseStyle, justifyContent:'center',
       gap:'clamp(16px,3vh,40px)', padding:'clamp(20px,4vw,60px)' }}>
-      <div style={hosp}>УЛТ. ГОСПИТАЛЬ</div>
+      <Logo />
       <div style={{ background:'rgba(255,255,255,.13)', border:'2px solid rgba(255,255,255,.3)',
         borderRadius:'clamp(12px,2vmin,24px)',
         padding:'clamp(24px,5vh,64px) clamp(32px,8vw,96px)', textAlign:'center' }}>
