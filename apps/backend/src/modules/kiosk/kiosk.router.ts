@@ -5,6 +5,15 @@ import { TrpcService } from '../../trpc/trpc.service';
 import { PrismaService } from '../../database/prisma.service';
 import { EventsGateway } from '../../events/events.gateway';
 
+// Returns {y, m, d} for the current date in Kazakhstan (UTC+5).
+// The server runs in UTC; patients are in UTC+5, so we shift before extracting date parts.
+function kzToday(): { y: number; m: number; d: number } {
+  const kz = new Date(Date.now() + 5 * 60 * 60 * 1000);
+  return { y: kz.getUTCFullYear(), m: kz.getUTCMonth(), d: kz.getUTCDate() };
+}
+
+const PAID_CATEGORIES: PatientCategory[] = ['PAID_ONCE', 'PAID_CONTRACT'];
+
 export const createKioskRouter = (
   trpc: TrpcService,
   prisma: PrismaService,
@@ -25,9 +34,9 @@ export const createKioskRouter = (
         });
         if (!kiosk) throw new TRPCError({ code: 'NOT_FOUND', message: 'Киоск не найден' });
 
-        const now = new Date();
-        const dayStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-        const dayEnd   = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+        const { y, m, d } = kzToday();
+        const dayStart = new Date(Date.UTC(y, m, d));
+        const dayEnd   = new Date(Date.UTC(y, m, d + 1));
 
         const waitingCount = await prisma.queueEntry.count({
           where: {
@@ -66,10 +75,10 @@ export const createKioskRouter = (
         const firstName  = input.firstName.trim();
         const middleName = input.middleName?.trim() || undefined;
 
-        // UTC midnight today — no browser timezone shift
-        const now = new Date();
-        const scheduledAt = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-        const dayEnd      = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+        // UTC midnight of today in Kazakhstan (UTC+5) — server runs in UTC
+        const { y, m, d } = kzToday();
+        const scheduledAt = new Date(Date.UTC(y, m, d));
+        const dayEnd      = new Date(Date.UTC(y, m, d + 1));
 
         const entry = await prisma.$transaction(async (tx) => {
           // Find or create patient inside transaction
@@ -109,7 +118,7 @@ export const createKioskRouter = (
               status:                      'ARRIVED',
               arrivedAt:                   new Date(),
               requiresArrivalConfirmation: false,
-              paymentConfirmed:            false,
+              paymentConfirmed:            !PAID_CATEGORIES.includes(kiosk.defaultCategory),
               scheduledAt,
               createdById:                 null,
               kioskId:                     kiosk.id,
