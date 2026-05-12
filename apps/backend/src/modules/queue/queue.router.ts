@@ -51,7 +51,20 @@ export const createQueueRouter = (
           where: {
             doctorId: input.doctorId,
             OR: [
-              { status: { in: ['WAITING_ARRIVAL', 'ARRIVED', 'CALLED', 'IN_PROGRESS'] } },
+              // Активно обслуживаются прямо сейчас — показываем всегда
+              { status: { in: ['CALLED', 'IN_PROGRESS'] } },
+              // Ожидают сегодня (по scheduledAt)
+              {
+                status: { in: ['WAITING_ARRIVAL', 'ARRIVED'] },
+                scheduledAt: { gte: todayStart, lte: todayEnd },
+              },
+              // Живая очередь на сегодня (scheduledAt = null, по createdAt)
+              {
+                status: { in: ['WAITING_ARRIVAL', 'ARRIVED'] },
+                scheduledAt: null,
+                createdAt: { gte: todayStart, lte: todayEnd },
+              },
+              // Завершённые сегодня
               {
                 status: { in: ['COMPLETED', 'CANCELLED', 'NO_SHOW'] },
                 createdAt: { gte: todayStart, lte: todayEnd },
@@ -253,12 +266,21 @@ export const createQueueRouter = (
     callNext: trpc.protectedProcedure
       .input(z.object({ doctorId: z.string() }))
       .mutation(async ({ ctx, input }) => {
-        // Get all ARRIVED + payment confirmed
+        // Get today's ARRIVED + payment confirmed entries only
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+
         const candidates = await prisma.queueEntry.findMany({
           where: {
             doctorId: input.doctorId,
             status: 'ARRIVED',
             paymentConfirmed: true,
+            OR: [
+              { scheduledAt: { gte: todayStart, lte: todayEnd } },
+              { scheduledAt: null, createdAt: { gte: todayStart, lte: todayEnd } },
+            ],
           },
           include: { patient: { select: PATIENT_SELECT } },
         });
