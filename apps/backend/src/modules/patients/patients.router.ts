@@ -31,12 +31,12 @@ export const createPatientsRouter = (trpc: TrpcService, prisma: PrismaService) =
 
     create: trpc.protectedProcedure
       .input(z.object({
-        firstName: z.string().min(1),
-        lastName: z.string().min(1),
-        middleName: z.string().optional(),
+        firstName: z.string().trim().min(1),
+        lastName: z.string().trim().min(1),
+        middleName: z.string().trim().optional(),
         dateOfBirth: z.string().datetime().optional(),
-        phone: z.string().optional(),
-        address: z.string().optional(),
+        phone: z.string().regex(/^\+7\d{10}$/, 'Формат: +7XXXXXXXXXX').optional(),
+        address: z.string().trim().optional(),
         categories: z.array(z.nativeEnum(PatientCategory)).default([]),
         contractNumber: z.string().optional(),
         employeeDepartmentId: z.string().optional(),
@@ -54,11 +54,11 @@ export const createPatientsRouter = (trpc: TrpcService, prisma: PrismaService) =
     update: trpc.protectedProcedure
       .input(z.object({
         id: z.string(),
-        firstName: z.string().min(1).optional(),
-        lastName: z.string().min(1).optional(),
-        middleName: z.string().optional(),
-        phone: z.string().optional(),
-        address: z.string().optional(),
+        firstName: z.string().trim().min(1).optional(),
+        lastName: z.string().trim().min(1).optional(),
+        middleName: z.string().trim().optional(),
+        phone: z.string().regex(/^\+7\d{10}$/, 'Формат: +7XXXXXXXXXX').optional(),
+        address: z.string().trim().optional(),
         categories: z.array(z.nativeEnum(PatientCategory)).optional(),
         contractNumber: z.string().optional(),
         employeeDepartmentId: z.string().optional(),
