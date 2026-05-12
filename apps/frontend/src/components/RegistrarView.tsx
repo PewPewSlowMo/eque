@@ -416,14 +416,17 @@ function DoctorQueueGroup({ assignment }: { assignment: any }) {
 
 function QueueTab() {
   useQueueSocket();
+  const { user } = useUser();
+  const isDeptRegistrar = user?.role === 'DEPT_REGISTRAR';
+  const lockedDeptId    = isDeptRegistrar ? (user as any).departmentId ?? '' : null;
   const todayStr = isoDate(new Date());
   const [nameFilter, setNameFilter] = useState('');
   const [dateFilter, setDateFilter] = useState(todayStr);
-  const [deptFilter, setDeptFilter] = useState('');
+  const [deptFilter, setDeptFilter] = useState(lockedDeptId ?? '');
 
   const { data: departments = [] } = trpc.departments.getAll.useQuery();
   const { data: rawEntries = [], isLoading } = trpc.queue.getForRegistrar.useQuery(
-    { date: dateFilter || undefined, departmentId: deptFilter || undefined },
+    { date: dateFilter || undefined, departmentId: (lockedDeptId ?? deptFilter) || undefined },
     { refetchInterval: 20_000 },
   );
 
@@ -464,17 +467,19 @@ function QueueTab() {
           onChange={e => setDateFilter(e.target.value)}
           className="text-[9px] border border-border rounded px-2 py-1.5 outline-none focus:border-primary bg-white"
         />
-        <select
-          value={deptFilter}
-          onChange={e => setDeptFilter(e.target.value)}
-          className="text-[9px] border border-border rounded px-2 py-1.5 outline-none focus:border-primary bg-white"
-          style={{ maxWidth: '170px' }}
-        >
-          <option value="">Все отделения</option>
-          {(departments as any[]).map((d: any) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
-        </select>
+        {!isDeptRegistrar && (
+          <select
+            value={deptFilter}
+            onChange={e => setDeptFilter(e.target.value)}
+            className="text-[9px] border border-border rounded px-2 py-1.5 outline-none focus:border-primary bg-white"
+            style={{ maxWidth: '170px' }}
+          >
+            <option value="">Все отделения</option>
+            {(departments as any[]).map((d: any) => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        )}
         {isDirty && (
           <button
             onClick={() => { setNameFilter(''); setDateFilter(todayStr); setDeptFilter(''); }}
@@ -943,12 +948,14 @@ function PatientAppointmentsPanel({ patient }: { patient: Patient }) {
 /* ─── CalendarTab ────────────────────────────────── */
 function CalendarTab() {
   const { user } = useUser();
+  const isDeptRegistrar = user?.role === 'DEPT_REGISTRAR';
+  const lockedDeptId    = isDeptRegistrar ? (user as any).departmentId ?? '' : null;
 
   const [patient, setPatient]       = useState<Patient | null>(null);
   const [category, setCategory]     = useState('OSMS');
   const [priority, setPriority]     = useState('WALK_IN');
   const [weekOffset, setWeekOffset] = useState(0);
-  const [deptFilter, setDeptFilter] = useState('');
+  const [deptFilter, setDeptFilter] = useState(lockedDeptId ?? '');
   const [picker, setPicker]         = useState<{ doctor: any; date: Date; slots: string[] } | null>(null);
 
   const week      = useMemo(() => buildWeek(weekOffset), [weekOffset]);
@@ -988,30 +995,32 @@ function CalendarTab() {
 
   return (
     <div className="flex overflow-hidden h-full">
-      {/* Department sidebar */}
-      <div className="shrink-0 border-r border-border flex flex-col bg-slate-50 overflow-y-auto" style={{ width: '150px' }}>
-        <div className="px-2.5 py-1.5 border-b border-border bg-white shrink-0">
-          <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide">Отделения</span>
+      {/* Department sidebar — hidden for dept registrar */}
+      {!isDeptRegistrar && (
+        <div className="shrink-0 border-r border-border flex flex-col bg-slate-50 overflow-y-auto" style={{ width: '150px' }}>
+          <div className="px-2.5 py-1.5 border-b border-border bg-white shrink-0">
+            <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide">Отделения</span>
+          </div>
+          <button onClick={() => setDeptFilter('')}
+            className={`px-2.5 py-1.5 text-[9px] text-left border-l-2 transition-colors ${
+              !deptFilter ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent hover:bg-primary/5'}`}>
+            Все
+            <span className="float-right text-[8px] bg-slate-200 rounded-full px-1.5">{(allDoctors as any[]).length}</span>
+          </button>
+          {(departments as any[]).map((dept: any) => {
+            const cnt = (allDoctors as any[]).filter((d: any) => d.departmentId === dept.id).length;
+            if (cnt === 0) return null;
+            return (
+              <button key={dept.id} onClick={() => setDeptFilter(dept.id === deptFilter ? '' : dept.id)}
+                className={`px-2.5 py-1.5 text-[6px] text-left border-l-2 transition-colors leading-snug ${
+                  deptFilter === dept.id ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent hover:bg-primary/5'}`}>
+                {dept.name}
+                <span className="float-right text-[6px] bg-slate-200 rounded-full px-1.5 ml-1">{cnt}</span>
+              </button>
+            );
+          })}
         </div>
-        <button onClick={() => setDeptFilter('')}
-          className={`px-2.5 py-1.5 text-[9px] text-left border-l-2 transition-colors ${
-            !deptFilter ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent hover:bg-primary/5'}`}>
-          Все
-          <span className="float-right text-[8px] bg-slate-200 rounded-full px-1.5">{(allDoctors as any[]).length}</span>
-        </button>
-        {(departments as any[]).map((dept: any) => {
-          const cnt = (allDoctors as any[]).filter((d: any) => d.departmentId === dept.id).length;
-          if (cnt === 0) return null;
-          return (
-            <button key={dept.id} onClick={() => setDeptFilter(dept.id === deptFilter ? '' : dept.id)}
-              className={`px-2.5 py-1.5 text-[6px] text-left border-l-2 transition-colors leading-snug ${
-                deptFilter === dept.id ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent hover:bg-primary/5'}`}>
-              {dept.name}
-              <span className="float-right text-[6px] bg-slate-200 rounded-full px-1.5 ml-1">{cnt}</span>
-            </button>
-          );
-        })}
-      </div>
+      )}
 
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
