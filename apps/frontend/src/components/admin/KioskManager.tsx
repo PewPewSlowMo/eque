@@ -143,6 +143,9 @@ function KioskDialog({ open, onClose, editing }: DialogProps) {
               onChange={e => set('serviceId', e.target.value)}
               disabled={!form.doctorId}>
               <option value="">— выберите услугу —</option>
+              {form.doctorId && (services as any[]).length === 0 && (
+                <option disabled value="">Нет услуг у выбранного врача</option>
+              )}
               {(services as any[]).map((s: any) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
@@ -190,8 +193,18 @@ export function KioskManager() {
   const [editing, setEditing] = useState<any>(null);
 
   const copyLink = (slug: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/kiosk/${slug}`);
-    toast.success('Ссылка скопирована');
+    const url = `${window.location.origin}/kiosk/${slug}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => toast.success('Ссылка скопирована'));
+    } else {
+      const el = document.createElement('textarea');
+      el.value = url;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      toast.success('Ссылка скопирована');
+    }
   };
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Загрузка...</p>;
