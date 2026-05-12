@@ -139,6 +139,19 @@ export const createQueueRouter = (
           });
         }
 
+        if ((ctx.user as any)?.role === 'DEPT_REGISTRAR') {
+          const doctor = await prisma.user.findUnique({
+            where: { id: input.doctorId },
+            select: { departmentId: true },
+          });
+          if (!doctor || doctor.departmentId !== (ctx.user as any)?.departmentId) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Нет доступа к этому врачу',
+            });
+          }
+        }
+
         // Atomic: compute queue number and create entry in one transaction to avoid race conditions
         const entry = await prisma.$transaction(async (tx) => {
           const targetDate = input.scheduledAt ? new Date(input.scheduledAt) : new Date();
