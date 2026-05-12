@@ -740,7 +740,7 @@ function RescheduleDialog({ entry, patient, onClose, onDone }: {
 
             return (
               <button key={dstr}
-                disabled={isPast || !sched || free === 0}
+                disabled={isPast || !sched}
                 onClick={() => { setSelectedDay(d); setSelectedTime(null); }}
                 className="flex flex-col items-center py-1.5 rounded transition-colors disabled:opacity-25"
                 style={
@@ -752,6 +752,8 @@ function RescheduleDialog({ entry, patient, onClose, onDone }: {
                     ? { background: '#fff1f2', border: '1px solid #fecdd3' }
                     : sched && free > 0
                     ? { background: '#f0fdf4', border: '1px solid #86efac' }
+                    : sched && free === 0
+                    ? { background: '#fef2f2', border: '1px solid #fca5a5' }
                     : { background: '#f8fafc', border: '1px solid #e2e8f0' }
                 }>
                 <span className={`text-[7px] ${isSelected ? 'text-white/70' : 'text-muted-foreground'}`}>
@@ -762,6 +764,9 @@ function RescheduleDialog({ entry, patient, onClose, onDone }: {
                 </span>
                 {sched && free > 0 && !isSelected && (
                   <span className="text-[6px] text-green-700 font-medium">{free}</span>
+                )}
+                {sched && free === 0 && !isSelected && (
+                  <span className="text-[6px] text-red-400 font-medium">полн</span>
                 )}
               </button>
             );
