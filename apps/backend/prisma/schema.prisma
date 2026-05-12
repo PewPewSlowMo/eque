@@ -49,6 +49,7 @@ enum QueueEntryStatus {
 enum QueueSource {
   REGISTRAR
   CALL_CENTER
+  KIOSK
 }
 
 // ============================================================================
@@ -79,6 +80,7 @@ model User {
   assignments         DoctorAssignment[]    @relation("AssignedDoctor")
   doctorDaySchedules  DoctorDaySchedule[]
   doctorServices      DoctorService[]
+  kioskPoints Kiosk[] @relation("KioskDoctor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -247,8 +249,10 @@ model QueueEntry {
 
   status    QueueEntryStatus @default(WAITING_ARRIVAL)
   source    QueueSource
-  createdById String
-  createdBy   User    @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById String?
+  createdBy   User?   @relation("CreatedBy", fields: [createdById], references: [id])
+  kioskId   String?
+  kiosk     Kiosk?  @relation(fields: [kioskId], references: [id])
 
   paymentConfirmed Boolean @default(false)
   notes            String?
@@ -346,6 +350,7 @@ model Service {
   categories   ServiceCategory[]
   doctors      DoctorService[]
   queueEntries QueueEntry[]
+  kiosks Kiosk[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -372,4 +377,25 @@ model DoctorService {
 
   @@id([doctorId, serviceId])
   @@map("doctor_services")
+}
+
+// ============================================================================
+// KIOSK
+// ============================================================================
+
+model Kiosk {
+  id              String          @id @default(cuid())
+  slug            String          @unique
+  name            String
+  doctorId        String
+  serviceId       String
+  defaultCategory PatientCategory @default(OSMS)
+  active          Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+
+  doctor       User         @relation("KioskDoctor", fields: [doctorId], references: [id])
+  service      Service      @relation(fields: [serviceId], references: [id])
+  queueEntries QueueEntry[]
+
+  @@map("kiosks")
 }
