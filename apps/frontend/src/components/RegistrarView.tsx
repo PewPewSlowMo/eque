@@ -88,10 +88,11 @@ function SlotCell({ booked, maxSlots, onClick }: { booked: number; maxSlots: num
 
   if (free === 0) {
     return (
-      <div className="w-full text-center text-[9px] font-semibold py-1 rounded"
+      <button onClick={onClick}
+        className="w-full text-center text-[9px] font-semibold py-1 rounded transition-all hover:brightness-95"
         style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b' }}>
-        0/{maxSlots}
-      </div>
+        полн
+      </button>
     );
   }
 
