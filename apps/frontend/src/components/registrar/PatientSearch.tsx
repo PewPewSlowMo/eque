@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { normalizePhone, normalizeFio, finalizeFio } from '@/lib/inputNormalizers';
 
 interface Patient {
   id: string;
@@ -13,7 +14,7 @@ interface Patient {
   lastName: string;
   middleName?: string | null;
   phone?: string | null;
-  iin?: string | null;
+  address?: string | null;
 }
 
 interface PatientSearchProps {
@@ -27,7 +28,7 @@ export function PatientSearch({ onSelect, selected }: PatientSearchProps) {
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [newPatient, setNewPatient] = useState({
-    lastName: '', firstName: '', middleName: '', phone: '', iin: '',
+    lastName: '', firstName: '', middleName: '', phone: '', address: '',
   });
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -45,7 +46,7 @@ export function PatientSearch({ onSelect, selected }: PatientSearchProps) {
     onSuccess: (patient: Patient) => {
       onSelect(patient);
       setCreateOpen(false);
-      setNewPatient({ lastName: '', firstName: '', middleName: '', phone: '', iin: '' });
+      setNewPatient({ lastName: '', firstName: '', middleName: '', phone: '', address: '' });
       toast.success('Пациент создан');
     },
     onError: (e: any) => toast.error(e.message),
@@ -57,7 +58,7 @@ export function PatientSearch({ onSelect, selected }: PatientSearchProps) {
       lastName:   parts[0] ?? '',
       firstName:  parts[1] ?? '',
       middleName: parts[2] ?? '',
-      phone: '', iin: '',
+      phone: '', address: '',
     });
     setOpen(false);
     setCreateOpen(true);
@@ -116,11 +117,9 @@ export function PatientSearch({ onSelect, selected }: PatientSearchProps) {
                 <div className="text-[10px] font-semibold text-foreground">
                   {p.lastName} {p.firstName} {p.middleName ?? ''}
                 </div>
-                {(p.phone || p.iin) && (
+                {p.phone && (
                   <div className="text-[8px] text-muted-foreground mt-0.5">
-                    {p.iin && <span>{p.iin}</span>}
-                    {p.iin && p.phone && <span className="mx-1">·</span>}
-                    {p.phone && <span>{p.phone}</span>}
+                    <span>{p.phone}</span>
                   </div>
                 )}
               </button>
@@ -139,29 +138,34 @@ export function PatientSearch({ onSelect, selected }: PatientSearchProps) {
               <div className="space-y-1">
                 <Label>Фамилия *</Label>
                 <Input value={newPatient.lastName}
-                  onChange={e => setNewPatient(p => ({ ...p, lastName: e.target.value }))} />
+                  onChange={e => setNewPatient(p => ({ ...p, lastName: normalizeFio(e.target.value) }))}
+                  onBlur={e => setNewPatient(p => ({ ...p, lastName: finalizeFio(e.target.value) }))} />
               </div>
               <div className="space-y-1">
                 <Label>Имя *</Label>
                 <Input value={newPatient.firstName}
-                  onChange={e => setNewPatient(p => ({ ...p, firstName: e.target.value }))} />
+                  onChange={e => setNewPatient(p => ({ ...p, firstName: normalizeFio(e.target.value) }))}
+                  onBlur={e => setNewPatient(p => ({ ...p, firstName: finalizeFio(e.target.value) }))} />
               </div>
             </div>
             <div className="space-y-1">
               <Label>Отчество</Label>
               <Input value={newPatient.middleName}
-                onChange={e => setNewPatient(p => ({ ...p, middleName: e.target.value }))} />
+                onChange={e => setNewPatient(p => ({ ...p, middleName: normalizeFio(e.target.value) }))}
+                onBlur={e => setNewPatient(p => ({ ...p, middleName: finalizeFio(e.target.value) }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Телефон</Label>
                 <Input value={newPatient.phone}
-                  onChange={e => setNewPatient(p => ({ ...p, phone: e.target.value }))} />
+                  placeholder="+7XXXXXXXXXX"
+                  onChange={e => setNewPatient(p => ({ ...p, phone: normalizePhone(e.target.value) }))} />
               </div>
               <div className="space-y-1">
-                <Label>ИИН</Label>
-                <Input value={newPatient.iin}
-                  onChange={e => setNewPatient(p => ({ ...p, iin: e.target.value }))} />
+                <Label>Адрес</Label>
+                <Input value={newPatient.address}
+                  onChange={e => setNewPatient(p => ({ ...p, address: e.target.value }))}
+                  onBlur={e => setNewPatient(p => ({ ...p, address: e.target.value.trim() }))} />
               </div>
             </div>
             <Button
@@ -172,7 +176,7 @@ export function PatientSearch({ onSelect, selected }: PatientSearchProps) {
                 firstName: newPatient.firstName,
                 middleName: newPatient.middleName || undefined,
                 phone: newPatient.phone || undefined,
-                iin: newPatient.iin || undefined,
+                address: newPatient.address || undefined,
               })}
             >
               {createMutation.isPending ? 'Создание...' : 'Создать'}
