@@ -252,7 +252,7 @@ model QueueEntry {
   createdById String?
   createdBy   User?   @relation("CreatedBy", fields: [createdById], references: [id])
   kioskId   String?
-  kiosk     Kiosk?  @relation(fields: [kioskId], references: [id])
+  kiosk     Kiosk?  @relation(fields: [kioskId], references: [id], onDelete: SetNull)
 
   paymentConfirmed Boolean @default(false)
   notes            String?
@@ -392,9 +392,10 @@ model Kiosk {
   defaultCategory PatientCategory @default(OSMS)
   active          Boolean         @default(true)
   createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-  doctor       User         @relation("KioskDoctor", fields: [doctorId], references: [id])
-  service      Service      @relation(fields: [serviceId], references: [id])
+  doctor       User         @relation("KioskDoctor", fields: [doctorId], references: [id], onDelete: Restrict)
+  service      Service      @relation(fields: [serviceId], references: [id], onDelete: Restrict)
   queueEntries QueueEntry[]
 
   @@map("kiosks")
