@@ -12,6 +12,7 @@ const ROLES = [
   { value: 'ADMIN', label: 'Администратор' },
   { value: 'DIRECTOR', label: 'Директор' },
   { value: 'REGISTRAR', label: 'Регистратор' },
+  { value: 'DEPT_REGISTRAR', label: 'Регистратор отделения' },
   { value: 'CALL_CENTER', label: 'Колл-центр' },
   { value: 'DOCTOR', label: 'Врач' },
   { value: 'DEPARTMENT_HEAD', label: 'Завотделением' },
@@ -143,6 +144,10 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
     if (!firstName.trim() || !lastName.trim()) { toast.error('Имя и фамилия обязательны'); return; }
     if (!isEdit && !username.trim()) { toast.error('Логин обязателен'); return; }
     if (!isEdit && !password.trim()) { toast.error('Пароль обязателен'); return; }
+    if (role === 'DEPT_REGISTRAR' && (departmentId === NONE_DEPT || !departmentId)) {
+      toast.error('Для регистратора отделения необходимо выбрать отделение');
+      return;
+    }
 
     if (isEdit) {
       update.mutate({
@@ -240,7 +245,11 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
               <select
                 value={departmentId}
                 onChange={(e) => setDepartmentId(e.target.value)}
-                className={selectClass}
+                className={`${selectClass} ${
+                  role === 'DEPT_REGISTRAR' && (departmentId === NONE_DEPT || !departmentId)
+                    ? 'border-red-400'
+                    : ''
+                }`}
               >
                 <option value={NONE_DEPT}>Без отделения</option>
                 {(departments as any[]).map((d: any) => (
