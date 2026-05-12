@@ -13,11 +13,12 @@ datasource db {
 
 enum UserRole {
   ADMIN
+  DIRECTOR
   REGISTRAR
+  DEPT_REGISTRAR
   CALL_CENTER
   DOCTOR
   DEPARTMENT_HEAD
-  DIRECTOR
 }
 
 enum PatientCategory {
