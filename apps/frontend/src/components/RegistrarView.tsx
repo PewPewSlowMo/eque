@@ -74,7 +74,7 @@ const MONTH_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн',
 
 type Patient = {
   id: string; firstName: string; lastName: string;
-  middleName?: string | null; phone?: string | null; iin?: string | null;
+  middleName?: string | null; phone?: string | null; address?: string | null;
 };
 
 /* ─── SlotCell — shows "free / total" ───────────── */
@@ -1028,7 +1028,7 @@ function CalendarTab() {
                 <div className="text-[10px] font-bold text-foreground truncate">
                   {patient.lastName} {patient.firstName}
                 </div>
-                {patient.iin && <div className="text-[8px] text-muted-foreground">{patient.iin}</div>}
+                {patient.address && <div className="text-[8px] text-muted-foreground">{patient.address}</div>}
               </div>
               <button onClick={() => setPatient(null)} className="text-muted-foreground ml-1 text-[11px]">×</button>
             </div>

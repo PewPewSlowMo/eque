@@ -86,7 +86,7 @@ export function PatientSearch({ onSelect, selected }: PatientSearchProps) {
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
         <input
           ref={inputRef}
-          placeholder="Поиск пациента по ФИО, ИИН, телефону..."
+          placeholder="Поиск пациента по ФИО, адресу, телефону..."
           value={query}
           onChange={e => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
