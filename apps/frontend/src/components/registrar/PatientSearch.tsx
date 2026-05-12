@@ -158,7 +158,7 @@ export function PatientSearch({ onSelect, selected }: PatientSearchProps) {
               <div className="space-y-1">
                 <Label>Телефон</Label>
                 <Input value={newPatient.phone}
-                  placeholder="+7XXXXXXXXXX"
+                  placeholder="+7 7XX-XXXXXXX"
                   onChange={e => setNewPatient(p => ({ ...p, phone: normalizePhone(e.target.value) }))} />
               </div>
               <div className="space-y-1">
