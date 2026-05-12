@@ -75,10 +75,10 @@ export const createKioskRouter = (
         const firstName  = input.firstName.trim();
         const middleName = input.middleName?.trim() || undefined;
 
-        // UTC midnight of today in Kazakhstan (UTC+5) — server runs in UTC
+        // Day boundaries in Kazakhstan (UTC+5) — used only for queueNumber computation
         const { y, m, d } = kzToday();
-        const scheduledAt = new Date(Date.UTC(y, m, d));
-        const dayEnd      = new Date(Date.UTC(y, m, d + 1));
+        const dayStart = new Date(Date.UTC(y, m, d));
+        const dayEnd   = new Date(Date.UTC(y, m, d + 1));
 
         const entry = await prisma.$transaction(async (tx) => {
           // Find or create patient inside transaction
@@ -98,8 +98,8 @@ export const createKioskRouter = (
             where: {
               doctorId: kiosk.doctorId,
               OR: [
-                { scheduledAt: { gte: scheduledAt, lt: dayEnd } },
-                { scheduledAt: null, createdAt: { gte: scheduledAt, lt: dayEnd } },
+                { scheduledAt: { gte: dayStart, lt: dayEnd } },
+                { scheduledAt: null, createdAt: { gte: dayStart, lt: dayEnd } },
               ],
             },
             orderBy: { queueNumber: 'desc' },
@@ -119,7 +119,7 @@ export const createKioskRouter = (
               arrivedAt:                   new Date(),
               requiresArrivalConfirmation: false,
               paymentConfirmed:            !PAID_CATEGORIES.includes(kiosk.defaultCategory),
-              scheduledAt,
+              scheduledAt:                 null,
               createdById:                 null,
               kioskId:                     kiosk.id,
               queueNumber,
