@@ -6,7 +6,7 @@ export interface AuthUser {
   firstName: string;
   lastName: string;
   middleName?: string;
-  role: 'ADMIN' | 'REGISTRAR' | 'CALL_CENTER' | 'DOCTOR' | 'DEPARTMENT_HEAD' | 'DIRECTOR';
+  role: 'ADMIN' | 'REGISTRAR' | 'DEPT_REGISTRAR' | 'CALL_CENTER' | 'DOCTOR' | 'DEPARTMENT_HEAD' | 'DIRECTOR';
   departmentId?: string;
   department?: { id: string; name: string } | null;
   allowedCategories: string[];
