@@ -143,7 +143,7 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
     const stat       = STATUS_PILL[entry.status] ?? { label: entry.status, cls: 'bg-slate-100 text-slate-500' };
     const cat        = entry.category ? (CATEGORY_PILL[entry.category] ?? null) : null;
     const isCalling  = entry.id === calledEntryId || entry.status === 'CALLED';
-    const canNoShow  = ['WAITING_ARRIVAL', 'ARRIVED'].includes(entry.status);
+    const canNoShow  = entry.status === 'CALLED';
     const canCall    = entry.status === 'ARRIVED' && entry.paymentConfirmed;
     const canStart   = entry.status === 'CALLED';
 
