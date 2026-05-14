@@ -223,7 +223,7 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
             priority: 'WALK_IN', category: category as any,
             serviceId: effectiveServiceId,
             source: source as any,
-            scheduledAt: new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0)).toISOString(),
+            scheduledAt: null,
           })}
           className="w-full text-[9px] font-bold py-1.5 mb-3 disabled:opacity-40 transition-opacity"
           style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#92400e', borderRadius: '4px 14px 14px 4px' }}
