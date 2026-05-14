@@ -523,7 +523,7 @@ export const createQueueRouter = (
         if (!entry) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Запись очереди не найдена' });
         }
-        if (!['WAITING_ARRIVAL', 'ARRIVED'].includes(entry.status)) {
+        if (!['WAITING_ARRIVAL', 'ARRIVED', 'CALLED'].includes(entry.status)) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: `Нельзя отметить неявку: статус ${entry.status}`,
