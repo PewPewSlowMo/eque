@@ -961,8 +961,9 @@ function CalendarTab() {
   const [category, setCategory]     = useState('OSMS');
   const [priority, setPriority]     = useState('WALK_IN');
   const [weekOffset, setWeekOffset] = useState(0);
-  const [deptFilter, setDeptFilter] = useState(lockedDeptId ?? '');
-  const [picker, setPicker]         = useState<{ doctor: any; date: Date; slots: string[] } | null>(null);
+  const [deptFilter, setDeptFilter]     = useState(lockedDeptId ?? '');
+  const [doctorFilter, setDoctorFilter] = useState('');
+  const [picker, setPicker]             = useState<{ doctor: any; date: Date; slots: string[] } | null>(null);
 
   const week      = useMemo(() => buildWeek(weekOffset), [weekOffset]);
   const startDate = isoDate(week[0]);
@@ -987,13 +988,19 @@ function CalendarTab() {
   const doctors = useMemo(() => {
     let list = allDoctors as any[];
     if (deptFilter) list = list.filter((d: any) => d.departmentId === deptFilter);
+    if (doctorFilter.trim()) {
+      const q = doctorFilter.trim().toLowerCase();
+      list = list.filter((d: any) =>
+        `${d.lastName} ${d.firstName} ${d.middleName ?? ''}`.toLowerCase().includes(q)
+      );
+    }
     // Filter by acceptedCategories: empty array = accepts all categories
     list = list.filter((d: any) => {
       const cats: string[] = d.acceptedCategories ?? [];
       return cats.length === 0 || cats.includes(category);
     });
     return list;
-  }, [allDoctors, deptFilter, category]);
+  }, [allDoctors, deptFilter, doctorFilter, category]);
 
   const allowedCats = (user as any)?.allowedCategories?.length
     ? CATEGORY_OPTS.filter(o => (user as any).allowedCategories.includes(o.value))
@@ -1003,7 +1010,7 @@ function CalendarTab() {
     <div className="flex overflow-hidden h-full">
       {/* Department sidebar — hidden for dept registrar */}
       {!isDeptRegistrar && (
-        <div className="shrink-0 border-r border-border flex flex-col bg-slate-50 overflow-y-auto" style={{ width: '150px' }}>
+        <div className="shrink-0 border-r border-border flex flex-col bg-slate-50 overflow-y-auto" style={{ width: '195px' }}>
           <div className="px-2.5 py-1.5 border-b border-border bg-white shrink-0">
             <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide">Отделения</span>
           </div>
@@ -1018,10 +1025,10 @@ function CalendarTab() {
             if (cnt === 0) return null;
             return (
               <button key={dept.id} onClick={() => setDeptFilter(dept.id === deptFilter ? '' : dept.id)}
-                className={`px-2.5 py-1.5 text-[6px] text-left border-l-2 transition-colors leading-snug ${
+                className={`px-2.5 py-1.5 text-[9px] text-left border-l-2 transition-colors leading-snug ${
                   deptFilter === dept.id ? 'text-primary font-bold border-l-primary bg-primary/5' : 'text-muted-foreground border-l-transparent hover:bg-primary/5'}`}>
                 {dept.name}
-                <span className="float-right text-[6px] bg-slate-200 rounded-full px-1.5 ml-1">{cnt}</span>
+                <span className="float-right text-[8px] bg-slate-200 rounded-full px-1.5 ml-1">{cnt}</span>
               </button>
             );
           })}
@@ -1097,9 +1104,15 @@ function CalendarTab() {
           <table className="w-full border-collapse" style={{ minWidth: '560px' }}>
             <thead className="sticky top-0 z-10">
               <tr>
-                <th className="text-left text-[9px] font-semibold text-muted-foreground border-b border-r border-border bg-slate-50 px-2 py-1.5"
+                <th className="text-left border-b border-r border-border bg-slate-50 px-2 py-1"
                   style={{ width: 'var(--cal-doc-w, 152px)', minWidth: 'var(--cal-doc-w, 152px)' }}>
-                  ВРАЧ
+                  <input
+                    type="text"
+                    value={doctorFilter}
+                    onChange={e => setDoctorFilter(e.target.value)}
+                    placeholder="Поиск врача..."
+                    className="w-full text-[9px] bg-white border border-border rounded px-1.5 py-0.5 outline-none focus:border-primary/50 placeholder:text-muted-foreground/60"
+                  />
                 </th>
                 {week.map(d => {
                   const isToday   = isoDate(d) === today;
