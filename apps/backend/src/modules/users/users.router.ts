@@ -28,6 +28,7 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
         departmentId: z.string().optional(),
         allowedCategories:  z.array(z.nativeEnum(PatientCategory)).optional(),
         acceptedCategories: z.array(z.nativeEnum(PatientCategory)).optional(),
+        selfRegister: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
@@ -57,6 +58,7 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
         acceptedCategories: z.array(z.nativeEnum(PatientCategory)).optional(),
         isActive: z.boolean().optional(),
         password: z.string().min(6).optional(),
+        selfRegister: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
