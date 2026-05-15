@@ -107,9 +107,10 @@ function SlotCell({ booked, maxSlots, onClick }: { booked: number; maxSlots: num
 }
 
 /* ─── TimePicker popup ───────────────────────────── */
-function TimePicker({ doctor, date, takenTimes, availableSlots, patient, category, priority, onClose, onBooked }: {
+function TimePicker({ doctor, date, takenTimes, availableSlots, patient, category, priority, source: sourceProp, onClose, onBooked }: {
   doctor: any; date: Date; takenTimes: string[]; availableSlots: string[];
   patient: Patient; category: string; priority: string;
+  source?: string;
   onClose: () => void; onBooked: () => void;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
@@ -124,7 +125,7 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
   const services = servicesData as any[];
   const effectiveServiceId = services.length === 1 ? services[0].id : serviceId;
 
-  const source = (user as any)?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR';
+  const source = sourceProp ?? ((user as any)?.role === 'CALL_CENTER' ? 'CALL_CENTER' : 'REGISTRAR');
 
   const addMutation = trpc.queue.add.useMutation({
     onSuccess: () => {
@@ -952,7 +953,7 @@ function PatientAppointmentsPanel({ patient }: { patient: Patient }) {
 }
 
 /* ─── CalendarTab ────────────────────────────────── */
-function CalendarTab() {
+function CalendarTab({ lockedDoctorId }: { lockedDoctorId?: string }) {
   const { user } = useUser();
   const isDeptRegistrar = user?.role === 'DEPT_REGISTRAR';
   const lockedDeptId    = isDeptRegistrar ? (user as any).departmentId ?? '' : null;
@@ -964,6 +965,7 @@ function CalendarTab() {
   const [deptFilter, setDeptFilter]     = useState(lockedDeptId ?? '');
   const [doctorFilter, setDoctorFilter] = useState('');
   const [picker, setPicker]             = useState<{ doctor: any; date: Date; slots: string[] } | null>(null);
+  const calSource = lockedDoctorId ? 'DOCTOR_SELF' : undefined;
 
   const week      = useMemo(() => buildWeek(weekOffset), [weekOffset]);
   const startDate = isoDate(week[0]);
@@ -987,6 +989,7 @@ function CalendarTab() {
 
   const doctors = useMemo(() => {
     let list = allDoctors as any[];
+    if (lockedDoctorId) list = list.filter((d: any) => d.id === lockedDoctorId);
     if (deptFilter) list = list.filter((d: any) => d.departmentId === deptFilter);
     if (doctorFilter.trim()) {
       const q = doctorFilter.trim().toLowerCase();
@@ -1000,7 +1003,7 @@ function CalendarTab() {
       return cats.length === 0 || cats.includes(category);
     });
     return list;
-  }, [allDoctors, deptFilter, doctorFilter, category]);
+  }, [allDoctors, lockedDoctorId, deptFilter, doctorFilter, category]);
 
   const allowedCats = (user as any)?.allowedCategories?.length
     ? CATEGORY_OPTS.filter(o => (user as any).allowedCategories.includes(o.value))
@@ -1008,8 +1011,8 @@ function CalendarTab() {
 
   return (
     <div className="flex overflow-hidden h-full">
-      {/* Department sidebar — hidden for dept registrar */}
-      {!isDeptRegistrar && (
+      {/* Department sidebar — hidden for dept registrar and self-register mode */}
+      {!isDeptRegistrar && !lockedDoctorId && (
         <div className="shrink-0 border-r border-border flex flex-col bg-slate-50 overflow-y-auto" style={{ width: '195px' }}>
           <div className="px-2.5 py-1.5 border-b border-border bg-white shrink-0">
             <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide">Отделения</span>
@@ -1106,13 +1109,15 @@ function CalendarTab() {
               <tr>
                 <th className="text-left border-b border-r border-border bg-slate-50 px-2 py-1"
                   style={{ width: 'var(--cal-doc-w, 152px)', minWidth: 'var(--cal-doc-w, 152px)' }}>
-                  <input
-                    type="text"
-                    value={doctorFilter}
-                    onChange={e => setDoctorFilter(e.target.value)}
-                    placeholder="Поиск врача..."
-                    className="w-full text-[9px] bg-white border border-border rounded px-1.5 py-0.5 outline-none focus:border-primary/50 placeholder:text-muted-foreground/60"
-                  />
+                  {!lockedDoctorId && (
+                    <input
+                      type="text"
+                      value={doctorFilter}
+                      onChange={e => setDoctorFilter(e.target.value)}
+                      placeholder="Поиск врача..."
+                      className="w-full text-[9px] bg-white border border-border rounded px-1.5 py-0.5 outline-none focus:border-primary/50 placeholder:text-muted-foreground/60"
+                    />
+                  )}
                 </th>
                 {week.map(d => {
                   const isToday   = isoDate(d) === today;
@@ -1217,6 +1222,7 @@ function CalendarTab() {
           takenTimes={takenTimes as string[]}
           availableSlots={picker.slots}
           patient={patient} category={category} priority={priority}
+          source={calSource}
           onClose={() => setPicker(null)}
           onBooked={() => { setPicker(null); setPatient(null); }}
         />
@@ -1226,35 +1232,39 @@ function CalendarTab() {
 }
 
 /* ─── RegistrarView — two tabs ───────────────────── */
-export function RegistrarView() {
+export function RegistrarView({ lockedDoctorId }: { lockedDoctorId?: string } = {}) {
   useQueueSocket();
   const [tab, setTab] = useState<'calendar' | 'queue'>('calendar');
 
   return (
     <div className="flex flex-col overflow-hidden h-full">
-      {/* Tab bar */}
-      <div className="flex items-center border-b border-border bg-white px-4 shrink-0">
-        {[
-          { key: 'calendar', label: 'Запись пациентов' },
-          { key: 'queue',    label: 'Очередь' },
-        ].map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key as any)}
-            className={`text-[10px] font-semibold px-4 py-2.5 border-b-2 transition-colors ${
-              tab === t.key
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {/* Tab bar — hidden in self-register mode */}
+      {!lockedDoctorId && (
+        <div className="flex items-center border-b border-border bg-white px-4 shrink-0">
+          {[
+            { key: 'calendar', label: 'Запись пациентов' },
+            { key: 'queue',    label: 'Очередь' },
+          ].map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key as any)}
+              className={`text-[10px] font-semibold px-4 py-2.5 border-b-2 transition-colors ${
+                tab === t.key
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Tab content */}
       <div className="flex-1 overflow-hidden">
-        {tab === 'calendar' ? <CalendarTab /> : <QueueTab />}
+        {tab === 'calendar' || lockedDoctorId
+          ? <CalendarTab lockedDoctorId={lockedDoctorId} />
+          : <QueueTab />}
       </div>
     </div>
   );
