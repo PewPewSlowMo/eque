@@ -108,7 +108,7 @@ export const createQueueRouter = (
           category: PatientCategoryEnum,
           serviceId: z.string(),
           scheduledAt: z.string().datetime().nullish(),
-          source: z.enum(['REGISTRAR', 'CALL_CENTER']),
+          source: z.enum(['REGISTRAR', 'CALL_CENTER', 'DOCTOR_SELF']),
           notes: z.string().optional(),
         }),
       )
