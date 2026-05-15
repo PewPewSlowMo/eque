@@ -10,6 +10,11 @@ async function bootstrap() {
   const corsOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
   app.enableCors({ origin: corsOrigins, credentials: true });
 
+  app.use('/api/backup/import', (req: any, res: any, next: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('express').json({ limit: '100mb' })(req, res, next);
+  });
+
   app.useStaticAssets(join(process.cwd(), 'public'));
 
   const trpc = app.get(TrpcRouter);

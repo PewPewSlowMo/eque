@@ -9,6 +9,7 @@ import { DepartmentsTab } from './admin/DepartmentsTab';
 import { BoardsTab } from './admin/BoardsTab';
 import { ServicesTab } from './admin/ServicesTab';
 import { KioskManager } from './admin/KioskManager';
+import { BackupTab } from './admin/BackupTab';
 
 export function AdminPanel() {
   const { user } = useUser();
@@ -28,6 +29,7 @@ export function AdminPanel() {
           {(isAdmin || isDeptHead) && <TabsTrigger value="services">Услуги</TabsTrigger>}
           {isAdmin && <TabsTrigger value="boards">Табло</TabsTrigger>}
           {isAdmin && <TabsTrigger value="kiosks">Киоски</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="backup">Бэкап</TabsTrigger>}
         </TabsList>
 
         {isAdmin && (
@@ -73,6 +75,12 @@ export function AdminPanel() {
         {isAdmin && (
           <TabsContent value="kiosks" className="pt-4">
             <KioskManager />
+          </TabsContent>
+        )}
+
+        {isAdmin && (
+          <TabsContent value="backup" className="pt-4">
+            <BackupTab />
           </TabsContent>
         )}
       </Tabs>
