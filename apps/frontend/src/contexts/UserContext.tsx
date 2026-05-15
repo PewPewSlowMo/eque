@@ -10,6 +10,7 @@ export interface AuthUser {
   departmentId?: string;
   department?: { id: string; name: string } | null;
   allowedCategories: string[];
+  selfRegister?: boolean;
 }
 
 interface UserContextValue {
