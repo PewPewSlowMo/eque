@@ -329,7 +329,7 @@ function QueueRow({ entry }: { entry: any }) {
           <span className="text-[8px] text-muted-foreground">
             {STATUS_LABEL[entry.status] ?? entry.status}
           </span>
-          {entry.scheduledAt && (
+          {entry.scheduledAt && entry.priority !== 'WALK_IN' && (
             <>
               <span className="text-[8px] text-muted-foreground">·</span>
               <span className="text-[8px] font-medium text-primary">
@@ -676,7 +676,7 @@ function RescheduleDialog({ entry, patient, onClose, onDone }: {
     const d = new Date(iso);
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   });
-  const currentSlot = entry.scheduledAt
+  const currentSlot = entry.scheduledAt && entry.priority !== 'WALK_IN'
     ? (() => { const d = new Date(entry.scheduledAt); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()
     : null;
   const takenFiltered = takenLocal.filter(t => t !== currentSlot);
