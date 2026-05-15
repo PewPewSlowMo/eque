@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 const API_BASE = (import.meta.env.VITE_TRPC_URL as string)?.replace('/trpc', '') ?? '';
 
 function authHeader() {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
