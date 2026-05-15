@@ -229,13 +229,17 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
         {/* Walk-in button */}
         <button
           disabled={anyPending || !effectiveServiceId}
-          onClick={() => walkInMut.mutate({
-            doctorId: doctor.id, patientId: patient.id,
-            priority: 'WALK_IN', category: category as any,
-            serviceId: effectiveServiceId,
-            source: source as any,
-            scheduledAt: null,
-          })}
+          onClick={() => {
+            const noon = new Date(date);
+            noon.setHours(12, 0, 0, 0);
+            walkInMut.mutate({
+              doctorId: doctor.id, patientId: patient.id,
+              priority: 'WALK_IN', category: category as any,
+              serviceId: effectiveServiceId,
+              source: source as any,
+              scheduledAt: noon.toISOString(),
+            });
+          }}
           className="w-full text-[9px] font-bold py-1.5 mb-3 disabled:opacity-40 transition-opacity"
           style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#92400e', borderRadius: '4px 14px 14px 4px' }}
         >
@@ -574,7 +578,9 @@ function CancelDialog({ entry, patient, onClose, onDone }: {
 
   const finalReason = selected === 'Другое' ? custom.trim() : selected;
   const canConfirm  = selected && (selected !== 'Другое' || custom.trim().length > 0);
-  const schedTime   = entry.scheduledAt
+  const schedTime   = entry.priority === 'WALK_IN'
+    ? 'живая'
+    : entry.scheduledAt
     ? new Date(entry.scheduledAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
     : null;
 
@@ -879,7 +885,9 @@ function PatientAppointmentsPanel({ patient }: { patient: Patient }) {
             const isPaid      = PAID_CATS.includes(e.category);
             const needArrival = e.status === 'WAITING_ARRIVAL';
             const needPayment = !e.paymentConfirmed && !['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(e.status);
-            const schedTime   = e.scheduledAt
+            const schedTime   = e.priority === 'WALK_IN'
+              ? 'живая'
+              : e.scheduledAt
               ? new Date(e.scheduledAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
               : null;
 
