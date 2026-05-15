@@ -6,6 +6,7 @@ import { Login } from '@/components/Login';
 import { Layout } from '@/components/Layout';
 import { RegistrarView } from '@/components/RegistrarView';
 import { DoctorView } from '@/components/DoctorView';
+import { DoctorSelfRegistrarView } from '@/components/DoctorSelfRegistrarView';
 import { DepartmentHeadView } from '@/components/DepartmentHeadView';
 import { DisplayBoard } from '@/components/DisplayBoard';
 import { BoardView } from '@/components/board/BoardView';
@@ -104,7 +105,7 @@ function AppContent() {
       case 'REGISTRAR':
       case 'DEPT_REGISTRAR':
       case 'CALL_CENTER':   return <RegistrarView />;
-      case 'DOCTOR':        return <DoctorView />;
+      case 'DOCTOR':        return user.selfRegister ? <DoctorSelfRegistrarView /> : <DoctorView />;
       case 'DEPARTMENT_HEAD': return <DepartmentHeadView />;
       case 'DIRECTOR':      return <AdminPanel />;
       default:              return <div className="text-muted-foreground p-8">Роль не настроена</div>;
