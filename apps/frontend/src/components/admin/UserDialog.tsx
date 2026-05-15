@@ -59,6 +59,7 @@ interface Props {
     departmentId?: string | null;
     allowedCategories: string[];
     isActive?: boolean;
+    selfRegister?: boolean;
   };
 }
 
@@ -76,6 +77,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
   const [departmentId, setDepartmentId] = useState(NONE_DEPT);
   const [allowedCategories,  setAllowedCategories]  = useState<string[]>([]);
   const [acceptedCategories, setAcceptedCategories] = useState<string[]>([]);
+  const [selfRegister, setSelfRegister] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -89,6 +91,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
       setDepartmentId(editUser?.departmentId ?? NONE_DEPT);
       setAllowedCategories(editUser?.allowedCategories   ?? []);
       setAcceptedCategories((editUser as any)?.acceptedCategories ?? []);
+      setSelfRegister((editUser as any)?.selfRegister ?? false);
     }
   }, [open, editUser]);
 
@@ -159,6 +162,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
         departmentId: (departmentId && departmentId !== NONE_DEPT) ? departmentId : undefined,
         allowedCategories:  allowedCategories as any,
         acceptedCategories: acceptedCategories as any,
+        selfRegister,
         ...(password.trim() ? { password: password.trim() } : {}),
       });
     } else {
@@ -173,6 +177,7 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
         departmentId: (departmentId && departmentId !== NONE_DEPT) ? departmentId : undefined,
         allowedCategories:  allowedCategories as any,
         acceptedCategories: acceptedCategories as any,
+        selfRegister,
       });
     }
   };
@@ -304,6 +309,20 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
                 ))}
               </div>
             </div>
+
+            {showDoctorCategories && (
+              <div className="pt-1 border-t border-border">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selfRegister}
+                    onChange={e => setSelfRegister(e.target.checked)}
+                    className="h-3.5 w-3.5 accent-primary"
+                  />
+                  <span className="text-xs text-muted-foreground">Режим самозаписи пациентов</span>
+                </label>
+              </div>
+            )}
 
             {isDoctor && editUser?.id && (
               <div className="space-y-1.5">
