@@ -115,8 +115,8 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
   // Walk-in = no scheduled slot, regardless of priority label
   const activeEntries   = entries.filter(e => !FINISHED.has(e.status));
   const finishedEntries = entries.filter(e =>  FINISHED.has(e.status));
-  const scheduled = activeEntries.filter(e => e.scheduledAt != null);
-  const walkIn    = activeEntries.filter(e => e.scheduledAt == null);
+  const scheduled = activeEntries.filter(e => e.priority !== 'WALK_IN');
+  const walkIn    = activeEntries.filter(e => e.priority === 'WALK_IN');
 
   if (entries.length === 0) {
     return (
@@ -178,7 +178,7 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
             {entry.patient.lastName} {entry.patient.firstName}
             {entry.patient.middleName ? ` ${entry.patient.middleName[0]}.` : ''}
           </span>
-          {entry.scheduledAt && (
+          {entry.scheduledAt && entry.priority !== 'WALK_IN' && (
             <span className="ml-auto shrink-0 text-[8px] font-bold tabular-nums text-primary/70">
               {new Date(entry.scheduledAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
             </span>

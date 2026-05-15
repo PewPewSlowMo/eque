@@ -129,7 +129,7 @@ export function DoctorView() {
               </div>
               <div className="text-[9px] text-muted-foreground mt-0.5">
                 {PRIORITY_LABEL[calledEntry.priority] ?? calledEntry.priority}
-                {(calledEntry as any).scheduledAt
+                {(calledEntry as any).scheduledAt && (calledEntry as any).priority !== 'WALK_IN'
                   ? ` · ${new Date((calledEntry as any).scheduledAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`
                   : ''}
                 {assignment ? ` · Каб. ${(assignment as any).cabinet.number}` : ''}

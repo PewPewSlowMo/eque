@@ -70,7 +70,7 @@ export function QueuePanel({ queue }: Props) {
         >
           {displayList.map((entry, i) => {
             const { first, last } = formatName(entry.patientFirstName, entry.patientLastName);
-            const time = formatTime(entry.scheduledAt);
+            const time = entry.priority === 'WALK_IN' ? '' : formatTime(entry.scheduledAt);
             return (
               <div
                 key={`${entry.queueNumber}-${i}`}
