@@ -50,6 +50,7 @@ enum QueueSource {
   REGISTRAR
   CALL_CENTER
   KIOSK
+  DOCTOR_SELF
 }
 
 // ============================================================================
@@ -66,6 +67,7 @@ model User {
   role       UserRole @default(REGISTRAR)
   isActive   Boolean  @default(true)
   specialty  String?
+  selfRegister Boolean @default(false)
 
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
