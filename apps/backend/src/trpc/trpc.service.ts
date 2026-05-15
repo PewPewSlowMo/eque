@@ -11,6 +11,7 @@ export interface AuthUser {
   username: string;
   role: UserRole;
   departmentId?: string | null;
+  selfRegister?: boolean;
 }
 
 export interface Context {
@@ -41,6 +42,7 @@ export class TrpcService {
         username: decoded.username,
         role: decoded.role,
         departmentId: decoded.departmentId,
+        selfRegister: decoded.selfRegister ?? false,
       };
     } catch {
       return null;

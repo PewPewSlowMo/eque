@@ -29,7 +29,7 @@ export const createAuthRouter = (trpc: TrpcService, prisma: PrismaService) => {
         if (!valid) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Неверный логин или пароль' });
 
         const token = jwt.sign(
-          { userId: user.id, username: user.username, role: user.role, departmentId: user.departmentId },
+          { userId: user.id, username: user.username, role: user.role, departmentId: user.departmentId, selfRegister: user.selfRegister },
           JWT_SECRET,
           { expiresIn: JWT_EXPIRES_IN },
         );
@@ -46,6 +46,7 @@ export const createAuthRouter = (trpc: TrpcService, prisma: PrismaService) => {
             departmentId: user.departmentId,
             department: user.department,
             allowedCategories: user.allowedCategories,
+            selfRegister: user.selfRegister,
           },
         };
       }),
@@ -66,6 +67,7 @@ export const createAuthRouter = (trpc: TrpcService, prisma: PrismaService) => {
         departmentId: user.departmentId,
         department: user.department,
         allowedCategories: user.allowedCategories,
+        selfRegister: user.selfRegister,
       };
     }),
   });
