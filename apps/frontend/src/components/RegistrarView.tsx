@@ -86,6 +86,16 @@ function SlotCell({ booked, maxSlots, onClick }: { booked: number; maxSlots: num
   const brd = pct >= 0.75 ? '#fca5a5' : pct >= 0.45 ? '#fcd34d' : '#86efac';
   const clr = pct >= 0.75 ? '#991b1b' : pct >= 0.45 ? '#92400e' : '#166534';
 
+  if (maxSlots === 0) {
+    return (
+      <button onClick={onClick}
+        className="w-full text-center text-[9px] py-1 rounded transition-all hover:brightness-95"
+        style={{ background: '#f3f4f6', border: '1px solid #d1d5db', color: '#9ca3af' }}>
+        —
+      </button>
+    );
+  }
+
   if (free === 0) {
     return (
       <button onClick={onClick}
