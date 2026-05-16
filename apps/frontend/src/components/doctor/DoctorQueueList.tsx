@@ -60,16 +60,19 @@ interface QueueEntry {
 interface Props {
   entries: QueueEntry[];
   doctorId: string;
+  date?: string;
+  isToday?: boolean;
   calledEntryId?: string | null;
   onCallSuccess?: () => void;
 }
 
-export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSuccess }: Props) {
+export function DoctorQueueList({ entries, doctorId, date, isToday = true, calledEntryId, onCallSuccess }: Props) {
   const utils = trpc.useUtils();
+  const inv = () => utils.queue.getByDoctor.invalidate({ doctorId, date });
 
   const callNext = trpc.queue.callNext.useMutation({
     onSuccess: (result: any) => {
-      utils.queue.getByDoctor.invalidate({ doctorId });
+      inv();
       onCallSuccess?.();
       if (result.called) {
         toast.success(`Вызван: ${result.called.patient.lastName} ${result.called.patient.firstName}`);
@@ -82,7 +85,7 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
 
   const callSpecific = trpc.queue.callSpecific.useMutation({
     onSuccess: (result: any) => {
-      utils.queue.getByDoctor.invalidate({ doctorId });
+      inv();
       onCallSuccess?.();
       toast.success(`Вызван: ${result.called.patient.lastName} ${result.called.patient.firstName}`);
     },
@@ -90,26 +93,26 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
   });
 
   const startAppointment = trpc.queue.startAppointment.useMutation({
-    onSuccess: () => { utils.queue.getByDoctor.invalidate({ doctorId }); },
+    onSuccess: () => inv(),
     onError: (e: any) => toast.error(e.message),
   });
 
   const callRepeat = trpc.queue.callRepeat.useMutation({
-    onSuccess: () => { utils.queue.getByDoctor.invalidate({ doctorId }); toast.success('Пациент вызван повторно'); },
+    onSuccess: () => { inv(); toast.success('Пациент вызван повторно'); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const markNoShow = trpc.queue.markNoShow.useMutation({
-    onSuccess: () => { utils.queue.getByDoctor.invalidate({ doctorId }); toast.info('Отмечена неявка'); },
+    onSuccess: () => { inv(); toast.info('Отмечена неявка'); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const cancel = trpc.queue.cancel.useMutation({
-    onSuccess: () => { utils.queue.getByDoctor.invalidate({ doctorId }); toast.info('Запись отменена'); },
+    onSuccess: () => { inv(); toast.info('Запись отменена'); },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const canCallNext = entries.some(e => e.status === 'ARRIVED' && e.paymentConfirmed);
+  const canCallNext = isToday && entries.some(e => e.status === 'ARRIVED' && e.paymentConfirmed);
   const anyPending  = callNext.isPending || callSpecific.isPending || startAppointment.isPending || callRepeat.isPending;
 
   // Walk-in = no scheduled slot, regardless of priority label
@@ -143,9 +146,9 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
     const stat       = STATUS_PILL[entry.status] ?? { label: entry.status, cls: 'bg-slate-100 text-slate-500' };
     const cat        = entry.category ? (CATEGORY_PILL[entry.category] ?? null) : null;
     const isCalling  = entry.id === calledEntryId || entry.status === 'CALLED';
-    const canNoShow  = entry.status === 'CALLED';
-    const canCall    = entry.status === 'ARRIVED' && entry.paymentConfirmed;
-    const canStart   = entry.status === 'CALLED';
+    const canNoShow  = isToday && entry.status === 'CALLED';
+    const canCall    = isToday && entry.status === 'ARRIVED' && entry.paymentConfirmed;
+    const canStart   = isToday && entry.status === 'CALLED';
 
     return (
       <div
@@ -252,17 +255,19 @@ export function DoctorQueueList({ entries, doctorId, calledEntryId, onCallSucces
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {/* Call by priority button */}
-      <div className="px-2 py-2 border-b border-border bg-white sticky top-0 z-10">
-        <button
-          onClick={() => callNext.mutate({ doctorId })}
-          disabled={!canCallNext || anyPending}
-          className="w-full h-8 text-[10px] font-bold text-white disabled:opacity-40 transition-opacity"
-          style={{ background: '#00685B', borderRadius: '4px 20px 20px 4px' }}
-        >
-          {callNext.isPending ? 'Вызов...' : 'По приоритету'}
-        </button>
-      </div>
+      {/* Call by priority button — only for today */}
+      {isToday && (
+        <div className="px-2 py-2 border-b border-border bg-white sticky top-0 z-10">
+          <button
+            onClick={() => callNext.mutate({ doctorId })}
+            disabled={!canCallNext || anyPending}
+            className="w-full h-8 text-[10px] font-bold text-white disabled:opacity-40 transition-opacity"
+            style={{ background: '#00685B', borderRadius: '4px 20px 20px 4px' }}
+          >
+            {callNext.isPending ? 'Вызов...' : 'По приоритету'}
+          </button>
+        </div>
+      )}
 
       {/* Scheduled / prioritized patients */}
       {scheduled.length > 0 && (

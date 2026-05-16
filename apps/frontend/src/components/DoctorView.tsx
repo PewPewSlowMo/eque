@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useUser } from '@/contexts/UserContext';
 import { useQueueSocket } from './registrar/useQueueSocket';
@@ -13,10 +13,28 @@ const PRIORITY_LABEL: Record<string, string> = {
   WALK_IN:   'Обращение',
 };
 
+const DAYS_RU = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+const MONTHS_RU = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+
+function isoDate(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function dateLabel(d: Date, todayStr: string): string {
+  const str = isoDate(d);
+  if (str === todayStr) return 'Сегодня';
+  const tomorrow = new Date(d); tomorrow.setDate(d.getDate() - 1);
+  if (isoDate(tomorrow) === todayStr) return `Завтра, ${d.getDate()} ${MONTHS_RU[d.getMonth()]}`;
+  const yesterday = new Date(d); yesterday.setDate(d.getDate() + 1);
+  if (isoDate(yesterday) === todayStr) return `Вчера, ${d.getDate()} ${MONTHS_RU[d.getMonth()]}`;
+  return `${d.getDate()} ${MONTHS_RU[d.getMonth()]} (${DAYS_RU[d.getDay()]})`;
+}
+
 export function DoctorView() {
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
   const [selectedDoctorId, setSelectedDoctorId] = useState('');
+  const [dayOffset, setDayOffset] = useState(0);
   const utils = trpc.useUtils();
 
   const { data: allDoctors = [] } = trpc.users.getDoctors.useQuery(
@@ -28,9 +46,16 @@ export function DoctorView() {
 
   useQueueSocket();
 
+  const todayStr = useMemo(() => isoDate(new Date()), []);
+  const selectedDate = useMemo(() => {
+    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + dayOffset); return d;
+  }, [dayOffset]);
+  const dateStr = isoDate(selectedDate);
+  const isToday = dateStr === todayStr;
+
   const { data: entries = [], isLoading } = trpc.queue.getByDoctor.useQuery(
-    { doctorId },
-    { enabled: !!doctorId, refetchInterval: 30_000 },
+    { doctorId, date: dateStr },
+    { enabled: !!doctorId, refetchInterval: isToday ? 30_000 : 60_000 },
   );
 
   const { data: assignment } = trpc.assignments.getForDoctor.useQuery(
@@ -39,7 +64,7 @@ export function DoctorView() {
   );
 
   const startAppointment = trpc.queue.startAppointment.useMutation({
-    onSuccess: () => utils.queue.getByDoctor.invalidate({ doctorId }),
+    onSuccess: () => utils.queue.getByDoctor.invalidate({ doctorId, date: dateStr }),
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -48,11 +73,10 @@ export function DoctorView() {
   const allEntries = entries as any[];
   const inProgressPatients = allEntries.filter((e: any) => e.status === 'IN_PROGRESS');
   const calledEntry   = allEntries.find((e: any) => e.status === 'CALLED') ?? null;
-  // All entries go to the list (finished ones filtered/displayed inside DoctorQueueList)
   const waitingEntries = allEntries.filter(
     (e: any) => !['IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(e.status),
   );
-  const queueListEntries = allEntries; // pass everything; DoctorQueueList handles grouping
+  const queueListEntries = allEntries;
 
   const panelWidth = 'var(--q-panel-width, 240px)';
 
@@ -79,6 +103,21 @@ export function DoctorView() {
           </select>
         </div>
       )}
+
+      {/* ── Date navigation bar ── */}
+      <div className="shrink-0 flex items-center justify-center gap-2 px-3 py-1.5 bg-white border-b border-border">
+        <button
+          onClick={() => setDayOffset(o => o - 1)}
+          className="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-muted-foreground text-sm"
+        >‹</button>
+        <span className={`text-[11px] font-semibold min-w-[120px] text-center ${isToday ? 'text-primary' : 'text-foreground'}`}>
+          {dateLabel(selectedDate, todayStr)}
+        </span>
+        <button
+          onClick={() => setDayOffset(o => o + 1)}
+          className="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-muted-foreground text-sm"
+        >›</button>
+      </div>
 
       {/* ── ADMIN: no doctor selected placeholder ── */}
       {isAdmin && !selectedDoctorId ? (
@@ -111,6 +150,8 @@ export function DoctorView() {
           <DoctorQueueList
             entries={queueListEntries}
             doctorId={doctorId}
+            date={dateStr}
+            isToday={isToday}
             calledEntryId={calledEntry?.id}
           />
         )}

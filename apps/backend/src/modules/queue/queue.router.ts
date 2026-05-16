@@ -40,35 +40,24 @@ export const createQueueRouter = (
   return trpc.router({
     // Active queue for a doctor (WAITING_ARRIVAL, ARRIVED, CALLED, IN_PROGRESS)
     getByDoctor: trpc.protectedProcedure
-      .input(z.object({ doctorId: z.string() }))
+      .input(z.object({ doctorId: z.string(), date: z.string().optional() }))
       .query(async ({ input }) => {
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const todayEnd = new Date();
-        todayEnd.setHours(23, 59, 59, 999);
+        const target = input.date ? new Date(input.date) : new Date();
+        const dayStart = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 0, 0, 0);
+        const dayEnd   = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 23, 59, 59, 999);
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const isToday  = (input.date ?? todayStr) === todayStr;
 
         const entries = await prisma.queueEntry.findMany({
           where: {
             doctorId: input.doctorId,
             OR: [
-              // Активно обслуживаются прямо сейчас — показываем всегда
-              { status: { in: ['CALLED', 'IN_PROGRESS'] } },
-              // Ожидают сегодня (по scheduledAt)
-              {
-                status: { in: ['WAITING_ARRIVAL', 'ARRIVED'] },
-                scheduledAt: { gte: todayStart, lte: todayEnd },
-              },
-              // Живая очередь на сегодня (scheduledAt = null, по createdAt)
-              {
-                status: { in: ['WAITING_ARRIVAL', 'ARRIVED'] },
-                scheduledAt: null,
-                createdAt: { gte: todayStart, lte: todayEnd },
-              },
-              // Завершённые сегодня
-              {
-                status: { in: ['COMPLETED', 'CANCELLED', 'NO_SHOW'] },
-                createdAt: { gte: todayStart, lte: todayEnd },
-              },
+              // Активно обслуживаются прямо сейчас — только для сегодня
+              ...(isToday ? [{ status: { in: ['CALLED', 'IN_PROGRESS'] } } as any] : []),
+              // Записи на этот день (по scheduledAt)
+              { scheduledAt: { gte: dayStart, lte: dayEnd } },
+              // Живая очередь этого дня (старые записи с scheduledAt=null, по createdAt)
+              { scheduledAt: null, createdAt: { gte: dayStart, lte: dayEnd } },
             ],
           },
           include: {
