@@ -19,21 +19,75 @@ export function UsersTab() {
   const isAdmin = user?.role === 'ADMIN';
 
   const { data: users = [], isLoading } = trpc.users.getAll.useQuery();
+  const { data: departments = [] } = trpc.departments.getAll.useQuery();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [deptFilter, setDeptFilter] = useState('');
 
   const openCreate = () => { setEditing(null); setDialogOpen(true); };
   const openEdit = (u: any) => { setEditing(u); setDialogOpen(true); };
 
-  const visibleUsers = (users as any[]).filter((u: any) => showInactive || u.isActive !== false);
+  const visibleUsers = (users as any[]).filter((u: any) => {
+    if (!showInactive && u.isActive === false) return false;
+    if (roleFilter && u.role !== roleFilter) return false;
+    if (deptFilter && u.department?.id !== deptFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const fio = `${u.lastName ?? ''} ${u.firstName ?? ''} ${u.middleName ?? ''}`.toLowerCase();
+      if (!fio.includes(q)) return false;
+    }
+    return true;
+  });
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Загрузка...</p>;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
+      {/* Filters row */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <input
+          type="text"
+          placeholder="Поиск по ФИО..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="text-sm px-3 py-1.5 border border-border rounded outline-none focus:ring-1 focus:ring-primary w-48"
+        />
+        <select
+          value={roleFilter}
+          onChange={e => setRoleFilter(e.target.value)}
+          className="text-sm px-3 py-1.5 border border-border rounded outline-none focus:ring-1 focus:ring-primary bg-white"
+        >
+          <option value="">Все роли</option>
+          {Object.entries(ROLE_LABEL).map(([k, v]) => (
+            <option key={k} value={k}>{v}</option>
+          ))}
+        </select>
+        <select
+          value={deptFilter}
+          onChange={e => setDeptFilter(e.target.value)}
+          className="text-sm px-3 py-1.5 border border-border rounded outline-none focus:ring-1 focus:ring-primary bg-white"
+        >
+          <option value="">Все отделения</option>
+          {(departments as any[]).map((d: any) => (
+            <option key={d.id} value={d.id}>{d.name}</option>
+          ))}
+        </select>
+        {(search || roleFilter || deptFilter) && (
+          <button
+            onClick={() => { setSearch(''); setRoleFilter(''); setDeptFilter(''); }}
+            className="text-xs text-muted-foreground hover:text-foreground underline"
+          >
+            Сбросить
+          </button>
+        )}
+        <span className="text-xs text-muted-foreground ml-auto">{visibleUsers.length} чел.</span>
+      </div>
+
       <div className="flex items-center justify-between flex-wrap gap-2">
         <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
           <input
