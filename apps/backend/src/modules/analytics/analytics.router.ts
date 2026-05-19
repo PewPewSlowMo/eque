@@ -114,8 +114,8 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
     getHistorical: trpc.protectedProcedure
       .input(z.object({
         deptId: z.string().optional(),
-        from: z.string(), // YYYY-MM-DD
-        to: z.string(),   // YYYY-MM-DD включительно
+        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       }))
       .query(async ({ input, ctx }) => {
         const { user } = ctx;
@@ -134,8 +134,11 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
             ? (user.departmentId ?? undefined)
             : (input.deptId || undefined);
 
-        const fromDate = new Date(input.from + 'T00:00:00');
-        const toDate   = new Date(input.to   + 'T23:59:59.999');
+        const fromDate = new Date(input.from + 'T00:00:00.000Z');
+        const toDate   = new Date(input.to   + 'T23:59:59.999Z');
+        if (fromDate > toDate) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Дата начала не может быть позже даты конца' });
+        }
 
         const entries = await prisma.queueEntry.findMany({
           where: {
