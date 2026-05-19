@@ -65,6 +65,12 @@ function formatDay(dateStr: string): string {
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 }
 
+function workloadColor(pct: number): string {
+  if (pct < 70)  return 'text-amber-600';
+  if (pct <= 90) return 'text-emerald-600';
+  return 'text-red-600';
+}
+
 export function HistoricalPanel({ deptId }: Props) {
   const today = toIso(new Date());
   const weekAgo = (() => { const d = new Date(); d.setDate(d.getDate() - 6); return toIso(d); })();
@@ -84,6 +90,8 @@ export function HistoricalPanel({ deptId }: Props) {
 
   const d = data as any;
   const maxDay = d ? Math.max(...(d.byDay as any[]).map((x: any) => x.total), 1) : 1;
+  const maxHour = d && d.byHour.length > 0 ? Math.max(...(d.byHour as any[]).map((x: any) => x.total), 1) : 1;
+  const maxDow  = d && d.byDayOfWeek.length > 0 ? Math.max(...(d.byDayOfWeek as any[]).map((x: any) => x.total), 1) : 1;
 
   return (
     <div className="space-y-4">
@@ -96,6 +104,7 @@ export function HistoricalPanel({ deptId }: Props) {
           {/* Итоговые показатели */}
           <div className="flex gap-3 flex-wrap">
             <StatCard label="Выполнено"     value={d.totals.completed} />
+            <StatCard label="Пришли"        value={d.totals.arrived} />
             <StatCard label="Запланировано" value={d.totals.scheduled} />
             <StatCard label="% выполнения"  value={`${d.totals.completionRate}%`} />
             <StatCard label="% неявок"      value={`${d.totals.noShowRate}%`} />
@@ -104,10 +113,10 @@ export function HistoricalPanel({ deptId }: Props) {
 
           {/* Временны́е показатели */}
           <div className="flex gap-3 flex-wrap">
-            <StatCard label="Сред. ожидание"     value={d.timing.avgWaitMinutes != null ? `${d.timing.avgWaitMinutes} мин` : '—'} />
-            <StatCard label="Сред. приём"         value={d.timing.avgDurationMinutes != null ? `${d.timing.avgDurationMinutes} мин` : '—'} />
-            <StatCard label="Сред. опоздание"     value={d.timing.avgLatenessMinutes != null ? `${d.timing.avgLatenessMinutes} мин` : '—'} />
-            <StatCard label="Реакция врача"       value={d.timing.avgResponseMinutes != null ? `${d.timing.avgResponseMinutes} мин` : '—'} />
+            <StatCard label="Сред. ожидание"   value={d.timing.avgWaitMinutes     != null ? `${d.timing.avgWaitMinutes} мин`     : '—'} />
+            <StatCard label="Сред. приём"       value={d.timing.avgDurationMinutes != null ? `${d.timing.avgDurationMinutes} мин` : '—'} />
+            <StatCard label="Сред. опоздание"   value={d.timing.avgLatenessMinutes != null ? `${d.timing.avgLatenessMinutes} мин` : '—'} />
+            <StatCard label="Реакция врача"     value={d.timing.avgResponseMinutes != null ? `${d.timing.avgResponseMinutes} мин` : '—'} />
           </div>
 
           {/* Разбивки по приоритетам и источникам */}
@@ -172,15 +181,118 @@ export function HistoricalPanel({ deptId }: Props) {
                 ))}
               </div>
               <div className="flex gap-4 mt-3">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                  <span className="text-xs text-muted-foreground">Выполнено</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-400" />
-                  <span className="text-xs text-muted-foreground">Неявки</span>
-                </div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-xs text-muted-foreground">Выполнено</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-400" /><span className="text-xs text-muted-foreground">Неявки</span></div>
               </div>
+            </div>
+          )}
+
+          {/* Неявки по врачам */}
+          {d.noShowByDoctor.length > 0 && (
+            <div className="bg-white border border-border rounded-lg p-4 shadow-sm">
+              <SectionTitle>Неявки по врачам</SectionTitle>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    {['ФИО', 'Специальность', 'Неявки', 'Всего', '% неявок'].map(h => (
+                      <th key={h} className={`text-xs font-semibold text-muted-foreground pb-2 ${h === 'ФИО' || h === 'Специальность' ? 'text-left' : 'text-right'}`}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(d.noShowByDoctor as any[]).map((doc: any) => (
+                    <tr key={doc.doctorId} className="border-t border-border">
+                      <td className="py-2 text-sm text-foreground">{doc.lastName} {doc.firstName}</td>
+                      <td className="py-2 text-sm text-muted-foreground">{doc.specialty ?? '—'}</td>
+                      <td className="py-2 text-sm tabular-nums text-right text-red-600 font-semibold">{doc.noShow}</td>
+                      <td className="py-2 text-sm tabular-nums text-right text-muted-foreground">{doc.total}</td>
+                      <td className="py-2 text-sm tabular-nums text-right font-semibold text-foreground">{doc.noShowRate}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Распределение по часам */}
+          {d.byHour.length > 0 && (
+            <div className="bg-white border border-border rounded-lg p-4 shadow-sm">
+              <SectionTitle>Распределение по часам</SectionTitle>
+              <div className="space-y-1.5">
+                {(d.byHour as any[]).map((h: any) => (
+                  <div key={h.hour} className="flex items-center gap-3">
+                    <div className="text-sm text-muted-foreground w-12 shrink-0 tabular-nums">
+                      {String(h.hour).padStart(2, '0')}:00
+                    </div>
+                    <div className="flex-1 h-2 rounded-full overflow-hidden bg-muted">
+                      <div className="h-full rounded-full bg-blue-400 transition-all"
+                        style={{ width: `${h.total / maxHour * 100}%` }} />
+                    </div>
+                    <div className="text-xs text-muted-foreground tabular-nums w-8 text-right">{h.total}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Распределение по дням недели */}
+          {d.byDayOfWeek.length > 0 && (
+            <div className="bg-white border border-border rounded-lg p-4 shadow-sm">
+              <SectionTitle>Распределение по дням недели</SectionTitle>
+              <div className="space-y-1.5">
+                {(d.byDayOfWeek as any[]).map((day: any) => (
+                  <div key={day.weekday} className="flex items-center gap-3">
+                    <div className="text-sm text-muted-foreground w-8 shrink-0">{day.label}</div>
+                    <div className="flex-1 h-2 rounded-full overflow-hidden bg-muted">
+                      <div className="h-full rounded-full bg-indigo-400 transition-all"
+                        style={{ width: `${day.total / maxDow * 100}%` }} />
+                    </div>
+                    <div className="text-xs text-muted-foreground tabular-nums w-8 text-right">{day.total}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Загрузка врачей */}
+          {d.doctorWorkload.length > 0 && (
+            <div className="bg-white border border-border rounded-lg overflow-hidden shadow-sm">
+              <div className="p-4 pb-2">
+                <SectionTitle>Загрузка врачей</SectionTitle>
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted border-b border-border">
+                    {['ФИО', 'Специальность', 'Принято', 'Слоты план', 'Загрузка (слоты)', 'Время план (мин)', 'Время факт (мин)', 'Загрузка (время)'].map(h => (
+                      <th key={h} className="text-left text-xs font-semibold text-muted-foreground px-4 py-2">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(d.doctorWorkload as any[]).map((doc: any) => (
+                    <tr key={doc.doctorId} className="border-t border-border hover:bg-muted/40 transition-colors">
+                      <td className="px-4 py-2.5 text-sm font-medium text-foreground">{doc.lastName} {doc.firstName}</td>
+                      <td className="px-4 py-2.5 text-sm text-muted-foreground">{doc.specialty ?? '—'}</td>
+                      <td className="px-4 py-2.5 text-sm tabular-nums text-foreground">{doc.completed}</td>
+                      <td className="px-4 py-2.5 text-sm tabular-nums text-muted-foreground">
+                        {doc.slotsTotal > 0 ? doc.slotsTotal : '—'}
+                      </td>
+                      <td className={`px-4 py-2.5 text-sm tabular-nums font-semibold ${doc.slotsTotal > 0 ? workloadColor(doc.workloadBySlotsPct) : 'text-muted-foreground'}`}>
+                        {doc.slotsTotal > 0 ? `${doc.workloadBySlotsPct}%` : '—'}
+                      </td>
+                      <td className="px-4 py-2.5 text-sm tabular-nums text-muted-foreground">
+                        {doc.scheduledMinutes > 0 ? doc.scheduledMinutes : '—'}
+                      </td>
+                      <td className="px-4 py-2.5 text-sm tabular-nums text-muted-foreground">
+                        {doc.actualMinutes > 0 ? doc.actualMinutes : '—'}
+                      </td>
+                      <td className={`px-4 py-2.5 text-sm tabular-nums font-semibold ${doc.scheduledMinutes > 0 ? workloadColor(doc.workloadByTimePct) : 'text-muted-foreground'}`}>
+                        {doc.scheduledMinutes > 0 ? `${doc.workloadByTimePct}%` : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
