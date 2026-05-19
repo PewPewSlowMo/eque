@@ -10,11 +10,13 @@ import { BoardsTab } from './admin/BoardsTab';
 import { ServicesTab } from './admin/ServicesTab';
 import { KioskManager } from './admin/KioskManager';
 import { BackupTab } from './admin/BackupTab';
+import { AnalyticsTab } from './analytics/AnalyticsTab';
 
 export function AdminPanel() {
   const { user } = useUser();
   const isAdmin = user?.role === 'ADMIN';
   const isDeptHead = user?.role === 'DEPARTMENT_HEAD';
+  const isDirector = user?.role === 'DIRECTOR';
 
   return (
     <div className="h-full overflow-y-auto p-4">
@@ -30,6 +32,7 @@ export function AdminPanel() {
           {isAdmin && <TabsTrigger value="boards">Табло</TabsTrigger>}
           {isAdmin && <TabsTrigger value="kiosks">Киоски</TabsTrigger>}
           {isAdmin && <TabsTrigger value="backup">Бэкап</TabsTrigger>}
+          {(isAdmin || isDirector) && <TabsTrigger value="analytics">Аналитика</TabsTrigger>}
         </TabsList>
 
         {isAdmin && (
@@ -81,6 +84,12 @@ export function AdminPanel() {
         {isAdmin && (
           <TabsContent value="backup" className="pt-4">
             <BackupTab />
+          </TabsContent>
+        )}
+
+        {(isAdmin || isDirector) && (
+          <TabsContent value="analytics" className="pt-4">
+            <AnalyticsTab />
           </TabsContent>
         )}
       </Tabs>
