@@ -1,4 +1,3 @@
-// apps/frontend/src/components/analytics/AnalyticsTab.tsx
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { OperationalPanel } from './OperationalPanel';
@@ -19,43 +18,51 @@ export function AnalyticsTab({ lockedDeptId }: Props) {
 
   const deptId = lockedDeptId ?? selectedDeptId;
 
-  const btnBase = 'text-[9px] font-semibold px-3 py-1.5 transition-colors';
-  const activeStyle = { background: 'rgba(0,104,91,.3)', color: '#00a08f', borderRadius: '3px 10px 10px 3px' };
-  const inactiveStyle = { color: 'rgba(255,255,255,.5)', background: 'transparent' };
-
   return (
-    <div className="space-y-3">
-      {/* Фильтр отделения (только для ADMIN/DIRECTOR) */}
-      {!lockedDeptId && (
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] text-slate-500">Отделение:</span>
-          <select
-            value={selectedDeptId ?? ''}
-            onChange={e => setSelectedDeptId(e.target.value || undefined)}
-            className="text-[9px] px-2 py-1 outline-none"
-            style={{ background: '#12151e', border: '1px solid #252831', borderRadius: 4, color: '#e2e8f0' }}
-          >
-            <option value="">Вся клиника</option>
-            {(departments as any[]).map((d: any) => (
-              <option key={d.id} value={d.id}>{d.name}</option>
-            ))}
-          </select>
-        </div>
-      )}
+    <div className="space-y-4">
+      {/* Верхняя панель: фильтр + переключатель */}
+      <div className="flex flex-wrap items-center gap-3">
+        {!lockedDeptId && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground shrink-0">Отделение:</span>
+            <select
+              value={selectedDeptId ?? ''}
+              onChange={e => setSelectedDeptId(e.target.value || undefined)}
+              className="text-sm px-3 py-1.5 border border-border rounded outline-none focus:ring-1 focus:ring-primary bg-white"
+            >
+              <option value="">Вся клиника</option>
+              {(departments as any[]).map((d: any) => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-      {/* Переключатель режимов */}
-      <div className="flex items-center gap-1">
-        <button className={btnBase} style={mode === 'operational' ? activeStyle : inactiveStyle}
-          onClick={() => setMode('operational')}>
-          Оперативная
-        </button>
-        <button className={btnBase} style={mode === 'historical' ? activeStyle : inactiveStyle}
-          onClick={() => setMode('historical')}>
-          Историческая
-        </button>
+        {/* Переключатель Оперативная / Историческая */}
+        <div className="flex rounded border border-border overflow-hidden text-sm">
+          <button
+            onClick={() => setMode('operational')}
+            className={`px-4 py-1.5 font-medium transition-colors ${
+              mode === 'operational'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-white text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            Оперативная
+          </button>
+          <button
+            onClick={() => setMode('historical')}
+            className={`px-4 py-1.5 font-medium transition-colors border-l border-border ${
+              mode === 'historical'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-white text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            Историческая
+          </button>
+        </div>
       </div>
 
-      {/* Панели */}
       {mode === 'operational' ? (
         <OperationalPanel deptId={deptId} />
       ) : (
