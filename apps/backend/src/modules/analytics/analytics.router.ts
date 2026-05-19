@@ -6,6 +6,11 @@ import { PrismaService } from '../../database/prisma.service';
 const ALLOWED_ROLES = ['ADMIN', 'DIRECTOR', 'DEPARTMENT_HEAD'] as const;
 const LATE_THRESHOLD_MS = 30 * 60 * 1000; // 30 минут
 
+function parseMinutes(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
 export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) => {
   return trpc.router({
 
@@ -203,6 +208,133 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
         const noShow    = entries.filter(e => e.status === 'NO_SHOW').length;
         const cancelled = entries.filter(e => e.status === 'CANCELLED').length;
 
+        const arrived = entries.filter(e => e.arrivedAt != null).length;
+
+        const noShowByDoctorMap = new Map<string, { noShow: number; total: number }>();
+        for (const e of entries) {
+          if (!noShowByDoctorMap.has(e.doctorId)) noShowByDoctorMap.set(e.doctorId, { noShow: 0, total: 0 });
+          const rec = noShowByDoctorMap.get(e.doctorId)!;
+          rec.total++;
+          if (e.status === 'NO_SHOW') rec.noShow++;
+        }
+        const doctorIdsFromEntries = [...noShowByDoctorMap.keys()];
+
+        const [doctorUsers, workloadSchedules] = await Promise.all([
+          prisma.user.findMany({
+            where: { id: { in: doctorIdsFromEntries } },
+            select: { id: true, lastName: true, firstName: true, specialty: true },
+          }),
+          prisma.doctorDaySchedule.findMany({
+            where: {
+              doctorId: { in: doctorIdsFromEntries },
+              date: {
+                gte: new Date(input.from + 'T00:00:00.000Z'),
+                lte: new Date(input.to   + 'T00:00:00.000Z'),
+              },
+            },
+            include: { breaks: true },
+          }),
+        ]);
+        const doctorUserMap = new Map(doctorUsers.map(u => [u.id, u]));
+
+        const noShowByDoctor = doctorIdsFromEntries
+          .map(id => {
+            const stats = noShowByDoctorMap.get(id)!;
+            const u = doctorUserMap.get(id);
+            return {
+              doctorId: id,
+              lastName:  u?.lastName  ?? '',
+              firstName: u?.firstName ?? '',
+              specialty: u?.specialty ?? null,
+              noShow:    stats.noShow,
+              total:     stats.total,
+              noShowRate: stats.total > 0 ? Math.round(stats.noShow / stats.total * 100) : 0,
+            };
+          })
+          .sort((a, b) => b.noShowRate - a.noShowRate || b.noShow - a.noShow);
+
+        const hourMap = new Map<number, { total: number; completed: number; noShow: number }>();
+        for (const e of entries) {
+          const hour = (e.scheduledAt ?? e.createdAt).getUTCHours();
+          if (!hourMap.has(hour)) hourMap.set(hour, { total: 0, completed: 0, noShow: 0 });
+          const h = hourMap.get(hour)!;
+          h.total++;
+          if (e.status === 'COMPLETED') h.completed++;
+          if (e.status === 'NO_SHOW')   h.noShow++;
+        }
+        const byHour = [...hourMap.entries()]
+          .map(([hour, v]) => ({ hour, ...v }))
+          .sort((a, b) => a.hour - b.hour);
+
+        const DOW_LABELS = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+        const dowMap = new Map<number, { total: number; completed: number; noShow: number }>();
+        for (const e of entries) {
+          const dow = (e.scheduledAt ?? e.createdAt).getUTCDay();
+          if (!dowMap.has(dow)) dowMap.set(dow, { total: 0, completed: 0, noShow: 0 });
+          const rec = dowMap.get(dow)!;
+          rec.total++;
+          if (e.status === 'COMPLETED') rec.completed++;
+          if (e.status === 'NO_SHOW')   rec.noShow++;
+        }
+        const byDayOfWeek = [...dowMap.entries()]
+          .map(([weekday, v]) => ({ weekday, label: DOW_LABELS[weekday], ...v }))
+          .sort((a, b) => a.weekday - b.weekday);
+
+        const completedByDoctor    = new Map<string, number>();
+        const actualMinutesByDoctor = new Map<string, number>();
+        for (const e of entries) {
+          if (e.status === 'COMPLETED') {
+            completedByDoctor.set(e.doctorId, (completedByDoctor.get(e.doctorId) ?? 0) + 1);
+            if (e.startedAt && e.completedAt) {
+              const mins = (e.completedAt.getTime() - e.startedAt.getTime()) / 60000;
+              actualMinutesByDoctor.set(e.doctorId, (actualMinutesByDoctor.get(e.doctorId) ?? 0) + mins);
+            }
+          }
+        }
+
+        const schedulesByDoctor = new Map<string, typeof workloadSchedules>();
+        for (const s of workloadSchedules) {
+          if (!schedulesByDoctor.has(s.doctorId)) schedulesByDoctor.set(s.doctorId, []);
+          schedulesByDoctor.get(s.doctorId)!.push(s);
+        }
+
+        const doctorWorkload = doctorIdsFromEntries
+          .map(id => {
+            const u = doctorUserMap.get(id);
+            const dSchedules = schedulesByDoctor.get(id) ?? [];
+
+            let slotsTotal = 0;
+            let scheduledMinutes = 0;
+            for (const s of dSchedules) {
+              const workStart  = parseMinutes(s.startTime);
+              const workEnd    = parseMinutes(s.endTime);
+              const breakMins  = s.breaks.reduce(
+                (sum, b) => sum + parseMinutes(b.endTime) - parseMinutes(b.startTime), 0,
+              );
+              const workingMins = Math.max(0, workEnd - workStart - breakMins);
+              slotsTotal       += Math.floor(workingMins / s.slotMinutes);
+              scheduledMinutes += workingMins;
+            }
+
+            const completedCount = completedByDoctor.get(id) ?? 0;
+            const actualMinutes  = Math.round(actualMinutesByDoctor.get(id) ?? 0);
+
+            return {
+              doctorId:  id,
+              lastName:  u?.lastName  ?? '',
+              firstName: u?.firstName ?? '',
+              specialty: u?.specialty ?? null,
+              completed: completedCount,
+              slotsTotal,
+              slotsUsed:           completedCount,
+              workloadBySlotsPct:  slotsTotal       > 0 ? Math.round(completedCount  / slotsTotal       * 100) : 0,
+              scheduledMinutes,
+              actualMinutes,
+              workloadByTimePct:   scheduledMinutes > 0 ? Math.round(actualMinutes   / scheduledMinutes * 100) : 0,
+            };
+          })
+          .sort((a, b) => b.workloadBySlotsPct - a.workloadBySlotsPct);
+
         // Среднее время ожидания: arrivedAt → calledAt
         const waitTimes = entries
           .filter(e => e.arrivedAt && e.calledAt)
@@ -284,11 +416,12 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
           .sort((a, b) => a.date.localeCompare(b.date));
 
         return {
-          totals: { scheduled: total, completed, noShow, cancelled,
+          totals: { scheduled: total, completed, noShow, arrived, cancelled,
             completionRate: total > 0 ? Math.round(completed / total * 100) : 0,
-            noShowRate: total > 0 ? Math.round(noShow / total * 100) : 0 },
+            noShowRate:     total > 0 ? Math.round(noShow    / total * 100) : 0 },
           timing: { avgWaitMinutes, avgDurationMinutes, avgLatenessMinutes, avgResponseMinutes },
           byPriority, bySource, byCancelReason, byDay,
+          noShowByDoctor, byHour, byDayOfWeek, doctorWorkload,
         };
       }),
 
