@@ -46,7 +46,7 @@ export function OperationalPanel({ deptId }: Props) {
   if (!data) return null;
 
   const { summary, doctors } = data as any;
-  const sb = summary.statusBreakdown as Record<string, number>;
+  const sb = (summary.statusBreakdown ?? {}) as Record<string, number>;
 
   return (
     <div className="space-y-4">
@@ -112,8 +112,8 @@ export function OperationalPanel({ deptId }: Props) {
                   }`}>
                     {d.avgDurationToday != null ? `${d.avgDurationToday} мин` : '—'}
                   </td>
-                  <td className={`px-4 py-2.5 text-sm tabular-nums ${d.lateCount > 0 ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
-                    {d.lateCount}
+                  <td className={`px-4 py-2.5 text-sm tabular-nums ${(d.lateCount ?? 0) > 0 ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
+                    {d.lateCount ?? 0}
                   </td>
                 </tr>
               ))}
