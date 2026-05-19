@@ -60,8 +60,16 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
             arrivedAt: true,
             scheduledAt: true,
             createdAt: true,
+            startedAt: true,
+            completedAt: true,
           },
         });
+
+        const schedules = await prisma.doctorDaySchedule.findMany({
+          where: { doctorId: { in: doctorIds }, date: dayStart },
+          include: { breaks: true },
+        });
+        const scheduleByDoctor = new Map(schedules.map(s => [s.doctorId, s]));
 
         const entriesByDoctor = new Map<string, typeof entries>();
         for (const e of entries) {
@@ -69,18 +77,43 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
           entriesByDoctor.get(e.doctorId)!.push(e);
         }
 
+        const statusBreakdown = {
+          waitingArrival: entries.filter(e => e.status === 'WAITING_ARRIVAL').length,
+          arrived:        entries.filter(e => e.status === 'ARRIVED').length,
+          called:         entries.filter(e => e.status === 'CALLED').length,
+          inProgress:     entries.filter(e => e.status === 'IN_PROGRESS').length,
+          completedToday: entries.filter(e => e.status === 'COMPLETED').length,
+          noShowToday:    entries.filter(e => e.status === 'NO_SHOW').length,
+        };
+
+        const waitTimes = entries
+          .filter(e => e.status === 'ARRIVED' && e.arrivedAt)
+          .map(e => Math.floor((now.getTime() - e.arrivedAt!.getTime()) / 60000));
+        const maxWaitMinutes = waitTimes.length > 0 ? Math.max(...waitTimes) : null;
+
         let totalWaiting = 0;
         let doctorsActive = 0;
         let latePatients = 0;
 
-        const ORDER = { active: 0, free: 1, off: 2 } as const;
+        const ORDER = { active: 0, break: 1, free: 2, off: 3 } as const;
 
         const doctorStats = doctors.map(d => {
           const dEntries = entriesByDoctor.get(d.id) ?? [];
 
           const hasInProgress = dEntries.some(e => e.status === 'IN_PROGRESS');
           const hasToday = dEntries.length > 0;
-          const status: 'active' | 'free' | 'off' = hasInProgress ? 'active' : hasToday ? 'free' : 'off';
+          const schedule = scheduleByDoctor.get(d.id);
+          const normativeMinutes = schedule?.slotMinutes ?? null;
+          const nowMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+          const isOnBreak = schedule
+            ? schedule.breaks.some(b => {
+                const [bH, bM] = b.startTime.split(':').map(Number);
+                const [eH, eM] = b.endTime.split(':').map(Number);
+                return nowMinutes >= bH * 60 + bM && nowMinutes < eH * 60 + eM;
+              })
+            : false;
+          const status: 'active' | 'break' | 'free' | 'off' =
+            hasInProgress ? 'active' : isOnBreak ? 'break' : hasToday ? 'free' : 'off';
 
           const waiting = dEntries.filter(e => e.status === 'WAITING_ARRIVAL' || e.status === 'ARRIVED');
           const queueLength = waiting.length;
@@ -90,24 +123,33 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
             ? Math.round(arrivedEntries.reduce((s, e) => s + (now.getTime() - e.arrivedAt!.getTime()) / 60000, 0) / arrivedEntries.length)
             : null;
 
-          const late = dEntries.filter(e => {
-            if (e.status !== 'WAITING_ARRIVAL') return false;
-            const ref = e.scheduledAt ?? e.createdAt;
+          const lateCount = dEntries.filter(e => {
+            if (e.status !== 'WAITING_ARRIVAL' && e.status !== 'ARRIVED') return false;
+            const ref = e.arrivedAt ?? e.scheduledAt ?? e.createdAt;
             return now.getTime() - ref.getTime() > LATE_THRESHOLD_MS;
           }).length;
 
+          const completedDurations = dEntries
+            .filter(e => e.status === 'COMPLETED' && e.startedAt && e.completedAt)
+            .map(e => (e.completedAt!.getTime() - e.startedAt!.getTime()) / 60000);
+          const avgDurationToday = completedDurations.length > 0
+            ? Math.round(completedDurations.reduce((a, b) => a + b, 0) / completedDurations.length)
+            : null;
+
           if (status === 'active') doctorsActive++;
           totalWaiting += queueLength;
-          latePatients += late;
+          latePatients += lateCount;
 
           return { id: d.id, lastName: d.lastName, firstName: d.firstName, middleName: d.middleName,
-            specialty: d.specialty, status, queueLength, avgWaitMinutes };
+            specialty: d.specialty, status, queueLength, avgWaitMinutes,
+            lateCount, avgDurationToday, normativeMinutes };
         });
 
         const sortedStats = [...doctorStats].sort((a, b) => ORDER[a.status] - ORDER[b.status]);
 
         return {
-          summary: { totalWaiting, doctorsActive, doctorsTotal: doctors.length, latePatients },
+          summary: { totalWaiting, doctorsActive, doctorsTotal: doctors.length, latePatients,
+            statusBreakdown, maxWaitMinutes },
           doctors: sortedStats,
         };
       }),
