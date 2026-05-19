@@ -29,6 +29,7 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
             : (input.deptId || undefined);
 
         const now = new Date();
+        const nowMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
         const todayStr = now.toISOString().slice(0, 10); // YYYY-MM-DD in UTC
         const dayStart = new Date(todayStr + 'T00:00:00.000Z');
         const dayEnd   = new Date(todayStr + 'T23:59:59.999Z');
@@ -104,7 +105,6 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
           const hasToday = dEntries.length > 0;
           const schedule = scheduleByDoctor.get(d.id);
           const normativeMinutes = schedule?.slotMinutes ?? null;
-          const nowMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
           const isOnBreak = schedule
             ? schedule.breaks.some(b => {
                 const [bH, bM] = b.startTime.split(':').map(Number);
