@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { trpc } from '@/lib/trpc';
 import { PeriodSelector, type Period } from './PeriodSelector';
 
@@ -56,7 +56,7 @@ function BarRow({ label, count, pct, color }: { label: string; count: number; pc
   );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({ children }: { children: ReactNode }) {
   return <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{children}</div>;
 }
 
