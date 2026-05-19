@@ -312,7 +312,7 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
                 (sum, b) => sum + parseMinutes(b.endTime) - parseMinutes(b.startTime), 0,
               );
               const workingMins = Math.max(0, workEnd - workStart - breakMins);
-              slotsTotal       += Math.floor(workingMins / s.slotMinutes);
+              if (s.slotMinutes > 0) slotsTotal += Math.floor(workingMins / s.slotMinutes);
               scheduledMinutes += workingMins;
             }
 
