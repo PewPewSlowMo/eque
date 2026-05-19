@@ -3,6 +3,7 @@ import { trpc } from '@/lib/trpc';
 import { useUser } from '@/contexts/UserContext';
 import { useQueueSocket } from './registrar/useQueueSocket';
 import { toast } from 'sonner';
+import { AnalyticsTab } from './analytics/AnalyticsTab';
 
 /* ─── helpers ────────────────────────────────────── */
 type CabStatus = 'active' | 'free' | 'off';
@@ -139,7 +140,7 @@ export function DepartmentHeadView() {
 
   const [floor,      setFloor]      = useState(1);
   const [dialog,     setDialog]     = useState<any | null>(null);
-  const [tab,        setTab]        = useState<'plan' | 'list'>('plan');
+  const [tab,        setTab]        = useState<'plan' | 'list' | 'analytics'>('plan');
   const [dragOver,   setDragOver]   = useState<string | null>(null);  // cabinetId
   const [overload,   setOverload]   = useState<{ doctorId: string; cabinet: any } | null>(null);
 
@@ -270,11 +271,15 @@ export function DepartmentHeadView() {
             className={`text-[9px] font-semibold px-2.5 py-1 transition-colors ${tab === 'list' ? 'text-white' : 'text-slate-500'}`}>
             Список
           </button>
+          <button onClick={() => setTab('analytics')}
+            className={`text-[9px] font-semibold px-2.5 py-1 transition-colors ${tab === 'analytics' ? 'text-white' : 'text-slate-500'}`}>
+            Аналитика
+          </button>
           <span className="text-[17px] font-bold tabular-nums" style={{ color: '#B39168' }}>{timeStr}</span>
         </div>
       </div>
 
-      {tab === 'plan' ? (
+      {tab === 'plan' && (
         <div className="flex flex-1 overflow-hidden" style={{ background: '#1a1d27' }}>
           {/* floor plan */}
           <div className="flex-1 overflow-auto p-4">
@@ -349,7 +354,9 @@ export function DepartmentHeadView() {
             })}
           </div>
         </div>
-      ) : (
+      )}
+
+      {tab === 'list' && (
         /* list view */
         <div className="flex-1 overflow-y-auto p-4" style={{ background: '#1a1d27' }}>
           <div className="max-w-2xl mx-auto space-y-2">
@@ -380,6 +387,12 @@ export function DepartmentHeadView() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {tab === 'analytics' && (
+        <div className="p-3 overflow-y-auto flex-1">
+          <AnalyticsTab lockedDeptId={departmentId || undefined} />
         </div>
       )}
 
