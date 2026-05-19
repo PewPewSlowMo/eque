@@ -296,7 +296,7 @@ export function HistoricalPanel({ deptId }: Props) {
             </div>
           )}
 
-          {d.totals.scheduled === 0 && (
+          {d.totals.completed === 0 && d.totals.scheduled === 0 && (
             <div className="text-sm text-muted-foreground text-center py-8">Нет данных за выбранный период</div>
           )}
         </>
