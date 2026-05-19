@@ -29,8 +29,9 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
             : (input.deptId || undefined);
 
         const now = new Date();
-        const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-        const dayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        const todayStr = now.toISOString().slice(0, 10); // YYYY-MM-DD in UTC
+        const dayStart = new Date(todayStr + 'T00:00:00.000Z');
+        const dayEnd   = new Date(todayStr + 'T23:59:59.999Z');
 
         const doctors = await prisma.user.findMany({
           where: {
