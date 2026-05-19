@@ -19,6 +19,9 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
         if (user.role === 'DEPARTMENT_HEAD' && input.deptId && input.deptId !== user.departmentId) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа к этому отделению' });
         }
+        if (user.role === 'DEPARTMENT_HEAD' && !user.departmentId) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Отделение не назначено' });
+        }
 
         const effectiveDeptId: string | undefined =
           user.role === 'DEPARTMENT_HEAD'
@@ -100,11 +103,11 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
             specialty: d.specialty, status, queueLength, avgWaitMinutes };
         });
 
-        doctorStats.sort((a, b) => ORDER[a.status] - ORDER[b.status]);
+        const sortedStats = [...doctorStats].sort((a, b) => ORDER[a.status] - ORDER[b.status]);
 
         return {
           summary: { totalWaiting, doctorsActive, doctorsTotal: doctors.length, latePatients },
-          doctors: doctorStats,
+          doctors: sortedStats,
         };
       }),
 
