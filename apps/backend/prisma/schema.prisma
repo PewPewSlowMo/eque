@@ -393,6 +393,7 @@ model Kiosk {
   serviceId       String
   defaultCategory PatientCategory @default(OSMS)
   active          Boolean         @default(true)
+  dailyLimit      Int?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
