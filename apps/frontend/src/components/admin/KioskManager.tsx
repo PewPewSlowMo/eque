@@ -103,7 +103,7 @@ function KioskDialog({ open, onClose, editing }: DialogProps) {
 
     let dailyLimit: number | null = null;
     if (form.dailyLimit !== '') {
-      const parsed = parseInt(form.dailyLimit, 10);
+      const parsed = Number(form.dailyLimit);
       if (!Number.isInteger(parsed) || parsed < 1) {
         toast.error('Лимит должен быть целым положительным числом');
         return;
@@ -195,6 +195,7 @@ function KioskDialog({ open, onClose, editing }: DialogProps) {
             <Input
               type="number"
               min={1}
+              step={1}
               value={form.dailyLimit}
               onChange={e => set('dailyLimit', e.target.value)}
               placeholder="Без ограничений"
