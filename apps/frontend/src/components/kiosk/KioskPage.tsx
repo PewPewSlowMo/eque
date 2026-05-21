@@ -219,6 +219,27 @@ export function KioskPage({ slug }: { slug: string }) {
     </div>
   );
 
+  // Limit exhausted
+  if (config.spotsLeft === 0) return (
+    <div style={{ ...baseStyle, justifyContent:'center', gap:'clamp(8px,1.5vh,16px)',
+      padding:'clamp(20px,4vw,60px)' }}>
+      <Logo />
+      <div style={{ color:'white', fontSize:'clamp(20px,3.5vmin,40px)', fontWeight:800,
+        textAlign:'center', lineHeight:1.2 }}>
+        Жазылу жабық
+      </div>
+      <div style={{ color:'rgba(255,255,255,.6)', fontSize:'clamp(14px,2.2vmin,24px)',
+        textAlign:'center' }}>
+        Запись закрыта
+      </div>
+      <div style={{ color:'rgba(255,255,255,.4)', fontSize:'clamp(12px,1.8vmin,20px)',
+        textAlign:'center', marginTop:'8px', lineHeight:1.5 }}>
+        Бүгінгі лимит таусылды<br/>
+        Дневной лимит записей исчерпан
+      </div>
+    </div>
+  );
+
   // ── Screen: Welcome ──────────────────────────────────────────────────────
   if (screen === 'welcome') return (
     <div style={{ ...baseStyle, justifyContent:'space-evenly',
@@ -242,6 +263,11 @@ export function KioskPage({ slug }: { slug: string }) {
           ? `Қазір ${config.waitingCount} адам күтуде / Сейчас ожидают ${config.waitingCount} чел.`
           : 'Кезек бос / Очередь свободна'}
       </div>
+      {config.spotsLeft != null && config.spotsLeft > 0 && (
+        <div style={{ color:'#B39168', fontSize:'clamp(11px,1.7vmin,18px)', textAlign:'center' }}>
+          Қалған орын: {config.spotsLeft} / Осталось мест: {config.spotsLeft}
+        </div>
+      )}
     </div>
   );
 
