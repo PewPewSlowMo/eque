@@ -38,16 +38,25 @@ export const createKioskRouter = (
         const dayStart = new Date(Date.UTC(y, m, d));
         const dayEnd   = new Date(Date.UTC(y, m, d + 1));
 
-        const waitingCount = await prisma.queueEntry.count({
-          where: {
-            doctorId: kiosk.doctorId,
-            status: { in: ['WAITING_ARRIVAL', 'ARRIVED'] },
-            OR: [
-              { scheduledAt: { gte: dayStart, lt: dayEnd } },
-              { scheduledAt: null, createdAt: { gte: dayStart, lt: dayEnd } },
-            ],
-          },
-        });
+        const [waitingCount, todayCount] = await Promise.all([
+          prisma.queueEntry.count({
+            where: {
+              doctorId: kiosk.doctorId,
+              status: { in: ['WAITING_ARRIVAL', 'ARRIVED'] },
+              OR: [
+                { scheduledAt: { gte: dayStart, lt: dayEnd } },
+                { scheduledAt: null, createdAt: { gte: dayStart, lt: dayEnd } },
+              ],
+            },
+          }),
+          prisma.queueEntry.count({
+            where: { kioskId: kiosk.id, createdAt: { gte: dayStart, lt: dayEnd } },
+          }),
+        ]);
+
+        const spotsLeft: number | null = kiosk.dailyLimit != null
+          ? Math.max(0, kiosk.dailyLimit - todayCount)
+          : null;
 
         return {
           name:        kiosk.name,
@@ -55,6 +64,7 @@ export const createKioskRouter = (
           serviceName: kiosk.service.name,
           active:      kiosk.active,
           waitingCount,
+          spotsLeft,
         };
       }),
 
@@ -107,6 +117,15 @@ export const createKioskRouter = (
           });
           const queueNumber = (last?.queueNumber ?? 0) + 1;
 
+          if (kiosk.dailyLimit != null) {
+            const todayCount = await tx.queueEntry.count({
+              where: { kioskId: kiosk.id, createdAt: { gte: dayStart, lt: dayEnd } },
+            });
+            if (todayCount >= kiosk.dailyLimit) {
+              throw new TRPCError({ code: 'FORBIDDEN', message: 'Запись на сегодня закрыта: лимит исчерпан' });
+            }
+          }
+
           return tx.queueEntry.create({
             data: {
               doctorId:                    kiosk.doctorId,
@@ -153,6 +172,7 @@ export const createKioskRouter = (
         serviceId:       z.string(),
         defaultCategory: z.nativeEnum(PatientCategory).default('OSMS'),
         active:          z.boolean().default(true),
+        dailyLimit:      z.number().int().positive().nullable().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
@@ -169,6 +189,7 @@ export const createKioskRouter = (
         serviceId:       z.string().optional(),
         defaultCategory: z.nativeEnum(PatientCategory).optional(),
         active:          z.boolean().optional(),
+        dailyLimit:      z.number().int().positive().nullable().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'ADMIN') throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
