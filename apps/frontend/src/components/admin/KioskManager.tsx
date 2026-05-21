@@ -43,11 +43,12 @@ interface KioskForm {
   serviceId: string;
   defaultCategory: string;
   active: boolean;
+  dailyLimit: string;
 }
 
 const EMPTY: KioskForm = {
   name:'', slug:'', doctorId:'', serviceId:'',
-  defaultCategory:'OSMS', active:true,
+  defaultCategory:'OSMS', active:true, dailyLimit:'',
 };
 
 interface DialogProps {
@@ -59,9 +60,15 @@ interface DialogProps {
 function KioskDialog({ open, onClose, editing }: DialogProps) {
   const utils = trpc.useUtils();
   const [form, setForm] = useState<KioskForm>(editing
-    ? { name:editing.name, slug:editing.slug, doctorId:editing.doctorId,
-        serviceId:editing.serviceId, defaultCategory:editing.defaultCategory,
-        active:editing.active }
+    ? {
+        name:            editing.name,
+        slug:            editing.slug,
+        doctorId:        editing.doctorId,
+        serviceId:       editing.serviceId,
+        defaultCategory: editing.defaultCategory,
+        active:          editing.active,
+        dailyLimit:      editing.dailyLimit != null ? String(editing.dailyLimit) : '',
+      }
     : EMPTY
   );
 
@@ -94,7 +101,25 @@ function KioskDialog({ open, onClose, editing }: DialogProps) {
     if (!form.doctorId)       { toast.error('Выберите врача'); return; }
     if (!form.serviceId)      { toast.error('Выберите услугу'); return; }
 
-    const data = { ...form, active: form.active };
+    let dailyLimit: number | null = null;
+    if (form.dailyLimit !== '') {
+      const parsed = parseInt(form.dailyLimit, 10);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        toast.error('Лимит должен быть целым положительным числом');
+        return;
+      }
+      dailyLimit = parsed;
+    }
+
+    const data = {
+      name:            form.name,
+      slug:            form.slug,
+      doctorId:        form.doctorId,
+      serviceId:       form.serviceId,
+      defaultCategory: form.defaultCategory,
+      active:          form.active,
+      dailyLimit,
+    };
     if (editing) {
       update.mutate({ id: editing.id, ...data });
     } else {
@@ -165,6 +190,19 @@ function KioskDialog({ open, onClose, editing }: DialogProps) {
               onChange={e => set('active', e.target.checked)} />
             <Label htmlFor="kiosk-active">Активен</Label>
           </div>
+          <div>
+            <Label>Дневной лимит записей (необязательно)</Label>
+            <Input
+              type="number"
+              min={1}
+              value={form.dailyLimit}
+              onChange={e => set('dailyLimit', e.target.value)}
+              placeholder="Без ограничений"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Оставьте пустым — лимита нет
+            </p>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Отмена</Button>
@@ -229,6 +267,7 @@ export function KioskManager() {
                 <th className="text-left px-4 py-2 font-medium">Услуга</th>
                 <th className="text-left px-4 py-2 font-medium">Slug</th>
                 <th className="text-left px-4 py-2 font-medium">Статус</th>
+                <th className="text-left px-4 py-2 font-medium">Лимит/день</th>
                 <th className="px-4 py-2 font-medium" />
               </tr>
             </thead>
@@ -249,6 +288,9 @@ export function KioskManager() {
                     }`}>
                       {k.active ? 'Активен' : 'Неактивен'}
                     </span>
+                  </td>
+                  <td className="px-4 py-2 text-muted-foreground">
+                    {k.dailyLimit != null ? k.dailyLimit : '—'}
                   </td>
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-2 justify-end">
