@@ -5,10 +5,16 @@ import { PrismaService } from '../../database/prisma.service';
 
 const ALLOWED_ROLES = ['ADMIN', 'DIRECTOR', 'DEPARTMENT_HEAD'] as const;
 const LATE_THRESHOLD_MS = 30 * 60 * 1000; // 30 минут
+const KZ_OFFSET_MS = 5 * 60 * 60 * 1000; // UTC+5 (Kazakhstan)
 
 function parseMinutes(t: string): number {
   const [h, m] = t.split(':').map(Number);
   return h * 60 + m;
+}
+
+// Shift a UTC timestamp to KZ local time for extracting hours/weekdays
+function kzDate(dt: Date): Date {
+  return new Date(dt.getTime() + KZ_OFFSET_MS);
 }
 
 export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) => {
@@ -34,10 +40,14 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
             : (input.deptId || undefined);
 
         const now = new Date();
-        const nowMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
-        const todayStr = now.toISOString().slice(0, 10); // YYYY-MM-DD in UTC
-        const dayStart = new Date(todayStr + 'T00:00:00.000Z');
-        const dayEnd   = new Date(todayStr + 'T23:59:59.999Z');
+        const kzNow = kzDate(now);
+        const nowMinutes = kzNow.getUTCHours() * 60 + kzNow.getUTCMinutes();
+        const todayStr = kzNow.toISOString().slice(0, 10); // YYYY-MM-DD in KZ time
+        // dayStart/dayEnd as KZ-midnight boundaries for QueueEntry timestamp queries
+        const dayStart = new Date(todayStr + 'T00:00:00+05:00');
+        const dayEnd   = new Date(todayStr + 'T23:59:59+05:00');
+        // dayStartDate: UTC midnight of the KZ calendar date — for @db.Date field comparisons
+        const dayStartDate = new Date(todayStr + 'T00:00:00.000Z');
 
         const doctors = await prisma.user.findMany({
           where: {
@@ -72,7 +82,7 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
         });
 
         const schedules = await prisma.doctorDaySchedule.findMany({
-          where: { doctorId: { in: doctorIds }, date: dayStart },
+          where: { doctorId: { in: doctorIds }, date: dayStartDate },
           include: { breaks: true },
         });
         const scheduleByDoctor = new Map(schedules.map(s => [s.doctorId, s]));
@@ -182,8 +192,8 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
             ? (user.departmentId ?? undefined)
             : (input.deptId || undefined);
 
-        const fromDate = new Date(input.from + 'T00:00:00.000Z');
-        const toDate   = new Date(input.to   + 'T23:59:59.999Z');
+        const fromDate = new Date(input.from + 'T00:00:00+05:00');
+        const toDate   = new Date(input.to   + 'T23:59:59+05:00');
         if (fromDate > toDate) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Дата начала не может быть позже даты конца' });
         }
@@ -255,7 +265,7 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
 
         const hourMap = new Map<number, { total: number; completed: number; noShow: number }>();
         for (const e of entries) {
-          const hour = (e.scheduledAt ?? e.createdAt).getUTCHours();
+          const hour = kzDate(e.scheduledAt ?? e.createdAt).getUTCHours();
           if (!hourMap.has(hour)) hourMap.set(hour, { total: 0, completed: 0, noShow: 0 });
           const h = hourMap.get(hour)!;
           h.total++;
@@ -269,7 +279,7 @@ export const createAnalyticsRouter = (trpc: TrpcService, prisma: PrismaService) 
         const DOW_LABELS = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
         const dowMap = new Map<number, { total: number; completed: number; noShow: number }>();
         for (const e of entries) {
-          const dow = (e.scheduledAt ?? e.createdAt).getUTCDay();
+          const dow = kzDate(e.scheduledAt ?? e.createdAt).getUTCDay();
           if (!dowMap.has(dow)) dowMap.set(dow, { total: 0, completed: 0, noShow: 0 });
           const rec = dowMap.get(dow)!;
           rec.total++;
