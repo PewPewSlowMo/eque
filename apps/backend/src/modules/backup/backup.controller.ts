@@ -22,48 +22,57 @@ export class BackupController {
   async exportBackup(@Req() req: Request, @Res() res: Response) {
     this.checkAdmin(req);
 
-    const [
-      departments, cabinets, users, shiftTemplates, categorySettings,
-      patients, services, serviceCategories, doctorServices,
-      displayBoards, displayBoardCabinets, kiosks,
-      doctorDaySchedules, dayScheduleBreaks, doctorAssignments,
-      queueEntries, queueHistory,
-    ] = await Promise.all([
-      this.prisma.department.findMany(),
-      this.prisma.cabinet.findMany(),
-      this.prisma.user.findMany(),
-      this.prisma.shiftTemplate.findMany(),
-      this.prisma.categorySettings.findMany(),
-      this.prisma.patient.findMany(),
-      this.prisma.service.findMany(),
-      this.prisma.serviceCategory.findMany(),
-      this.prisma.doctorService.findMany(),
-      this.prisma.displayBoard.findMany(),
-      this.prisma.displayBoardCabinet.findMany(),
-      this.prisma.kiosk.findMany(),
-      this.prisma.doctorDaySchedule.findMany(),
-      this.prisma.dayScheduleBreak.findMany(),
-      this.prisma.doctorAssignment.findMany(),
-      this.prisma.queueEntry.findMany(),
-      this.prisma.queueHistory.findMany(),
-    ]);
-
-    const backup = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      data: {
+    try {
+      const [
         departments, cabinets, users, shiftTemplates, categorySettings,
         patients, services, serviceCategories, doctorServices,
         displayBoards, displayBoardCabinets, kiosks,
         doctorDaySchedules, dayScheduleBreaks, doctorAssignments,
         queueEntries, queueHistory,
-      },
-    };
+      ] = await Promise.all([
+        this.prisma.department.findMany(),
+        this.prisma.cabinet.findMany(),
+        this.prisma.user.findMany(),
+        this.prisma.shiftTemplate.findMany(),
+        this.prisma.categorySettings.findMany(),
+        this.prisma.patient.findMany(),
+        this.prisma.service.findMany(),
+        this.prisma.serviceCategory.findMany(),
+        this.prisma.doctorService.findMany(),
+        this.prisma.displayBoard.findMany(),
+        this.prisma.displayBoardCabinet.findMany(),
+        this.prisma.kiosk.findMany(),
+        this.prisma.doctorDaySchedule.findMany(),
+        this.prisma.dayScheduleBreak.findMany(),
+        this.prisma.doctorAssignment.findMany(),
+        this.prisma.queueEntry.findMany(),
+        this.prisma.queueHistory.findMany(),
+      ]);
 
-    const filename = `eque-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(JSON.stringify(backup, null, 2));
+      const backup = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        data: {
+          departments, cabinets, users, shiftTemplates, categorySettings,
+          patients, services, serviceCategories, doctorServices,
+          displayBoards, displayBoardCabinets, kiosks,
+          doctorDaySchedules, dayScheduleBreaks, doctorAssignments,
+          queueEntries, queueHistory,
+        },
+      };
+
+      const json = JSON.stringify(backup);
+      const filename = `eque-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', Buffer.byteLength(json, 'utf8'));
+      res.send(json);
+    } catch (err) {
+      console.error('[backup] export error:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ message: 'Ошибка экспорта', detail: String(err) });
+      }
+    }
   }
 
   @Post('import')
