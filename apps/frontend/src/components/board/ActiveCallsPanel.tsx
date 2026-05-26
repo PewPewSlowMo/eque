@@ -37,7 +37,8 @@ export function ActiveCallsPanel({ calls }: Props) {
               }}
             >
               <span style={{ color: '#B39168', fontWeight: 800, fontSize: 48, lineHeight: 1, flexShrink: 0 }}>
-                {call.patientLastName} {call.patientFirstName ? call.patientFirstName.charAt(0) + '.' : ''}
+                {call.patientFirstName}{' '}
+                <span style={{ fontWeight: 600 }}>{call.patientLastName ? call.patientLastName.slice(0, 2) + '.' : ''}</span>
               </span>
               <span style={{ color: 'rgba(255,255,255,.3)', fontSize: 72, lineHeight: 0.6, overflow: 'hidden', flexShrink: 0 }}>
                 →
