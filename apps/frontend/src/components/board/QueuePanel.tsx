@@ -52,19 +52,19 @@ export function QueuePanel({ queue }: Props) {
       <div key={`${keyPrefix}-${cab}`}>
         {/* Cabinet section header */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '6px 4px 4px 4px',
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '9px 6px 6px 6px',
         }}>
           <span style={{
             background: '#00685B', color: '#fff',
-            fontSize: 14, fontWeight: 900,
-            padding: '3px 10px', borderRadius: 4,
+            fontSize: 21, fontWeight: 900,
+            padding: '5px 15px', borderRadius: 6,
             letterSpacing: '0.04em', flexShrink: 0,
           }}>
             Каб. {cab}
           </span>
           <div style={{ flex: 1, height: 1, background: '#1e2530' }} />
-          <span style={{ fontSize: 10, color: '#64748b', flexShrink: 0 }}>
+          <span style={{ fontSize: 15, color: '#64748b', flexShrink: 0 }}>
             {entries.length} чел.
           </span>
         </div>
