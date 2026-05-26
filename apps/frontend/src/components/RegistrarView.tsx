@@ -579,7 +579,9 @@ function CancelDialog({ entry, patient, onClose, onDone }: {
   const finalReason = selected === 'Другое' ? custom.trim() : selected;
   const canConfirm  = selected && (selected !== 'Другое' || custom.trim().length > 0);
   const schedTime   = entry.priority === 'WALK_IN'
-    ? 'живая'
+    ? entry.scheduledAt
+      ? `живая · ${new Date(entry.scheduledAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}`
+      : 'живая'
     : entry.scheduledAt
     ? new Date(entry.scheduledAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
     : null;
@@ -886,7 +888,9 @@ function PatientAppointmentsPanel({ patient }: { patient: Patient }) {
             const needArrival = e.status === 'WAITING_ARRIVAL';
             const needPayment = !e.paymentConfirmed && !['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(e.status);
             const schedTime   = e.priority === 'WALK_IN'
-              ? 'живая'
+              ? e.scheduledAt
+                ? `живая · ${new Date(e.scheduledAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}`
+                : 'живая'
               : e.scheduledAt
               ? new Date(e.scheduledAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
               : null;
