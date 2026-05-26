@@ -29,13 +29,13 @@ export function normalizePhone(raw: string): string {
 }
 
 /**
- * Нормализует ФИО: только кириллица/пробел/дефис/апостроф,
- * каждое кириллическое слово — с заглавной буквы.
+ * Нормализует ФИО: кириллица, латиница, пробел, дефис, апостроф.
+ * Каждое слово — с заглавной буквы.
  * Вызывать onChange. На blur дополнительно вызвать finalizeFio.
  */
 export function normalizeFio(raw: string): string {
-  const filtered = raw.replace(/[^А-ЯЁа-яё \-']/g, '');
-  return filtered.replace(/[А-ЯЁа-яё]+/g, (word) =>
+  const filtered = raw.replace(/[^А-ЯЁа-яёA-Za-z \-']/g, '');
+  return filtered.replace(/[А-ЯЁа-яёA-Za-z]+/g, (word) =>
     word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
   );
 }
