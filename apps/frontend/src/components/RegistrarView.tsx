@@ -167,34 +167,36 @@ function TimePicker({ doctor, date, takenTimes, availableSlots, patient, categor
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,.28)' }} onClick={onClose}>
-      <div className="bg-white shadow-2xl p-4 w-[320px]"
-        style={{ borderRadius: '8px 28px 28px 8px', border: '1.5px solid #a8d4cd' }}
+      <div className="bg-white shadow-2xl p-4 w-[320px] flex flex-col"
+        style={{ borderRadius: '8px 28px 28px 8px', border: '1.5px solid #a8d4cd', maxHeight: '90vh' }}
         onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-baseline mb-3">
+        <div className="flex justify-between items-baseline mb-3 shrink-0">
           <span className="text-[11px] font-bold text-foreground">
             {doctor.lastName} {doctor.firstName[0]}. · {dateLabel}
           </span>
           <span className="text-[8px] text-muted-foreground">{freeCount} свободных</span>
         </div>
 
-        <div className="grid grid-cols-5 gap-1 mb-3">
-          {availableSlots.map(t => {
-            const isTaken = takenLocal.includes(t);
-            return (
-              <button key={t} disabled={isTaken}
-                onClick={() => !isTaken && setSelected(t === selected ? null : t)}
-                className="py-1 text-center text-[9px] font-semibold rounded transition-colors"
-                style={
-                  isTaken
-                    ? { background: '#f8fafc', color: '#cbd5e1', textDecoration: 'line-through', border: '1px solid #e2e8f0' }
-                    : t === selected
-                    ? { background: '#00685B', color: '#fff', border: '1px solid #00685B' }
-                    : { background: '#fff', color: '#1a1a1a', border: '1px solid #e2e8f0' }
-                }>
-                {t}
-              </button>
-            );
-          })}
+        <div className="overflow-y-auto mb-3 shrink-0" style={{ maxHeight: '200px' }}>
+          <div className="grid grid-cols-5 gap-1">
+            {availableSlots.map(t => {
+              const isTaken = takenLocal.includes(t);
+              return (
+                <button key={t} disabled={isTaken}
+                  onClick={() => !isTaken && setSelected(t === selected ? null : t)}
+                  className="py-1 text-center text-[9px] font-semibold rounded transition-colors"
+                  style={
+                    isTaken
+                      ? { background: '#f8fafc', color: '#cbd5e1', textDecoration: 'line-through', border: '1px solid #e2e8f0' }
+                      : t === selected
+                      ? { background: '#00685B', color: '#fff', border: '1px solid #00685B' }
+                      : { background: '#fff', color: '#1a1a1a', border: '1px solid #e2e8f0' }
+                  }>
+                  {t}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Service selector */}
