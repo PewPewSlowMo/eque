@@ -97,34 +97,38 @@ export function PatientSearch({ onSelect, selected }: PatientSearchProps) {
       </div>
 
       {open && debouncedQuery.length >= 1 && (
-        <div className="absolute top-full left-0 mt-1 z-50 border border-border rounded-md bg-white shadow-lg overflow-hidden"
-          style={{ width: '300px', maxHeight: '220px', overflowY: 'auto' }}>
-          {(results as Patient[]).length === 0 ? (
-            <div className="px-3 py-2.5 flex flex-col gap-1.5">
-              <span className="text-[9px] text-muted-foreground">Пациент не найден</span>
-              <button
-                onMouseDown={e => { e.preventDefault(); openCreate(); }}
-                className="text-left text-[9px] font-semibold text-primary hover:underline">
-                + Создать пациента{query.trim() ? ` «${query.trim()}»` : ''}
-              </button>
-            </div>
-          ) : (
-            (results as Patient[]).map(p => (
-              <button
-                key={p.id}
-                onMouseDown={e => { e.preventDefault(); onSelect(p); setOpen(false); setQuery(''); }}
-                className="w-full text-left px-3 py-2 hover:bg-primary/5 transition-colors border-b border-border/40 last:border-0">
-                <div className="text-[10px] font-semibold text-foreground">
-                  {p.lastName} {p.firstName} {p.middleName ?? ''}
-                </div>
-                {p.phone && (
-                  <div className="text-[8px] text-muted-foreground mt-0.5">
-                    <span>{p.phone}</span>
+        <div className="absolute top-full left-0 mt-1 z-50 border border-border rounded-md bg-white shadow-lg overflow-hidden flex flex-col"
+          style={{ width: '300px', maxHeight: '220px' }}>
+          <div className="overflow-y-auto flex-1">
+            {(results as Patient[]).length === 0 ? (
+              <div className="px-3 py-2.5">
+                <span className="text-[9px] text-muted-foreground">Пациент не найден</span>
+              </div>
+            ) : (
+              (results as Patient[]).map(p => (
+                <button
+                  key={p.id}
+                  onMouseDown={e => { e.preventDefault(); onSelect(p); setOpen(false); setQuery(''); }}
+                  className="w-full text-left px-3 py-2 hover:bg-primary/5 transition-colors border-b border-border/40 last:border-0">
+                  <div className="text-[10px] font-semibold text-foreground">
+                    {p.lastName} {p.firstName} {p.middleName ?? ''}
                   </div>
-                )}
-              </button>
-            ))
-          )}
+                  {p.phone && (
+                    <div className="text-[8px] text-muted-foreground mt-0.5">
+                      <span>{p.phone}</span>
+                    </div>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+          <div className="shrink-0 border-t border-border/40 px-3 py-1.5 bg-slate-50">
+            <button
+              onMouseDown={e => { e.preventDefault(); openCreate(); }}
+              className="text-left text-[9px] font-semibold text-primary hover:underline">
+              + Или создать{query.trim() ? ` «${query.trim()}»` : ' нового пациента'}
+            </button>
+          </div>
         </div>
       )}
 
