@@ -86,8 +86,17 @@ export const createDisplayRouter = (trpc: TrpcService, prisma: PrismaService) =>
           orderBy: { calledAt: 'asc' },
         });
 
+        const KZ_OFFSET_MS = 5 * 60 * 60 * 1000;
+        const kzNow = new Date(new Date().getTime() + KZ_OFFSET_MS);
+        const todayStr = kzNow.toISOString().slice(0, 10);
+        const dayStart = new Date(todayStr + 'T00:00:00+05:00');
+
         const queueEntries = await prisma.queueEntry.findMany({
-          where: { doctorId: { in: doctorIds }, status: { in: ['WAITING_ARRIVAL', 'ARRIVED'] } },
+          where: {
+            doctorId: { in: doctorIds },
+            status: { in: ['WAITING_ARRIVAL', 'ARRIVED'] },
+            createdAt: { gte: dayStart },
+          },
           include: { patient: { select: { firstName: true, lastName: true } } },
           orderBy: { createdAt: 'asc' },
         });
