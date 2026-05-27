@@ -61,7 +61,7 @@ export function CallOverlay({ calls, onDismiss }: Props) {
       >
         {calls.slice(0, 3).map((call, i) => (
           <div
-            key={`${call.cabinetId ?? 'none'}-${call.patientLastName}`}
+            key={`${call.cabinetId ?? 'none'}-${call.patientLastName ?? String(call.queueNumber ?? '')}`}
             style={{
               flex: 1, display: 'flex', flexDirection: 'row',
               alignItems: 'center', justifyContent: 'center',
@@ -84,7 +84,10 @@ export function CallOverlay({ calls, onDismiss }: Props) {
               fontSize: sz.patient,
               animation: 'gold-flash 0.5s ease-in-out infinite alternate',
             }}>
-              {call.patientLastName} {call.patientFirstName.charAt(0)}.
+              {call.patientFirstName != null
+                ? `${call.patientLastName} ${call.patientFirstName.charAt(0)}.`
+                : `№${call.queueNumber}`
+              }
             </span>
 
             {/* Arrow */}

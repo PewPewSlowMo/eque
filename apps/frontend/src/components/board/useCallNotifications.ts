@@ -4,8 +4,8 @@ import { getSocket } from '@/lib/socket';
 export interface CallEvent {
   cabinetId: string | null;
   cabinetNumber: string | null;
-  patientLastName: string;
-  patientFirstName: string;
+  patientLastName: string | null;
+  patientFirstName: string | null;
   patientMiddleName: string;
   queueNumber: number | null;
 }
@@ -44,13 +44,14 @@ export function useCallNotifications({ cabinetIds, board, backendBaseUrl, onCall
 
     const speakTTS = () => {
       if (board.audioMode !== 'SOUND_TTS') return;
-      const text = board.ttsTemplate
-        .replace('{lastName}',   event.patientLastName)
-        .replace('{firstName}',  event.patientFirstName)
-        .replace('{middleName}', event.patientMiddleName)
-        .replace('{cabinet}',    event.cabinetNumber ?? '')
-        .replace('{number}',     String(event.queueNumber ?? ''));
-      // Cancel any stalled speech, small delay so browser audio engine settles
+      const text = event.patientFirstName === null
+        ? `Номер ${event.queueNumber ?? ''}, кабинет ${event.cabinetNumber ?? ''}`
+        : board.ttsTemplate
+            .replace('{lastName}',   event.patientLastName ?? '')
+            .replace('{firstName}',  event.patientFirstName ?? '')
+            .replace('{middleName}', event.patientMiddleName)
+            .replace('{cabinet}',    event.cabinetNumber ?? '')
+            .replace('{number}',     String(event.queueNumber ?? ''));
       window.speechSynthesis.cancel();
       setTimeout(() => {
         const utterance = new SpeechSynthesisUtterance(text);
@@ -94,13 +95,14 @@ export function useCallNotifications({ cabinetIds, board, backendBaseUrl, onCall
     const handleCalled = (data: any) => {
       if (!data.cabinetId || !cabinetIdsRef.current.includes(data.cabinetId)) return;
 
+      const noConsent = data.entry?.displayConsent === false;
       const event: CallEvent = {
-        cabinetId:          data.cabinetId,
-        cabinetNumber:      data.cabinetNumber,
-        patientLastName:    data.entry?.patient?.lastName ?? '',
-        patientFirstName:   data.entry?.patient?.firstName ?? '',
-        patientMiddleName:  data.entry?.patient?.middleName ?? '',
-        queueNumber:        data.entry?.queueNumber ?? null,
+        cabinetId:         data.cabinetId,
+        cabinetNumber:     data.cabinetNumber,
+        patientLastName:   noConsent ? null : (data.entry?.patient?.lastName ?? ''),
+        patientFirstName:  noConsent ? null : (data.entry?.patient?.firstName ?? ''),
+        patientMiddleName: noConsent ? '' : (data.entry?.patient?.middleName ?? ''),
+        queueNumber:       data.entry?.queueNumber ?? null,
       };
 
       queueRef.current.push(event);
