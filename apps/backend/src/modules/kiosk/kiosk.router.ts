@@ -35,8 +35,9 @@ export const createKioskRouter = (
         if (!kiosk) throw new TRPCError({ code: 'NOT_FOUND', message: 'Киоск не найден' });
 
         const { y, m, d } = kzToday();
-        const dayStart = new Date(Date.UTC(y, m, d));
-        const dayEnd   = new Date(Date.UTC(y, m, d + 1));
+        const kzDateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayStart = new Date(kzDateStr + 'T00:00:00+05:00');
+        const dayEnd   = new Date(kzDateStr + 'T23:59:59+05:00');
 
         const [waitingCount, todayCount] = await Promise.all([
           prisma.queueEntry.count({
@@ -86,10 +87,11 @@ export const createKioskRouter = (
         const firstName  = input.firstName.trim();
         const middleName = input.middleName?.trim() || undefined;
 
-        // Day boundaries in Kazakhstan (UTC+5) — used only for queueNumber computation
+        // Day boundaries in Kazakhstan (UTC+5) — used for queueNumber computation
         const { y, m, d } = kzToday();
-        const dayStart = new Date(Date.UTC(y, m, d));
-        const dayEnd   = new Date(Date.UTC(y, m, d + 1));
+        const kzDateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayStart = new Date(kzDateStr + 'T00:00:00+05:00');
+        const dayEnd   = new Date(kzDateStr + 'T23:59:59+05:00');
 
         const entry = await prisma.$transaction(async (tx) => {
           // Find or create patient inside transaction
