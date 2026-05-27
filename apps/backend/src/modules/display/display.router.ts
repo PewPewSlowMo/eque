@@ -102,18 +102,19 @@ export const createDisplayRouter = (trpc: TrpcService, prisma: PrismaService) =>
         });
 
         const activeCalls = activeEntries.map((e) => ({
-          cabinetNumber: cabinetByDoctorId[e.doctorId]?.number ?? '?',
-          cabinetName:   cabinetByDoctorId[e.doctorId]?.name ?? null,
-          patientLastName:  e.patient.lastName,
-          patientFirstName: e.patient.firstName,
-          calledAt: e.calledAt,
+          cabinetNumber:    cabinetByDoctorId[e.doctorId]?.number ?? '?',
+          cabinetName:      cabinetByDoctorId[e.doctorId]?.name ?? null,
+          queueNumber:      e.queueNumber,
+          patientLastName:  e.displayConsent ? e.patient.lastName : null,
+          patientFirstName: e.displayConsent ? e.patient.firstName : null,
+          calledAt:         e.calledAt,
         }));
 
         const queue = queueEntries.map((e) => ({
           queueNumber:      e.queueNumber,
           priority:         e.priority as string,
-          patientLastName:  e.patient.lastName,
-          patientFirstName: e.patient.firstName,
+          patientLastName:  e.displayConsent ? e.patient.lastName : null,
+          patientFirstName: e.displayConsent ? e.patient.firstName : null,
           cabinetNumber:    cabinetByDoctorId[e.doctorId]?.number ?? '?',
           scheduledAt:      e.scheduledAt ?? null,
         }));
