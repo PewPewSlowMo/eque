@@ -80,7 +80,7 @@ function KioskKeyboard({ onKey, onBackspace, onClear, onNext, loading }: {
       <div style={rowStyle}>
         <button onClick={onClear} style={s({ ...keyStyle, flex:'2.4',
           fontSize:'clamp(10px,1.4vmin,14px)', lineHeight:1.25, textAlign:'center' })}>
-          Тазалау<br/><span style={{ opacity:.6, fontSize:'.8em', fontWeight:400 }}>Очистить</span>
+          Тазалау / Очистить
         </button>
         <button onClick={() => onKey(' ')} style={s({ ...keyStyle, flex:5,
           fontSize:'clamp(10px,1.4vmin,14px)' })}>
@@ -90,7 +90,7 @@ function KioskKeyboard({ onKey, onBackspace, onClear, onNext, loading }: {
           background: loading ? 'rgba(179,145,104,.5)' : '#B39168',
           border:'1px solid #a07d54', fontSize:'clamp(11px,1.6vmin,16px)',
           lineHeight:1.25, textAlign:'center', cursor: loading ? 'not-allowed' : 'pointer' })}>
-          ✓ Келесі<br/><span style={{ opacity:.7, fontSize:'.8em', fontWeight:400 }}>Далее</span>
+          ✓ Келесі / Далее
         </button>
       </div>
     </div>
