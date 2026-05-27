@@ -85,7 +85,7 @@ export function CallOverlay({ calls, onDismiss }: Props) {
               animation: 'gold-flash 0.5s ease-in-out infinite alternate',
             }}>
               {call.patientFirstName != null
-                ? `${call.patientLastName} ${call.patientFirstName.charAt(0)}.`
+                ? `${call.patientLastName ?? ''} ${call.patientFirstName.charAt(0)}.`.trim()
                 : `№${call.queueNumber}`
               }
             </span>

@@ -5,6 +5,7 @@ import { PrismaService } from '../../database/prisma.service';
 
 export const createDisplayRouter = (trpc: TrpcService, prisma: PrismaService) => {
   return trpc.router({
+    // Internal admin-only board: consent masking intentionally not applied (not a public display)
     getBoard: trpc.procedure.query(async () => {
       const assignments = await prisma.doctorAssignment.findMany({
         where: { isActive: true },

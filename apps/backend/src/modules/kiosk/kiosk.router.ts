@@ -143,7 +143,7 @@ export const createKioskRouter = (
               createdById:                 null,
               kioskId:                     kiosk.id,
               queueNumber,
-              displayConsent:              input.displayConsent ?? true,
+              displayConsent:              input.displayConsent,
             } as any,
           });
         });
