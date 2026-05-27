@@ -42,11 +42,12 @@ export const createQueueRouter = (
     getByDoctor: trpc.protectedProcedure
       .input(z.object({ doctorId: z.string(), date: z.string().optional() }))
       .query(async ({ input }) => {
-        const target = input.date ? new Date(input.date) : new Date();
-        const dayStart = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 0, 0, 0);
-        const dayEnd   = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 23, 59, 59, 999);
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const isToday  = (input.date ?? todayStr) === todayStr;
+        const KZ_OFFSET_MS = 5 * 60 * 60 * 1000;
+        const kzTodayStr = new Date(Date.now() + KZ_OFFSET_MS).toISOString().slice(0, 10);
+        const dateStr  = input.date ?? kzTodayStr;
+        const dayStart = new Date(dateStr + 'T00:00:00+05:00');
+        const dayEnd   = new Date(dateStr + 'T23:59:59+05:00');
+        const isToday  = dateStr === kzTodayStr;
 
         const entries = await prisma.queueEntry.findMany({
           where: {
@@ -268,11 +269,10 @@ export const createQueueRouter = (
     callNext: trpc.protectedProcedure
       .input(z.object({ doctorId: z.string() }))
       .mutation(async ({ ctx, input }) => {
-        // Get today's ARRIVED + payment confirmed entries only
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const todayEnd = new Date();
-        todayEnd.setHours(23, 59, 59, 999);
+        // Get today's ARRIVED + payment confirmed entries only (KZ day boundaries)
+        const _kzToday = new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const todayStart = new Date(_kzToday + 'T00:00:00+05:00');
+        const todayEnd   = new Date(_kzToday + 'T23:59:59+05:00');
 
         const candidates = await prisma.queueEntry.findMany({
           where: {
