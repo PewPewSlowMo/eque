@@ -1,8 +1,9 @@
 interface ActiveCall {
   cabinetNumber: string;
   cabinetName: string | null;
-  patientLastName: string;
-  patientFirstName: string;
+  queueNumber: number;
+  patientLastName: string | null;
+  patientFirstName: string | null;
   calledAt: Date | string | null;
 }
 
@@ -37,8 +38,10 @@ export function ActiveCallsPanel({ calls }: Props) {
               }}
             >
               <span style={{ color: '#B39168', fontWeight: 800, fontSize: 48, lineHeight: 1, flexShrink: 0 }}>
-                {call.patientFirstName}{' '}
-                <span style={{ fontWeight: 600 }}>{call.patientLastName ? call.patientLastName.slice(0, 2) + '.' : ''}</span>
+                {call.patientFirstName != null
+                  ? <>{call.patientFirstName}{' '}<span style={{ fontWeight: 600 }}>{call.patientLastName ? call.patientLastName.slice(0, 2) + '.' : ''}</span></>
+                  : `№${call.queueNumber}`
+                }
               </span>
               <span style={{ color: 'rgba(255,255,255,.3)', fontSize: 72, lineHeight: 0.6, overflow: 'hidden', flexShrink: 0 }}>
                 →

@@ -3,8 +3,8 @@ import { useMemo } from 'react';
 interface QueueEntry {
   queueNumber: number;
   priority: string;
-  patientLastName: string;
-  patientFirstName: string;
+  patientLastName: string | null;
+  patientFirstName: string | null;
   cabinetNumber: string;
   scheduledAt: string | Date | null;
 }
@@ -72,7 +72,9 @@ export function QueuePanel({ queue }: Props) {
         {/* Patient rows */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
           {entries.map((entry, idx) => {
-            const { first, last } = formatName(entry.patientFirstName, entry.patientLastName);
+            const isAnon = entry.patientFirstName === null;
+            const nameFirst = isAnon ? `№${entry.queueNumber}` : entry.patientFirstName!;
+            const nameLast  = isAnon ? '' : (entry.patientLastName ? entry.patientLastName.slice(0, 2) + '.' : '');
             const time = entry.priority === 'WALK_IN' ? '' : formatTime(entry.scheduledAt);
             return (
               <div
@@ -103,8 +105,8 @@ export function QueuePanel({ queue }: Props) {
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     flex: 1, minWidth: 0,
                   }}>
-                    {first}{' '}
-                    <span style={{ color: '#94a3b8', fontWeight: 500 }}>{last}</span>
+                    {nameFirst}{' '}
+                    <span style={{ color: '#94a3b8', fontWeight: 500 }}>{nameLast}</span>
                   </span>
                   {time && (
                     <>
