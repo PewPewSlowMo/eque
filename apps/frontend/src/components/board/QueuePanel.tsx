@@ -29,10 +29,6 @@ function formatTime(value: string | Date | null): string {
   return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
 
-function formatName(firstName: string, lastName: string): { first: string; last: string } {
-  const last = lastName.length > 0 ? lastName.slice(0, 2) + '.' : '';
-  return { first: firstName, last };
-}
 
 export function QueuePanel({ queue }: Props) {
   const shouldScroll = queue.length > SCROLL_THRESHOLD;
@@ -42,7 +38,9 @@ export function QueuePanel({ queue }: Props) {
     const map = new Map<string, QueueEntry[]>();
     for (const e of queue) {
       if (!map.has(e.cabinetNumber)) map.set(e.cabinetNumber, []);
-      map.get(e.cabinetNumber)!.push(e);
+      const group = map.get(e.cabinetNumber) ?? [];
+      group.push(e);
+      map.set(e.cabinetNumber, group);
     }
     return Array.from(map.entries());
   }, [queue]);
@@ -73,7 +71,7 @@ export function QueuePanel({ queue }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
           {entries.map((entry, idx) => {
             const isAnon = entry.patientFirstName === null;
-            const nameFirst = isAnon ? `№${entry.queueNumber}` : entry.patientFirstName!;
+            const nameFirst = isAnon ? `№${entry.queueNumber}` : (entry.patientFirstName ?? '');
             const nameLast  = isAnon ? '' : (entry.patientLastName ? entry.patientLastName.slice(0, 2) + '.' : '');
             const time = entry.priority === 'WALK_IN' ? '' : formatTime(entry.scheduledAt);
             return (
