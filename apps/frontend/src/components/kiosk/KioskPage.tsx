@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { trpc } from '@/lib/trpc';
 
-type Screen = 'welcome' | 'entry' | 'confirm';
+type Screen = 'welcome' | 'entry' | 'consent' | 'confirm';
 type ActiveField = 'lastName' | 'firstName' | 'middleName';
 interface Fields { lastName: string; firstName: string; middleName: string; }
 
@@ -111,6 +111,23 @@ export function KioskPage({ slug }: { slug: string }) {
   );
   const addMutation = trpc.kiosk.addToQueue.useMutation();
 
+  const handleConsent = useCallback(async (consent: boolean) => {
+    if (!fields.lastName.trim() || !fields.firstName.trim()) return;
+    try {
+      const res = await addMutation.mutateAsync({
+        slug,
+        lastName:       fields.lastName.trim(),
+        firstName:      fields.firstName.trim(),
+        middleName:     fields.middleName.trim() || undefined,
+        displayConsent: consent,
+      });
+      setQueueNumber(res.queueNumber);
+      setScreen('confirm');
+    } catch {
+      // error shown via addMutation.error
+    }
+  }, [fields, slug, addMutation]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Countdown and auto-reset on confirm screen
   useEffect(() => {
     if (screen !== 'confirm') return;
@@ -149,7 +166,7 @@ export function KioskPage({ slug }: { slug: string }) {
     setFields(p => ({ ...p, [activeField]: '' }));
   }, [activeField]);
 
-  const handleNext = useCallback(async () => {
+  const handleNext = useCallback(() => {
     if (activeField === 'lastName') {
       if (!fields.lastName.trim()) { setErrors(p => ({ ...p, lastName: true })); return; }
       setActiveField('firstName');
@@ -160,22 +177,11 @@ export function KioskPage({ slug }: { slug: string }) {
       setActiveField('middleName');
       return;
     }
-    // middleName — submit
+    // middleName — переход к экрану согласия
     if (!fields.lastName.trim())  { setErrors(p => ({ ...p, lastName: true }));  setActiveField('lastName');  return; }
     if (!fields.firstName.trim()) { setErrors(p => ({ ...p, firstName: true })); setActiveField('firstName'); return; }
-    try {
-      const res = await addMutation.mutateAsync({
-        slug,
-        lastName:   fields.lastName.trim(),
-        firstName:  fields.firstName.trim(),
-        middleName: fields.middleName.trim() || undefined,
-      });
-      setQueueNumber(res.queueNumber);
-      setScreen('confirm');
-    } catch {
-      // error shown via addMutation.error
-    }
-  }, [activeField, fields, slug, addMutation]);
+    setScreen('consent');
+  }, [activeField, fields]);
 
   const baseStyle = s({
     background: GR, width:'100%', height:'100%', overflow:'hidden',
@@ -351,6 +357,110 @@ export function KioskPage({ slug }: { slug: string }) {
           loading={addMutation.isPending}
         />
         <style>{`@keyframes blink { 50% { opacity: 0; } }`}</style>
+      </div>
+    );
+  }
+
+  // ── Screen: Consent ─────────────────────────────────────────────────────
+  if (screen === 'consent') {
+    const previewName = `${fields.firstName} ${fields.lastName.slice(0, 2)}.`;
+    return (
+      <div style={{ ...baseStyle, justifyContent: 'space-evenly',
+        padding: 'clamp(20px,4vh,60px) clamp(20px,4vw,60px)' }}>
+        <Logo />
+
+        {/* Name confirmation card */}
+        <div style={{
+          background: 'rgba(255,255,255,.13)', border: '2px solid rgba(255,255,255,.3)',
+          borderRadius: 'clamp(12px,2vmin,24px)',
+          padding: 'clamp(16px,3vh,32px) clamp(24px,6vw,64px)',
+          textAlign: 'center', width: '100%', maxWidth: 'min(820px,98vw)',
+        }}>
+          <div style={{ color: 'rgba(255,255,255,.5)',
+            fontSize: 'clamp(12px,1.8vmin,18px)', marginBottom: 6 }}>
+            Сіздің деректеріңіз / Ваши данные
+          </div>
+          <div style={{ color: 'white', fontSize: 'clamp(22px,4vmin,40px)', fontWeight: 800 }}>
+            {fields.lastName} {fields.firstName}
+          </div>
+          {fields.middleName && (
+            <div style={{ color: 'rgba(255,255,255,.5)',
+              fontSize: 'clamp(14px,2vmin,22px)', marginTop: 4 }}>
+              {fields.middleName}
+            </div>
+          )}
+        </div>
+
+        {/* Question */}
+        <div style={{ textAlign: 'center', maxWidth: 'min(820px,98vw)', width: '100%' }}>
+          <div style={{ color: 'white', fontSize: 'clamp(16px,2.6vmin,28px)',
+            fontWeight: 700, lineHeight: 1.3 }}>
+            Атыңызды ақпараттық тақтада көрсетуге рұқсат бересіз бе?
+          </div>
+          <div style={{ color: 'rgba(255,255,255,.55)',
+            fontSize: 'clamp(13px,2vmin,22px)', marginTop: 8, lineHeight: 1.35 }}>
+            Разрешаете отображать ваше имя на информационном табло?
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div style={{ display: 'flex', flexDirection: 'column',
+          gap: 'clamp(8px,1.5vh,16px)', width: '100%', maxWidth: 'min(820px,98vw)' }}>
+
+          {addMutation.error && (
+            <div style={{ color: '#fca5a5',
+              fontSize: 'clamp(11px,1.6vmin,16px)', textAlign: 'center' }}>
+              {addMutation.error.message}
+            </div>
+          )}
+
+          <button
+            disabled={addMutation.isPending}
+            onClick={() => handleConsent(true)}
+            style={s({
+              background: addMutation.isPending ? 'rgba(179,145,104,.5)' : '#B39168',
+              border: '2px solid #a07d54',
+              borderRadius: 'clamp(10px,1.5vmin,18px)',
+              color: 'white', fontWeight: 800,
+              cursor: addMutation.isPending ? 'not-allowed' : 'pointer',
+              padding: 'clamp(14px,2.5vh,28px) clamp(20px,4vw,48px)',
+              fontSize: 'clamp(18px,3vmin,32px)', lineHeight: 1.3, width: '100%',
+            })}>
+            ✓ Иә, келісемін / Да
+            <div style={{ fontWeight: 400, fontSize: '.65em', opacity: .75, marginTop: 4 }}>
+              На табло: «{previewName}»
+            </div>
+          </button>
+
+          <button
+            disabled={addMutation.isPending}
+            onClick={() => handleConsent(false)}
+            style={s({
+              background: 'rgba(255,255,255,.1)',
+              border: '2px solid rgba(255,255,255,.2)',
+              borderRadius: 'clamp(10px,1.5vmin,18px)',
+              color: 'white', fontWeight: 800,
+              cursor: addMutation.isPending ? 'not-allowed' : 'pointer',
+              padding: 'clamp(14px,2.5vh,28px) clamp(20px,4vw,48px)',
+              fontSize: 'clamp(18px,3vmin,32px)', lineHeight: 1.3, width: '100%',
+            })}>
+            ✗ Жоқ / Нет
+            <div style={{ fontWeight: 400, fontSize: '.65em', opacity: .65, marginTop: 4 }}>
+              На табло: только порядковый номер
+            </div>
+          </button>
+        </div>
+
+        {/* Back button */}
+        <button
+          onClick={() => { setScreen('entry'); addMutation.reset(); }}
+          style={s({
+            background: 'none', border: 'none',
+            color: 'rgba(255,255,255,.4)',
+            fontSize: 'clamp(12px,1.8vmin,18px)', cursor: 'pointer',
+          })}>
+          ← Артқа / Назад
+        </button>
       </div>
     );
   }
