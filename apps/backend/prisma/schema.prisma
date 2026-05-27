@@ -257,6 +257,7 @@ model QueueEntry {
   kiosk     Kiosk?  @relation(fields: [kioskId], references: [id], onDelete: SetNull)
 
   paymentConfirmed Boolean @default(false)
+  displayConsent   Boolean @default(true)
   notes            String?
   cancelReason     String?
 
