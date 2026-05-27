@@ -71,10 +71,11 @@ export const createKioskRouter = (
     // ── Public: add patient to walk-in queue ──────────────────────────────
     addToQueue: trpc.procedure
       .input(z.object({
-        slug:        z.string(),
-        lastName:    z.string().min(1),
-        firstName:   z.string().min(1),
-        middleName:  z.string().min(1).optional(),
+        slug:           z.string(),
+        lastName:       z.string().min(1),
+        firstName:      z.string().min(1),
+        middleName:     z.string().min(1).optional(),
+        displayConsent: z.boolean().default(true),
       }))
       .mutation(async ({ input }) => {
         const kiosk = await prisma.kiosk.findUnique({ where: { slug: input.slug } });
@@ -142,6 +143,7 @@ export const createKioskRouter = (
               createdById:                 null,
               kioskId:                     kiosk.id,
               queueNumber,
+              displayConsent:              input.displayConsent ?? true,
             } as any,
           });
         });
