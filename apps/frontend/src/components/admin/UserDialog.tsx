@@ -145,6 +145,10 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
 
   const handleSubmit = () => {
     if (!firstName.trim() || !lastName.trim()) { toast.error('Имя и фамилия обязательны'); return; }
+    if (isEdit && username.trim() && username.trim().length < 3) {
+      toast.error('Логин должен содержать минимум 3 символа');
+      return;
+    }
     if (!isEdit && !username.trim()) { toast.error('Логин обязателен'); return; }
     if (!isEdit && !password.trim()) { toast.error('Пароль обязателен'); return; }
     if (role === 'DEPT_REGISTRAR' && (departmentId === NONE_DEPT || !departmentId)) {
@@ -163,6 +167,9 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
         allowedCategories:  allowedCategories as any,
         acceptedCategories: acceptedCategories as any,
         selfRegister,
+        ...(username.trim() && username.trim() !== editUser!.username
+          ? { username: username.trim() }
+          : {}),
         ...(password.trim() ? { password: password.trim() } : {}),
       });
     } else {
@@ -211,14 +218,24 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
                 </div>
               </div>
             ) : (
-              <div className="space-y-1">
-                <Label>Новый пароль</Label>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Не менять"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label>Логин</Label>
+                  <Input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Мин. 3 символа"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Новый пароль</Label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Не менять"
+                  />
+                </div>
               </div>
             )}
 
