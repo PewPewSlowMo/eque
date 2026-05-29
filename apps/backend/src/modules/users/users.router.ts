@@ -49,6 +49,7 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
     update: trpc.protectedProcedure
       .input(z.object({
         id: z.string(),
+        username: z.string().min(3).optional(),
         firstName: z.string().min(1).optional(),
         lastName: z.string().min(1).optional(),
         middleName: z.string().optional(),
@@ -78,12 +79,19 @@ export const createUsersRouter = (trpc: TrpcService, prisma: PrismaService) => {
         const { id, password, ...rest } = input;
         const data: any = { ...rest };
         if (password) data.password = await bcrypt.hash(password, 10);
-        return prisma.user.update({
-          where: { id },
-          data,
-          omit: { password: true },
-          include: { department: { select: { id: true, name: true } } },
-        });
+        try {
+          return await prisma.user.update({
+            where: { id },
+            data,
+            omit: { password: true },
+            include: { department: { select: { id: true, name: true } } },
+          });
+        } catch (e: any) {
+          if (e.code === 'P2002' && (e.meta?.target as string[] | undefined)?.includes('username')) {
+            throw new TRPCError({ code: 'CONFLICT', message: 'Логин уже занят' });
+          }
+          throw e;
+        }
       }),
 
     getDoctors: trpc.protectedProcedure
