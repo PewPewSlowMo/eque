@@ -224,8 +224,9 @@ export function UserDialog({ open, onClose, user: editUser }: Props) {
                   <Input
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Мин. 3 символа"
+                    placeholder={editUser?.username}
                   />
+                  <p className="text-xs text-muted-foreground">Оставьте пустым, чтобы не менять</p>
                 </div>
                 <div className="space-y-1">
                   <Label>Новый пароль</Label>
