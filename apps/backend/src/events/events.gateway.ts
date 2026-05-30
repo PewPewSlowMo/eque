@@ -73,6 +73,19 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
     console.log(`[WS] Client disconnected: ${client.id}`);
   }
 
+  private getBoardRoomsForCabinet(cabinetId: string | null | undefined): string[] {
+    if (!cabinetId) return [];
+    const slugs = this.boardCache.get(cabinetId);
+    if (!slugs) return [];
+    return Array.from(slugs).map((slug) => `board:${slug}`);
+  }
+
+  private getStaffRoomsFor(args: { doctorId: string; departmentId: string | null }): string[] {
+    const rooms = ['staff:all', `doctor:${args.doctorId}`];
+    if (args.departmentId) rooms.push(`department:${args.departmentId}`);
+    return rooms;
+  }
+
   /**
    * Сигнал "очередь у врача изменилась" — staff-клиенты делают refetch через tRPC.
    * Board-клиенты получают сигнал refresh для `display.getBySlug`.
@@ -90,8 +103,13 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
       entryId: args.entryId,
       cabinetId: args.cabinetId ?? null,
     };
-    // Phase 4 (Task 6): switch to room-based routing. For now broadcast.
-    this.server.emit('queue:updated', staffPayload);
+    const staffRooms = this.getStaffRoomsFor(args);
+
+    this.server.to(staffRooms).emit('queue:updated', staffPayload);
+    // queue:updated может выстреливать без cabinetId (создание записи, confirmArrival и т.д.).
+    // Шлём всем табло в общую `board:all` — табло сами рефетчат свой scope через display.getBySlug.
+    // Payload пустой — board просто триггерит refetch.
+    this.server.to('board:all').emit('queue:updated', {});
   }
 
   /**
@@ -132,11 +150,13 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
       patientMiddleName: noConsent ? ''   : (args.entry.patient.middleName ?? ''),
     };
 
-    // Phase 4 (Task 6): switch to two separate room-targeted emits.
-    // For now, broadcast staffPayload only — board still reads legacy `data.entry.patient.*`
-    // until Task 7 updates the client. To avoid breaking the client in this transitional
-    // commit, we keep broadcasting BOTH the new staffPayload AND the legacy payload.
-    this.server.emit('queue:called', { ...staffPayload, ...boardPayload });
+    const staffRooms = this.getStaffRoomsFor(args);
+    const boardRooms = this.getBoardRoomsForCabinet(args.cabinetId);
+
+    this.server.to(staffRooms).emit('queue:called', staffPayload);
+    if (boardRooms.length > 0) {
+      this.server.to(boardRooms).emit('queue:called', boardPayload);
+    }
   }
 
   /**
@@ -154,8 +174,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
       departmentId: args.departmentId,
       cabinetId: args.cabinetId,
     };
-    // Phase 4 (Task 6): switch to room-based.
-    this.server.emit(args.type, staffPayload);
+    const staffRooms = this.getStaffRoomsFor(args);
+    this.server.to(staffRooms).emit(args.type, staffPayload);
+    // assignment меняет cabinet doctor'а → табло могут перестать/начать показывать врача.
+    // Шлём в board:all с пустым payload, табло рефетчат display.getBySlug и пересчитывают свой scope.
+    this.server.to('board:all').emit(args.type, {});
   }
 
   /**
