@@ -36,12 +36,14 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+type PatientCategoryLiteral = 'PAID_ONCE' | 'PAID_CONTRACT' | 'OSMS' | 'CONTINGENT' | 'EMPLOYEE';
+
 interface KioskForm {
   name: string;
   slug: string;
   doctorId: string;
   serviceId: string;
-  defaultCategory: string;
+  defaultCategory: PatientCategoryLiteral;
   active: boolean;
   dailyLimit: string;
 }

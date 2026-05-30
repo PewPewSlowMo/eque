@@ -12,7 +12,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         { emit: 'event', level: 'warn' },
       ],
     });
-    this.$on('error', (e: any) => this.logger.error('Prisma error:', e));
+    (this as any).$on('error', (e: any) => this.logger.error('Prisma error:', e));
   }
 
   async onModuleInit() {

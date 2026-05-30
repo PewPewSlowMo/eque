@@ -11,7 +11,7 @@ const corsOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:30
 @WebSocketGateway({ cors: { origin: corsOrigins, credentials: true } })
 export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   handleConnection(client: Socket) {
     console.log(`[WS] Client connected: ${client.id}`);

@@ -2,6 +2,7 @@
   "name": "backend",
   "version": "0.1.0",
   "private": true,
+  "types": "./src/trpc/trpc.router.ts",
   "scripts": {
     "dev": "nest start --watch",
     "build": "nest build",
