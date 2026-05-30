@@ -7,6 +7,7 @@ import {
 import { OnModuleInit, Injectable } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from '../database/prisma.service';
+import type { StaffEvent, BoardCallEvent } from './event-types';
 
 const corsOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
 
@@ -70,6 +71,91 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
 
   handleDisconnect(client: Socket) {
     console.log(`[WS] Client disconnected: ${client.id}`);
+  }
+
+  /**
+   * Сигнал "очередь у врача изменилась" — staff-клиенты делают refetch через tRPC.
+   * Board-клиенты получают сигнал refresh для `display.getBySlug`.
+   */
+  emitQueueUpdated(args: {
+    doctorId: string;
+    departmentId: string | null;
+    entryId: string;
+    cabinetId?: string | null;
+  }): void {
+    const staffPayload: StaffEvent = {
+      type: 'queue:updated',
+      doctorId: args.doctorId,
+      departmentId: args.departmentId,
+      entryId: args.entryId,
+      cabinetId: args.cabinetId ?? null,
+    };
+    // Phase 4 (Task 6): switch to room-based routing. For now broadcast.
+    this.server.emit('queue:updated', staffPayload);
+  }
+
+  /**
+   * Сигнал "пациент вызван" — staff-клиенты делают refetch, board-клиенты получают
+   * замаскированный payload для немедленного TTS.
+   */
+  emitQueueCalled(args: {
+    doctorId: string;
+    departmentId: string | null;
+    cabinetId: string;
+    cabinetNumber: string;
+    entry: {
+      id: string;
+      queueNumber: number;
+      displayConsent: boolean;
+      patient: {
+        firstName: string;
+        lastName: string;
+        middleName: string | null;
+      };
+    };
+  }): void {
+    const staffPayload: StaffEvent = {
+      type: 'queue:called',
+      doctorId: args.doctorId,
+      departmentId: args.departmentId,
+      entryId: args.entry.id,
+      cabinetId: args.cabinetId,
+    };
+
+    const noConsent = args.entry.displayConsent === false;
+    const boardPayload: BoardCallEvent = {
+      cabinetId: args.cabinetId,
+      cabinetNumber: args.cabinetNumber,
+      queueNumber: args.entry.queueNumber,
+      patientFirstName:  noConsent ? null : args.entry.patient.firstName,
+      patientLastName:   noConsent ? null : args.entry.patient.lastName,
+      patientMiddleName: noConsent ? ''   : (args.entry.patient.middleName ?? ''),
+    };
+
+    // Phase 4 (Task 6): switch to two separate room-targeted emits.
+    // For now, broadcast staffPayload only — board still reads legacy `data.entry.patient.*`
+    // until Task 7 updates the client. To avoid breaking the client in this transitional
+    // commit, we keep broadcasting BOTH the new staffPayload AND the legacy payload.
+    this.server.emit('queue:called', { ...staffPayload, ...boardPayload });
+  }
+
+  /**
+   * Сигнал "назначение врач↔кабинет создано/завершено".
+   */
+  emitAssignmentChanged(args: {
+    type: 'assignment:created' | 'assignment:ended';
+    doctorId: string;
+    departmentId: string | null;
+    cabinetId: string | null;
+  }): void {
+    const staffPayload: StaffEvent = {
+      type: args.type,
+      doctorId: args.doctorId,
+      departmentId: args.departmentId,
+      cabinetId: args.cabinetId,
+    };
+    // Phase 4 (Task 6): switch to room-based.
+    this.server.emit(args.type, staffPayload);
   }
 
   /**
