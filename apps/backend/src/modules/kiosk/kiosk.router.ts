@@ -79,7 +79,10 @@ export const createKioskRouter = (
         displayConsent: z.boolean().default(true),
       }))
       .mutation(async ({ input }) => {
-        const kiosk = await prisma.kiosk.findUnique({ where: { slug: input.slug } });
+        const kiosk = await prisma.kiosk.findUnique({
+          where: { slug: input.slug },
+          include: { doctor: { select: { departmentId: true } } },
+        });
         if (!kiosk) throw new TRPCError({ code: 'NOT_FOUND', message: 'Киоск не найден' });
         if (!kiosk.active) throw new TRPCError({ code: 'FORBIDDEN', message: 'Киоск недоступен' });
 
@@ -150,7 +153,11 @@ export const createKioskRouter = (
           });
         });
 
-        events.emit('queue:updated', { doctorId: kiosk.doctorId, entry });
+        events.emitQueueUpdated({
+          doctorId:     kiosk.doctorId,
+          departmentId: kiosk.doctor?.departmentId ?? null,
+          entryId:      entry.id,
+        });
         return { queueNumber: entry.queueNumber };
       }),
 

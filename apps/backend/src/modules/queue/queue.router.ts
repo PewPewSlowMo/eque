@@ -179,7 +179,10 @@ export const createQueueRouter = (
               arrivedAt,
               notes: input.notes,
             } as any,
-            include: { patient: { select: PATIENT_SELECT } },
+            include: {
+              patient: { select: PATIENT_SELECT },
+              doctor:  { select: { departmentId: true } },
+            },
           });
         });
 
@@ -192,7 +195,11 @@ export const createQueueRouter = (
           } as any,
         });
 
-        events.emit('queue:updated', { doctorId: input.doctorId, entry });
+        events.emitQueueUpdated({
+          doctorId:     input.doctorId,
+          departmentId: (entry as any).doctor?.departmentId ?? null,
+          entryId:      entry.id,
+        });
         return entry;
       }),
 
@@ -214,7 +221,10 @@ export const createQueueRouter = (
         const updated = await prisma.queueEntry.update({
           where: { id: input.entryId },
           data: { status: 'ARRIVED', arrivedAt: new Date() },
-          include: { patient: { select: PATIENT_SELECT } },
+          include: {
+            patient: { select: PATIENT_SELECT },
+            doctor:  { select: { departmentId: true } },
+          },
         });
 
         await prisma.queueHistory.create({
@@ -227,7 +237,11 @@ export const createQueueRouter = (
           } as any,
         });
 
-        events.emit('queue:updated', { doctorId: entry.doctorId, entry: updated });
+        events.emitQueueUpdated({
+          doctorId:     entry.doctorId,
+          departmentId: (updated as any).doctor?.departmentId ?? null,
+          entryId:      updated.id,
+        });
         return updated;
       }),
 
@@ -249,7 +263,10 @@ export const createQueueRouter = (
         const updated = await prisma.queueEntry.update({
           where: { id: input.entryId },
           data: { paymentConfirmed: true },
-          include: { patient: { select: PATIENT_SELECT } },
+          include: {
+            patient: { select: PATIENT_SELECT },
+            doctor:  { select: { departmentId: true } },
+          },
         });
 
         await prisma.queueHistory.create({
@@ -260,7 +277,11 @@ export const createQueueRouter = (
           } as any,
         });
 
-        events.emit('queue:updated', { doctorId: entry.doctorId, entry: updated });
+        events.emitQueueUpdated({
+          doctorId:     entry.doctorId,
+          departmentId: (updated as any).doctor?.departmentId ?? null,
+          entryId:      updated.id,
+        });
         return updated;
       }),
 
@@ -303,7 +324,10 @@ export const createQueueRouter = (
         const called = await prisma.queueEntry.update({
           where: { id: next.id },
           data: { status: 'CALLED', calledAt: new Date() },
-          include: { patient: { select: PATIENT_SELECT } },
+          include: {
+            patient: { select: { firstName: true, lastName: true, middleName: true } },
+            doctor:  { select: { departmentId: true } },
+          },
         });
 
         await prisma.queueHistory.create({
@@ -321,13 +345,30 @@ export const createQueueRouter = (
           include: { cabinet: { select: { id: true, number: true } } },
         });
 
-        events.emit('queue:called', {
-          doctorId:      input.doctorId,
-          cabinetId:     callNextAssignment?.cabinetId ?? null,
-          cabinetNumber: callNextAssignment?.cabinet.number ?? null,
-          entry:         called,
+        if (callNextAssignment) {
+          events.emitQueueCalled({
+            doctorId:      input.doctorId,
+            departmentId:  (called as any).doctor?.departmentId ?? null,
+            cabinetId:     callNextAssignment.cabinetId,
+            cabinetNumber: callNextAssignment.cabinet.number,
+            entry: {
+              id:             called.id,
+              queueNumber:    called.queueNumber,
+              displayConsent: (called as any).displayConsent ?? true,
+              patient: {
+                firstName:  called.patient.firstName,
+                lastName:   called.patient.lastName,
+                middleName: called.patient.middleName,
+              },
+            },
+          });
+        }
+        events.emitQueueUpdated({
+          doctorId:     input.doctorId,
+          departmentId: (called as any).doctor?.departmentId ?? null,
+          entryId:      called.id,
+          cabinetId:    callNextAssignment?.cabinetId ?? null,
         });
-        events.emit('queue:updated', { doctorId: input.doctorId, entry: called });
         return { called };
       }),
 
@@ -347,7 +388,10 @@ export const createQueueRouter = (
         const called = await prisma.queueEntry.update({
           where: { id: input.entryId },
           data: { status: 'CALLED', calledAt: new Date() },
-          include: { patient: { select: PATIENT_SELECT } },
+          include: {
+            patient: { select: { firstName: true, lastName: true, middleName: true } },
+            doctor:  { select: { departmentId: true } },
+          },
         });
         await prisma.queueHistory.create({
           data: {
@@ -364,13 +408,30 @@ export const createQueueRouter = (
           include: { cabinet: { select: { id: true, number: true } } },
         });
 
-        events.emit('queue:called', {
-          doctorId:      entry.doctorId,
-          cabinetId:     callSpecificAssignment?.cabinetId ?? null,
-          cabinetNumber: callSpecificAssignment?.cabinet.number ?? null,
-          entry:         called,
+        if (callSpecificAssignment) {
+          events.emitQueueCalled({
+            doctorId:      entry.doctorId,
+            departmentId:  (called as any).doctor?.departmentId ?? null,
+            cabinetId:     callSpecificAssignment.cabinetId,
+            cabinetNumber: callSpecificAssignment.cabinet.number,
+            entry: {
+              id:             called.id,
+              queueNumber:    called.queueNumber,
+              displayConsent: (called as any).displayConsent ?? true,
+              patient: {
+                firstName:  called.patient.firstName,
+                lastName:   called.patient.lastName,
+                middleName: called.patient.middleName,
+              },
+            },
+          });
+        }
+        events.emitQueueUpdated({
+          doctorId:     entry.doctorId,
+          departmentId: (called as any).doctor?.departmentId ?? null,
+          entryId:      called.id,
+          cabinetId:    callSpecificAssignment?.cabinetId ?? null,
         });
-        events.emit('queue:updated', { doctorId: entry.doctorId, entry: called });
         return { called };
       }),
 
@@ -387,7 +448,10 @@ export const createQueueRouter = (
         const updated = await prisma.queueEntry.update({
           where: { id: input.entryId },
           data: { status: 'IN_PROGRESS', startedAt: new Date() },
-          include: { patient: { select: PATIENT_SELECT } },
+          include: {
+            patient: { select: PATIENT_SELECT },
+            doctor:  { select: { departmentId: true } },
+          },
         });
 
         await prisma.queueHistory.create({
@@ -400,7 +464,11 @@ export const createQueueRouter = (
           } as any,
         });
 
-        events.emit('queue:updated', { doctorId: entry.doctorId, entry: updated });
+        events.emitQueueUpdated({
+          doctorId:     entry.doctorId,
+          departmentId: (updated as any).doctor?.departmentId ?? null,
+          entryId:      updated.id,
+        });
         return updated;
       }),
 
@@ -410,7 +478,10 @@ export const createQueueRouter = (
       .mutation(async ({ input }) => {
         const entry = await prisma.queueEntry.findUnique({
           where: { id: input.entryId },
-          include: { patient: { select: PATIENT_SELECT } },
+          include: {
+            patient: { select: { firstName: true, lastName: true, middleName: true } },
+            doctor:  { select: { departmentId: true } },
+          },
         });
         if (!entry) throw new TRPCError({ code: 'NOT_FOUND', message: 'Запись не найдена' });
 
@@ -419,12 +490,24 @@ export const createQueueRouter = (
           include: { cabinet: { select: { id: true, number: true } } },
         });
 
-        events.emit('queue:called', {
-          doctorId:      entry.doctorId,
-          cabinetId:     assignment?.cabinetId ?? null,
-          cabinetNumber: assignment?.cabinet.number ?? null,
-          entry,
-        });
+        if (assignment) {
+          events.emitQueueCalled({
+            doctorId:      entry.doctorId,
+            departmentId:  entry.doctor?.departmentId ?? null,
+            cabinetId:     assignment.cabinetId,
+            cabinetNumber: assignment.cabinet.number,
+            entry: {
+              id:             entry.id,
+              queueNumber:    entry.queueNumber,
+              displayConsent: entry.displayConsent ?? true,
+              patient: {
+                firstName:  entry.patient.firstName,
+                lastName:   entry.patient.lastName,
+                middleName: entry.patient.middleName,
+              },
+            },
+          });
+        }
         return { ok: true };
       }),
 
@@ -450,7 +533,10 @@ export const createQueueRouter = (
             completedAt: new Date(),
             notes: input.notes ?? entry.notes,
           },
-          include: { patient: { select: PATIENT_SELECT } },
+          include: {
+            patient: { select: PATIENT_SELECT },
+            doctor:  { select: { departmentId: true } },
+          },
         });
 
         await prisma.queueHistory.create({
@@ -464,7 +550,11 @@ export const createQueueRouter = (
           } as any,
         });
 
-        events.emit('queue:updated', { doctorId: entry.doctorId, entry: updated });
+        events.emitQueueUpdated({
+          doctorId:     entry.doctorId,
+          departmentId: (updated as any).doctor?.departmentId ?? null,
+          entryId:      updated.id,
+        });
         return updated;
       }),
 
@@ -486,7 +576,10 @@ export const createQueueRouter = (
         const updated = await prisma.queueEntry.update({
           where: { id: input.entryId },
           data: { status: 'CANCELLED', cancelReason: input.reason },
-          include: { patient: { select: PATIENT_SELECT } },
+          include: {
+            patient: { select: PATIENT_SELECT },
+            doctor:  { select: { departmentId: true } },
+          },
         });
 
         await prisma.queueHistory.create({
@@ -500,7 +593,11 @@ export const createQueueRouter = (
           } as any,
         });
 
-        events.emit('queue:updated', { doctorId: entry.doctorId, entry: updated });
+        events.emitQueueUpdated({
+          doctorId:     entry.doctorId,
+          departmentId: (updated as any).doctor?.departmentId ?? null,
+          entryId:      updated.id,
+        });
         return updated;
       }),
 
@@ -522,7 +619,10 @@ export const createQueueRouter = (
         const updated = await prisma.queueEntry.update({
           where: { id: input.entryId },
           data: { status: 'NO_SHOW' },
-          include: { patient: { select: PATIENT_SELECT } },
+          include: {
+            patient: { select: PATIENT_SELECT },
+            doctor:  { select: { departmentId: true } },
+          },
         });
 
         await prisma.queueHistory.create({
@@ -535,7 +635,11 @@ export const createQueueRouter = (
           } as any,
         });
 
-        events.emit('queue:updated', { doctorId: entry.doctorId, entry: updated });
+        events.emitQueueUpdated({
+          doctorId:     entry.doctorId,
+          departmentId: (updated as any).doctor?.departmentId ?? null,
+          entryId:      updated.id,
+        });
         return updated;
       }),
 

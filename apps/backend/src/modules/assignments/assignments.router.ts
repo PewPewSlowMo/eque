@@ -100,7 +100,12 @@ export const createAssignmentsRouter = (
           },
         });
 
-        events.emit('assignment:created', assignment);
+        events.emitAssignmentChanged({
+          type:         'assignment:created',
+          doctorId:     assignment.doctorId,
+          departmentId: assignment.doctor?.departmentId ?? null,
+          cabinetId:    assignment.cabinetId,
+        });
         return assignment;
       }),
 
@@ -129,12 +134,17 @@ export const createAssignmentsRouter = (
           where: { id: input.assignmentId },
           data: { isActive: false, endTime: new Date() },
           include: {
-            doctor: { select: { id: true, firstName: true, lastName: true } },
+            doctor: { select: { id: true, firstName: true, lastName: true, departmentId: true } },
             cabinet: { select: { id: true, number: true, name: true } },
           },
         });
 
-        events.emit('assignment:ended', assignment);
+        events.emitAssignmentChanged({
+          type:         'assignment:ended',
+          doctorId:     assignment.doctorId,
+          departmentId: assignment.doctor?.departmentId ?? null,
+          cabinetId:    assignment.cabinetId,
+        });
         return assignment;
       }),
   });
