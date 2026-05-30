@@ -42,7 +42,7 @@ export class TrpcRouter {
     assignments: createAssignmentsRouter(this.trpc, this.prisma, this.eventsGateway),
     queue: createQueueRouter(this.trpc, this.prisma, this.eventsGateway),
     display: createDisplayRouter(this.trpc, this.prisma),
-    displayBoards: createDisplayBoardsRouter(this.trpc, this.prisma),
+    displayBoards: createDisplayBoardsRouter(this.trpc, this.prisma, this.eventsGateway),
     schedules: createSchedulesRouter(this.trpc, this.prisma),
     services:  createServicesRouter(this.trpc, this.prisma),
     kiosk: createKioskRouter(this.trpc, this.prisma, this.eventsGateway),

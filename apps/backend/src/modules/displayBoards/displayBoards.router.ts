@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { TrpcService } from '../../trpc/trpc.service';
 import { PrismaService } from '../../database/prisma.service';
+import { EventsGateway } from '../../events/events.gateway';
 
 const BoardInput = z.object({
   name: z.string().min(1),
@@ -13,7 +14,11 @@ const BoardInput = z.object({
   cabinetIds: z.array(z.string()),
 });
 
-export const createDisplayBoardsRouter = (trpc: TrpcService, prisma: PrismaService) => {
+export const createDisplayBoardsRouter = (
+  trpc: TrpcService,
+  prisma: PrismaService,
+  events: EventsGateway,
+) => {
   return trpc.router({
     getAll: trpc.protectedProcedure.query(async ({ ctx }) => {
       if (!['ADMIN', 'DIRECTOR'].includes(ctx.user.role)) {
@@ -37,7 +42,7 @@ export const createDisplayBoardsRouter = (trpc: TrpcService, prisma: PrismaServi
         }
         const { cabinetIds, ...data } = input;
         try {
-          return await prisma.displayBoard.create({
+          const created = await prisma.displayBoard.create({
             data: {
               ...data,
               cabinets: {
@@ -50,6 +55,8 @@ export const createDisplayBoardsRouter = (trpc: TrpcService, prisma: PrismaServi
               },
             },
           });
+          await events.refreshBoardCache();
+          return created;
         } catch (e: any) {
           if (e?.code === 'P2002') {
             throw new TRPCError({ code: 'CONFLICT', message: 'Табло с таким slug уже существует' });
@@ -65,7 +72,7 @@ export const createDisplayBoardsRouter = (trpc: TrpcService, prisma: PrismaServi
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         }
         const { id, cabinetIds, ...data } = input;
-        return prisma.$transaction(async (tx) => {
+        const updated = await prisma.$transaction(async (tx) => {
           if (cabinetIds !== undefined) {
             await tx.displayBoardCabinet.deleteMany({ where: { boardId: id } });
             await tx.displayBoardCabinet.createMany({
@@ -89,6 +96,8 @@ export const createDisplayBoardsRouter = (trpc: TrpcService, prisma: PrismaServi
             throw e;
           }
         });
+        await events.refreshBoardCache();
+        return updated;
       }),
 
     delete: trpc.protectedProcedure
@@ -97,7 +106,16 @@ export const createDisplayBoardsRouter = (trpc: TrpcService, prisma: PrismaServi
         if (ctx.user.role !== 'ADMIN') {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Нет доступа' });
         }
-        return prisma.displayBoard.delete({ where: { id: input.id } });
+        const board = await prisma.displayBoard.findUnique({
+          where: { id: input.id },
+          select: { slug: true },
+        });
+        const result = await prisma.displayBoard.delete({ where: { id: input.id } });
+        if (board) {
+          events.disconnectBoard(board.slug);
+        }
+        await events.refreshBoardCache();
+        return result;
       }),
   });
 };
