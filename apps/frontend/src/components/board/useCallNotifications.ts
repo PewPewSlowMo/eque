@@ -95,14 +95,13 @@ export function useCallNotifications({ cabinetIds, board, backendBaseUrl, onCall
     const handleCalled = (data: any) => {
       if (!data.cabinetId || !cabinetIdsRef.current.includes(data.cabinetId)) return;
 
-      const noConsent = data.entry?.displayConsent === false;
       const event: CallEvent = {
         cabinetId:         data.cabinetId,
         cabinetNumber:     data.cabinetNumber,
-        patientLastName:   noConsent ? null : (data.entry?.patient?.lastName ?? ''),
-        patientFirstName:  noConsent ? null : (data.entry?.patient?.firstName ?? ''),
-        patientMiddleName: noConsent ? '' : (data.entry?.patient?.middleName ?? ''),
-        queueNumber:       data.entry?.queueNumber ?? null,
+        patientLastName:   data.patientLastName ?? null,
+        patientFirstName:  data.patientFirstName ?? null,
+        patientMiddleName: data.patientMiddleName ?? '',
+        queueNumber:       data.queueNumber ?? null,
       };
 
       queueRef.current.push(event);
