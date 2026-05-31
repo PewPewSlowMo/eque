@@ -246,18 +246,4 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
     this.server.to('board:all').emit(args.type, {});
   }
 
-  /**
-   * @deprecated Use typed emit methods (emitQueueUpdated, emitQueueCalled, emitAssignmentChanged).
-   * Сохранён временно для роутеров, которые ещё не мигрированы.
-   */
-  emit(event: string, data: any) {
-    this.server.emit(event, data);
-  }
-
-  /**
-   * @deprecated Use emitQueueCalled with cabinet info.
-   */
-  emitToDoctor(doctorId: string, event: string, data: any) {
-    this.server.to(`doctor:${doctorId}`).emit(event, data);
-  }
 }
