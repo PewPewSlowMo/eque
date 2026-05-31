@@ -8,8 +8,14 @@ import { OnModuleInit, Injectable } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from '../database/prisma.service';
 import type { StaffEvent, BoardCallEvent } from './event-types';
+import { TrpcService } from '../trpc/trpc.service';
+import type { AuthUser } from '../trpc/trpc.service';
 
 const corsOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
+
+type SocketContext =
+  | { kind: 'staff'; user: AuthUser }
+  | { kind: 'board'; slug: string; cabinetIds: string[] };
 
 @Injectable()
 @WebSocketGateway({ cors: { origin: corsOrigins, credentials: true } })
@@ -65,8 +71,60 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
     }
   }
 
-  handleConnection(client: Socket) {
-    console.log(`[WS] Client connected: ${client.id}`);
+  async handleConnection(client: Socket) {
+    const auth = client.handshake.auth as { token?: string; boardSlug?: string };
+
+    // Приоритет token. Если он есть — игнорируем boardSlug.
+    if (auth.token) {
+      const user = TrpcService.verifyToken(auth.token);
+      if (!user) {
+        console.log(`[WS] Rejected: invalid token (${client.id})`);
+        client.disconnect(true);
+        return;
+      }
+      const context: SocketContext = { kind: 'staff', user };
+      client.data = context;
+      this.joinStaffRooms(client, user);
+      console.log(`[WS] Staff connected: ${user.username} (${user.role})`);
+      return;
+    }
+
+    if (auth.boardSlug) {
+      const board = await this.prisma.displayBoard.findUnique({
+        where: { slug: auth.boardSlug },
+        select: { id: true, cabinets: { select: { cabinetId: true } } },
+      });
+      if (!board) {
+        console.log(`[WS] Rejected: unknown board slug ${auth.boardSlug} (${client.id})`);
+        client.emit('unauthorized', { message: 'unauthorized: unknown board' });
+        client.disconnect(true);
+        return;
+      }
+      const cabinetIds = board.cabinets.map((c) => c.cabinetId);
+      const context: SocketContext = { kind: 'board', slug: auth.boardSlug, cabinetIds };
+      client.data = context;
+      // board:{slug} — для TTS-критичного queue:called с cabinet-фильтром
+      // board:all — для общих refetch-триггеров queue:updated и assignment:*
+      client.join(`board:${auth.boardSlug}`);
+      client.join('board:all');
+      console.log(`[WS] Board connected: ${auth.boardSlug} (cabinets=${cabinetIds.length})`);
+      return;
+    }
+
+    console.log(`[WS] Rejected: no credentials (${client.id})`);
+    client.emit('unauthorized', { message: 'unauthorized: no credentials' });
+    client.disconnect(true);
+  }
+
+  private joinStaffRooms(client: Socket, user: AuthUser): void {
+    const wideAccessRoles = ['ADMIN', 'DIRECTOR', 'REGISTRAR', 'CALL_CENTER'];
+    if (wideAccessRoles.includes(user.role)) {
+      client.join('staff:all');
+    } else if (user.role === 'DEPT_REGISTRAR' || user.role === 'DEPARTMENT_HEAD') {
+      if (user.departmentId) client.join(`department:${user.departmentId}`);
+    } else if (user.role === 'DOCTOR') {
+      client.join(`doctor:${user.id}`);
+    }
   }
 
   handleDisconnect(client: Socket) {
