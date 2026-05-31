@@ -31,15 +31,26 @@ export function getSocket(mode: AuthMode): Socket {
       : { boardSlug: mode.slug },
   });
 
+  const triggerUnauthorizedReload = () => {
+    // Не зацикливать ретрай — отключаемся и форсируем reload для подхвата нового кода/токена
+    socket?.disconnect();
+    socket = null;
+    currentMode = null;
+    // Чуть-чуть задержки чтобы не сделать reload до того, как пользователь успел увидеть UI
+    setTimeout(() => window.location.reload(), 1000);
+  };
+
   socket.on('connect_error', (err) => {
     if (err.message === 'unauthorized' || err.message?.startsWith?.('unauthorized')) {
-      // Не зацикливать ретрай — отключаемся и форсируем reload для подхвата нового кода/токена
-      socket?.disconnect();
-      socket = null;
-      currentMode = null;
-      // Чуть-чуть задержки чтобы не сделать reload до того, как пользователь успел увидеть UI
-      setTimeout(() => window.location.reload(), 1000);
+      triggerUnauthorizedReload();
     }
+  });
+
+  // Сервер шлёт custom 'unauthorized' event перед disconnect (вместо зарезервированного 'connect_error').
+  // Слушаем оба варианта для надёжности.
+  socket.on('unauthorized', (info) => {
+    console.log('[WS] Server rejected connection:', info?.message ?? '(no message)');
+    triggerUnauthorizedReload();
   });
 
   return socket;

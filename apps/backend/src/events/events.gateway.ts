@@ -90,10 +90,17 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
     }
 
     if (auth.boardSlug) {
-      const board = await this.prisma.displayBoard.findUnique({
-        where: { slug: auth.boardSlug },
-        select: { id: true, cabinets: { select: { cabinetId: true } } },
-      });
+      let board: { id: string; cabinets: { cabinetId: string }[] } | null = null;
+      try {
+        board = await this.prisma.displayBoard.findUnique({
+          where: { slug: auth.boardSlug },
+          select: { id: true, cabinets: { select: { cabinetId: true } } },
+        });
+      } catch (err) {
+        console.error(`[WS] DB error during board auth (${client.id}):`, err);
+        client.disconnect(true);
+        return;
+      }
       if (!board) {
         console.log(`[WS] Rejected: unknown board slug ${auth.boardSlug} (${client.id})`);
         client.emit('unauthorized', { message: 'unauthorized: unknown board' });
