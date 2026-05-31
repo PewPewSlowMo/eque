@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { getSocket } from '@/lib/socket';
+import type { BoardCallEvent } from 'backend/src/events/event-types';
 
 export interface CallEvent {
   cabinetId: string | null;
@@ -93,16 +94,16 @@ export function useCallNotifications({ slug, cabinetIds, board, backendBaseUrl, 
   useEffect(() => {
     const socket = getSocket({ kind: 'board', slug });
 
-    const handleCalled = (data: any) => {
+    const handleCalled = (data: BoardCallEvent) => {
       if (!data.cabinetId || !cabinetIdsRef.current.includes(data.cabinetId)) return;
 
       const event: CallEvent = {
         cabinetId:         data.cabinetId,
         cabinetNumber:     data.cabinetNumber,
-        patientLastName:   data.patientLastName ?? null,
-        patientFirstName:  data.patientFirstName ?? null,
-        patientMiddleName: data.patientMiddleName ?? '',
-        queueNumber:       data.queueNumber ?? null,
+        patientLastName:   data.patientLastName,
+        patientFirstName:  data.patientFirstName,
+        patientMiddleName: data.patientMiddleName,
+        queueNumber:       data.queueNumber,
       };
 
       queueRef.current.push(event);

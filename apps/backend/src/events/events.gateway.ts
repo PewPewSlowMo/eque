@@ -79,6 +79,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect, 
       const user = TrpcService.verifyToken(auth.token);
       if (!user) {
         console.log(`[WS] Rejected: invalid token (${client.id})`);
+        client.emit('unauthorized', { message: 'unauthorized: invalid token' });
         client.disconnect(true);
         return;
       }
