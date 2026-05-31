@@ -31,6 +31,7 @@ export function BoardView({ slug }: Props) {
   }, []);
 
   const { onOverlayDismissed } = useCallNotifications({
+    slug,
     cabinetIds: data?.cabinetIds ?? [],
     board: data?.board ?? { audioMode: 'SOUND', ttsTemplate: '', soundUrl: null },
     backendBaseUrl: BACKEND_BASE,
@@ -44,7 +45,7 @@ export function BoardView({ slug }: Props) {
   }, [onOverlayDismissed, queryClient]);
 
   useEffect(() => {
-    const socket = getSocket();
+    const socket = getSocket({ kind: 'board', slug });
     const refresh = () => {
       queryClient.invalidateQueries({ queryKey: [['display', 'getBySlug']] });
     };

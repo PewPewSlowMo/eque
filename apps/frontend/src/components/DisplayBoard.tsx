@@ -32,7 +32,9 @@ export function DisplayBoard() {
   );
 
   useEffect(() => {
-    const socket = getSocket();
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+    const socket = getSocket({ kind: 'staff', token });
     const refresh = () => {
       queryClient.invalidateQueries({ queryKey: [['display', 'getBoard']] });
     };

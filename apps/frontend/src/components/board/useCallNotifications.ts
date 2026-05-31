@@ -17,13 +17,14 @@ interface BoardAudio {
 }
 
 interface Options {
+  slug: string;
   cabinetIds: string[];
   board: BoardAudio;
   backendBaseUrl: string;
   onCall: (event: CallEvent) => void;
 }
 
-export function useCallNotifications({ cabinetIds, board, backendBaseUrl, onCall }: Options) {
+export function useCallNotifications({ slug, cabinetIds, board, backendBaseUrl, onCall }: Options) {
   const audioRef = useRef<HTMLAudioElement>(new Audio());
   const queueRef = useRef<CallEvent[]>([]);
   const processingRef = useRef(false);
@@ -90,7 +91,7 @@ export function useCallNotifications({ cabinetIds, board, backendBaseUrl, onCall
   }, [processNext]);
 
   useEffect(() => {
-    const socket = getSocket();
+    const socket = getSocket({ kind: 'board', slug });
 
     const handleCalled = (data: any) => {
       if (!data.cabinetId || !cabinetIdsRef.current.includes(data.cabinetId)) return;

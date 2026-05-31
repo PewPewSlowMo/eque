@@ -6,7 +6,10 @@ export function useQueueSocket() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const socket = getSocket();
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;  // не залогинены — WS не нужен
+
+    const socket = getSocket({ kind: 'staff', token });
 
     const handleQueueUpdated = () => {
       queryClient.invalidateQueries({ queryKey: [['queue', 'getByDoctor']] });
